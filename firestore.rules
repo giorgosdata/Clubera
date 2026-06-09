@@ -1,0 +1,287 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function uid() { return request.auth.uid; }
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(uid())).data;
+    }
+    function clubDoc(clubId) {
+      return get(/databases/$(database)/documents/clubs/$(clubId)).data;
+    }
+    function isAdmin() {
+      return isSignedIn() && userDoc().role == 'admin';
+    }
+    // User has clubId pointing to this club in their user doc
+    function isMyClub(clubId) {
+      return isSignedIn() && userDoc().clubId == clubId;
+    }
+    function isClubOwner(clubId) {
+      return isSignedIn() && clubDoc(clubId).adminUid == uid();
+    }
+    function isClubStaff(clubId) {
+      return isSignedIn() && (
+        isClubOwner(clubId) ||
+        isMyClub(clubId) ||
+        uid() in clubDoc(clubId).staffUids
+      );
+    }
+
+    // ── COLLECTION-GROUP READS ──────────────────────────────────────────────
+    // collectionGroup('players') queries (Teams > Search, Admin > All Players)
+    // need a rule that matches via the recursive wildcard.
+    match /{path=**}/players/{playerId} {
+      allow read: if true;
+    }
+
+    // ── USERS ────────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && uid() == userId;
+      // Admin can update any field. Regular users can only update safe profile
+      // fields — role/points/balance/streak are managed by Cloud Functions only.
+      // clubId self-update allowed only when the user is the admin of that club
+      // (covers the create-club flow; blocks arbitrary staff impersonation).
+      allow update: if isAdmin() ||
+        (isSignedIn() && uid() == userId &&
+          !request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasAny(['role', 'points', 'balance', 'streak']) &&
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['clubId']) ||
+            request.resource.data.clubId == null ||
+            isClubOwner(request.resource.data.clubId)));
+      allow delete: if isAdmin();
+    }
+
+    // ── CLUBS ────────────────────────────────────────────────────────────────
+    match /clubs/{clubId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      // Staff/admin can update any field. Any signed-in user can change only
+      // the followers/votes counters (used by follow/vote flows).
+      allow update: if isClubStaff(clubId) || isAdmin() ||
+        (isSignedIn() &&
+          request.resource.data.diff(resource.data)
+            .affectedKeys().hasOnly(['followers', 'votes']));
+      allow delete: if isAdmin();
+
+      // Subcollections inside each club
+      match /players/{playerId} {
+        allow read: if true;
+        allow write: if isClubStaff(clubId) || isAdmin();
+      }
+      match /transfers/{transferId} {
+        allow read: if true;
+        allow write: if isClubStaff(clubId) || isAdmin();
+      }
+      match /academies/{academyId} {
+        allow read: if true;
+        allow write: if isClubStaff(clubId) || isAdmin();
+
+        match /players/{playerId} {
+          allow read: if true;
+          allow write: if isClubStaff(clubId) || isAdmin();
+        }
+        match /transfers/{transferId} {
+          allow read: if true;
+          allow write: if isClubStaff(clubId) || isAdmin();
+        }
+        match /matches/{matchId} {
+          allow read: if true;
+          allow write: if isClubStaff(clubId) || isAdmin();
+        }
+      }
+      // Votes subcollection (each user can vote once)
+      match /votes/{voterId} {
+        allow read: if true;
+        allow create, delete: if isSignedIn() && uid() == voterId;
+      }
+      // Feed subcollection (club news/posts)
+      match /feed/{feedId} {
+        allow read: if true;
+        allow write: if isClubStaff(clubId) || isAdmin();
+      }
+    }
+
+    // ── MATCHES ──────────────────────────────────────────────────────────────
+    match /matches/{matchId} {
+      allow read: if true;
+      allow create: if isAdmin() ||
+        (isSignedIn() && (
+          isClubStaff(request.resource.data.homeClubId) ||
+          isClubStaff(request.resource.data.awayClubId)
+        ));
+      // Once a match is finished, it cannot be updated by anyone except admin.
+      allow update: if isAdmin() ||
+        (isSignedIn() &&
+          resource.data.status != 'finished' &&
+          (
+            isClubStaff(request.resource.data.homeClubId) ||
+            isClubStaff(request.resource.data.awayClubId)
+          ));
+      allow delete: if isAdmin();
+
+      match /events/{eventId} {
+        allow read: if true;
+        // Events can only be added by club staff while match is not finished
+        allow create: if isAdmin() || (isSignedIn() &&
+          get(/databases/$(database)/documents/matches/$(matchId)).data.status != 'finished' &&
+          (isClubStaff(get(/databases/$(database)/documents/matches/$(matchId)).data.homeClubId) ||
+           isClubStaff(get(/databases/$(database)/documents/matches/$(matchId)).data.awayClubId)));
+        allow update, delete: if isAdmin();
+      }
+      // MVP votes: one doc per user (doc id = userId), only own vote
+      match /mvp_votes/{voterId} {
+        allow read: if true;
+        allow create, update: if isSignedIn() && uid() == voterId &&
+          get(/databases/$(database)/documents/matches/$(matchId)).data.status == 'finished';
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ── GAMES (admin-managed or club-specific) ───────────────────────────────
+    match /games/{gameId} {
+      allow read: if true;
+      // Admin: all games. Club staff: only their own club's games.
+      allow create: if isAdmin() ||
+        (isSignedIn() && request.resource.data.clubId != null &&
+          isClubStaff(request.resource.data.clubId));
+      // Club staff may update only if clubId stays the same (prevents ownership transfer).
+      allow update: if isAdmin() ||
+        (isSignedIn() && resource.data.clubId != null &&
+          isClubStaff(resource.data.clubId) &&
+          request.resource.data.clubId == resource.data.clubId);
+      allow delete: if isAdmin() ||
+        (isSignedIn() && resource.data.clubId != null && isClubStaff(resource.data.clubId));
+
+      // Trivia questions subcollection
+      match /questions/{questionId} {
+        allow read: if true;
+        allow write: if isAdmin() ||
+          (get(/databases/$(database)/documents/games/$(gameId)).data.clubId != null &&
+            isClubStaff(get(/databases/$(database)/documents/games/$(gameId)).data.clubId));
+      }
+    }
+
+    // ── SCORE PREDICTIONS (per-user match predictions) ──────────────────────
+    match /score_predictions/{predictionId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == uid() || isAdmin()
+      );
+      allow create, update: if isSignedIn() &&
+        request.resource.data.userId == uid();
+      allow delete: if isAdmin();
+    }
+
+    // ── GAME PLAYS (user playing history) ────────────────────────────────────
+    match /game_plays/{playId} {
+      allow get: if isSignedIn() && (
+        resource.data.userId == uid() || isAdmin()
+      );
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == uid();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── REWARDS ──────────────────────────────────────────────────────────────
+    match /rewards/{rewardId} {
+      allow read: if true;
+      allow create: if isSignedIn() && (
+        // Global rewards: only admin
+        (request.resource.data.clubId == null && isAdmin()) ||
+        // Club rewards: club staff
+        (request.resource.data.clubId != null && isClubStaff(request.resource.data.clubId))
+      );
+      allow update, delete: if isAdmin() ||
+        (resource.data.clubId != null && isClubStaff(resource.data.clubId));
+    }
+
+    // ── NEWS ─────────────────────────────────────────────────────────────────
+    match /news/{newsId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ── SPONSORS ─────────────────────────────────────────────────────────────
+    match /sponsors/{sponsorId} {
+      allow read: if true;
+      allow write: if isAdmin() ||
+        (request.resource.data.clubId != null && isClubStaff(request.resource.data.clubId)) ||
+        (resource != null && resource.data.clubId != null && isClubStaff(resource.data.clubId));
+    }
+
+    // ── DONATIONS ────────────────────────────────────────────────────────────
+    match /donations/{donationId} {
+      allow get: if isSignedIn() && (
+        resource.data.userId == uid() ||
+        isClubStaff(resource.data.clubId) ||
+        isAdmin()
+      );
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == uid();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── PAYMENTS / WALLET ────────────────────────────────────────────────────
+    match /payments/{paymentId} {
+      allow get: if isSignedIn() && (
+        resource.data.userId == uid() || isAdmin()
+      );
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == uid();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── COUPON PICKS / PREDICTIONS ───────────────────────────────────────────
+    match /coupon_picks/{pickId} {
+      allow get: if isSignedIn() && (
+        resource.data.userId == uid() || isAdmin()
+      );
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == uid();
+      allow update: if isSignedIn() && (
+        resource.data.userId == uid() || isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ── NOTIFICATIONS (per-user inbox) ───────────────────────────────────────
+    match /notifications/{notifId} {
+      allow get, update: if isSignedIn() && (
+        resource.data.userId == uid() || isAdmin()
+      );
+      allow list: if isSignedIn();
+      // Users can only create notifications for themselves (prevents spam)
+      allow create: if isSignedIn() && request.resource.data.userId == uid();
+      allow delete: if isAdmin() ||
+        (isSignedIn() && resource.data.userId == uid());
+    }
+
+    // ── FAN STATS (per-user per-club engagement, written by Cloud Functions) ─
+    match /fan_stats/{statId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ── USER BADGES (awarded by Cloud Functions only) ─────────────────────────
+    match /user_badges/{badgeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── CLUB REQUESTS (applications to create a club) ────────────────────────
+    match /club_requests/{requestId} {
+      allow get: if isSignedIn() && (
+        resource.data.userId == uid() || isAdmin()
+      );
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == uid();
+      allow update, delete: if isAdmin();
+    }
+  }
+}

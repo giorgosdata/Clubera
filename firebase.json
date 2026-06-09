@@ -1,0 +1,36 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs20"
+    }
+  ],
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "clubera-app",
+          "appId": "1:539400130045:android:73ad7bf57206fa47c51d94",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "clubera-app",
+          "configurations": {
+            "android": "1:539400130045:android:73ad7bf57206fa47c51d94",
+            "ios": "1:539400130045:ios:6d99505ef1f7234cc51d94"
+          }
+        }
+      }
+    }
+  }
+}

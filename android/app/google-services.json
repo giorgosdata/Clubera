@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "539400130045",
+    "project_id": "clubera-app",
+    "storage_bucket": "clubera-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:539400130045:android:73ad7bf57206fa47c51d94",
+        "android_client_info": {
+          "package_name": "com.clubera.clubera"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_l3IVQzyXs39E_FdL7OeGoydufLlbKuI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

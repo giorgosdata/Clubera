@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function maxImageSize() { return 5 * 1024 * 1024; } // 5 MB
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // ── Club logos / covers / media ─────────────────────────────────────────
+    match /clubs/{clubId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn()
+        && isImage()
+        && request.resource.size < maxImageSize();
+      allow delete: if isSignedIn();
+    }
+
+    // ── User photos ─────────────────────────────────────────────────────────
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn()
+        && uid() == userId
+        && isImage()
+        && request.resource.size < maxImageSize();
+      allow delete: if isSignedIn() && uid() == userId;
+    }
+
+    // ── Sponsor PDFs (max 10 MB, signed-in users) ───────────────────────────
+    match /sponsors/{sponsorId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn()
+        && request.resource.size < 10 * 1024 * 1024
+        && (
+          request.resource.contentType == 'application/pdf' ||
+          isImage()
+        );
+      allow delete: if isSignedIn();
+    }
+  }
+}
