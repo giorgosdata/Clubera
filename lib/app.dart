@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,11 +9,16 @@ import 'core/services/streak_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/offline_banner.dart';
 import 'features/auth/ui/login_screen.dart';
+import 'features/clubs/ui/club_profile_screen.dart';
 import 'features/home/ui/home_screen.dart';
+import 'features/matches/ui/match_detail_screen.dart';
 import 'features/matches/ui/matches_screen.dart';
 import 'features/teams/ui/teams_screen.dart';
 import 'features/profile/ui/profile_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
+import 'features/tournaments/ui/tournament_detail_screen.dart';
+
+final _navigatorKey = GlobalKey<NavigatorState>();
 
 class CluperaApp extends StatelessWidget {
   const CluperaApp({super.key});
@@ -22,6 +29,7 @@ class CluperaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Clubera',
       debugShowCheckedModeBanner: false,
+      navigatorKey: _navigatorKey,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeProvider.mode,
@@ -111,6 +119,7 @@ class _MainShell extends StatefulWidget {
 class _MainShellState extends State<_MainShell> {
   int _index = 0;
   bool _streakChecked = false;
+  StreamSubscription<Uri>? _linkSub;
 
   static const _screens = [
     HomeScreen(),
@@ -123,6 +132,44 @@ class _MainShellState extends State<_MainShell> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkStreak());
+    _initDeepLinks();
+  }
+
+  Future<void> _initDeepLinks() async {
+    final appLinks = AppLinks();
+    final initial = await appLinks.getInitialLink();
+    if (initial != null) _handleDeepLink(initial);
+    _linkSub = appLinks.uriLinkStream.listen(_handleDeepLink);
+  }
+
+  void _handleDeepLink(Uri uri) {
+    final segs = uri.pathSegments;
+    if (segs.isEmpty) return;
+    final nav = _navigatorKey.currentState;
+    if (nav == null) return;
+    switch (segs[0]) {
+      case 'match':
+        if (segs.length > 1) {
+          nav.push(MaterialPageRoute(builder: (_) => MatchDetailScreen(matchId: segs[1])));
+        }
+        break;
+      case 'club':
+        if (segs.length > 1) {
+          nav.push(MaterialPageRoute(builder: (_) => ClubProfileScreen(clubId: segs[1])));
+        }
+        break;
+      case 'tournament':
+        if (segs.length > 1) {
+          nav.push(MaterialPageRoute(builder: (_) => TournamentDetailScreen(tournamentId: segs[1])));
+        }
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    _linkSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkStreak() async {

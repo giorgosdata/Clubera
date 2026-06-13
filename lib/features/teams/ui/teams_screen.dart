@@ -8,6 +8,7 @@ import '../../../models/club_model.dart';
 import '../../../models/player_model.dart';
 import '../../clubs/ui/club_profile_screen.dart';
 import '../../clubs/ui/create_club_screen.dart' show kCountryList;
+import '../../tournaments/ui/tournaments_screen.dart';
 
 const kCountries = [
   {'flag': '🇩🇪', 'name': 'Germany'},
@@ -56,7 +57,7 @@ class _TeamsScreenState extends State<TeamsScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 3, vsync: this);
+    _tab = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -78,6 +79,7 @@ class _TeamsScreenState extends State<TeamsScreen>
             Tab(text: 'Browse'),
             Tab(text: 'Search'),
             Tab(text: 'Standings'),
+            Tab(text: 'Τουρνουά'),
           ],
         ),
       ),
@@ -87,6 +89,7 @@ class _TeamsScreenState extends State<TeamsScreen>
           _BrowseTab(),
           _SearchTab(),
           _StandingsTab(),
+          TournamentsScreen(showAppBar: false),
         ],
       ),
     );

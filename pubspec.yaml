@@ -38,6 +38,7 @@ dependencies:
   connectivity_plus: ^6.0.2
   share_plus: ^10.1.4
   local_auth: ^2.3.0
+  app_links: ^6.4.0
 
 dev_dependencies:
   flutter_test:
