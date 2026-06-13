@@ -534,7 +534,9 @@ class _DonateButton extends StatelessWidget {
             : () async {
                 setProcessing(true);
                 await _processDonation(context, double.parse(amount));
-                setProcessing(false);
+                // _processDonation always calls navigator.pop() — the sheet
+                // is already dismissed here, so setProcessing(false) would
+                // call setState on a disposed widget and throw.
               },
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppTheme.divider),

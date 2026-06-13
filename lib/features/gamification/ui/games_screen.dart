@@ -297,8 +297,10 @@ class _GamePlayScreenState extends State<GamePlayScreen>
 
     final provider = context.read<AppProvider>();
     await Future.delayed(const Duration(seconds: 3));
-    if (!mounted) return;
 
+    // provider captured before the delay — safe to use after unmount.
+    // Do NOT early-return here: the Firestore write and points must be
+    // committed even if the user navigated away during the animation.
     final user = provider.user;
     if (user == null) return;
 

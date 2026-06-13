@@ -278,21 +278,30 @@ async function resolvePredictionsForMatch(matchId, homeScore, awayScore, homeNam
       pts = PREDICT_OUTCOME_PTS;
     }
     try {
-      // Mark resolved FIRST (idempotency guard), then award points.
-      // If points award fails the function retries but the coupon is already
-      // marked resolved so points are not double-awarded.
-      await doc.ref.update({
-        resolved: true,
-        pointsEarned: pts,
-        resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+      // Atomic transaction: mark resolved AND award points together.
+      // Prevents both double-award (concurrent invocations) and point-loss
+      // (crash after resolved:true but before points increment).
+      let awarded = false;
+      await db.runTransaction(async (tx) => {
+        const fresh = await tx.get(doc.ref);
+        if (fresh.data()?.resolved === true) return;
+        tx.update(doc.ref, {
+          resolved: true,
+          pointsEarned: pts,
+          resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        if (pts > 0 && d.userId) {
+          tx.update(db.collection("users").doc(d.userId), {
+            points: admin.firestore.FieldValue.increment(pts),
+          });
+        }
+        awarded = pts > 0 && !!d.userId;
       });
-      if (pts > 0 && d.userId) {
+      // Non-critical side effects (notification + fan stats) outside transaction.
+      if (awarded) {
         const exact = pts === PREDICT_EXACT_PTS;
         const bump = { score: pts, predictionsCorrect: 1, predictionsExact: exact ? 1 : 0 };
         await Promise.all([
-          db.collection("users").doc(d.userId).update({
-            points: admin.firestore.FieldValue.increment(pts),
-          }),
           sendUser(
             d.userId,
             "🎯 Κέρδισες πόντους!",
@@ -321,17 +330,29 @@ async function resolvePredictionsForMatch(matchId, homeScore, awayScore, homeNam
       pts = PREDICT_OUTCOME_PTS;
     }
     try {
-      await doc.ref.update({
-        pointsEarned: pts,
-        resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+      // Atomic transaction: mark pointsEarned AND award points together.
+      // Prevents both double-award (concurrent invocations) and point-loss
+      // (crash after pointsEarned write but before points increment).
+      let awarded = false;
+      await db.runTransaction(async (tx) => {
+        const fresh = await tx.get(doc.ref);
+        if (fresh.data()?.pointsEarned != null) return;
+        tx.update(doc.ref, {
+          pointsEarned: pts,
+          resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        if (pts > 0 && d.userId) {
+          tx.update(db.collection("users").doc(d.userId), {
+            points: admin.firestore.FieldValue.increment(pts),
+          });
+        }
+        awarded = pts > 0 && !!d.userId;
       });
-      if (pts > 0 && d.userId) {
+      // Non-critical side effects outside transaction.
+      if (awarded) {
         const exact = pts === PREDICT_EXACT_PTS;
         const bump = { score: pts, predictionsCorrect: 1, predictionsExact: exact ? 1 : 0 };
         await Promise.all([
-          db.collection("users").doc(d.userId).update({
-            points: admin.firestore.FieldValue.increment(pts),
-          }),
           sendUser(
             d.userId,
             "🎯 Κέρδισες πόντους!",
@@ -719,15 +740,11 @@ exports.onMatchFinished = onDocumentUpdated(
     const matchId = event.params.matchId;
     const matchRef = db.collection("matches").doc(matchId);
 
-    // Idempotency guard: claim statsProcessed before updating counters.
-    let claimed = false;
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(matchRef);
-      if (!snap.exists || snap.data()?.statsProcessed) return;
-      tx.update(matchRef, { statsProcessed: true });
-      claimed = true;
-    });
-    if (!claimed) return;
+    // Idempotency guard: check BEFORE starting work, set AFTER completing it.
+    // Setting early (before the loop) would permanently drop stats if the
+    // function crashes mid-loop with no retry possible.
+    const guardSnap = await matchRef.get();
+    if (!guardSnap.exists || guardSnap.data()?.statsProcessed) return;
 
     // Fetch all events for this match
     const eventsSnap = await db
@@ -795,6 +812,10 @@ exports.onMatchFinished = onDocumentUpdated(
         console.error(`onMatchFinished: updatePlayerStats failed for ${s.playerName}:`, e);
       }
     });
+
+    // Mark stats done AFTER all writes succeed so a crash mid-loop
+    // allows a clean retry rather than silently dropping remaining players.
+    await matchRef.update({ statsProcessed: true });
 
     // ── Auto-update club standings ────────────────────────────────────────────
     const homeScore = after.homeScore ?? 0;

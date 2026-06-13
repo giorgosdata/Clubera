@@ -586,7 +586,7 @@ class _UserRow extends StatelessWidget {
     );
   }
 
-  void _handleAction(BuildContext context, String action, UserModel user) {
+  Future<void> _handleAction(BuildContext context, String action, UserModel user) async {
     if (action == 'delete') {
       showDialog(
         context: context,
@@ -620,12 +620,22 @@ class _UserRow extends StatelessWidget {
         ),
       );
     } else {
-      FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-        'role': action,
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('${user.name} is now $action')));
+      try {
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+          'role': action,
+        });
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${user.name} is now $action')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update role: $e'), backgroundColor: AppTheme.red),
+          );
+        }
+      }
     }
   }
 }
