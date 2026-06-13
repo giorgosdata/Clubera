@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/image_utils.dart';
@@ -150,8 +151,14 @@ class PlayerProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
+          // ─── Goals per match chart ────────────────────────────────────────
+          const _SectionTitle('ΓΚΟΛ ΑΝΑ ΑΓΩΝΑ'),
+          const SizedBox(height: 10),
+          _PlayerGoalChart(clubId: clubId, playerName: player.name, totalGoals: player.goals, appearances: player.appearances),
+          const SizedBox(height: 24),
+
           // ─── Match events history ─────────────────────────────────────────
-          const _SectionTitle('Ιστορικό Αγώνων'),
+          const _SectionTitle('ΙΣΤΟΡΙΚΟ ΑΓΩΝΩΝ'),
           const SizedBox(height: 10),
           _PlayerMatchHistory(clubId: clubId, playerName: player.name),
         ],
@@ -247,6 +254,218 @@ class _PlayerMatchHistory extends StatelessWidget {
     return results;
   }
 }
+
+// ─── Goal chart ───────────────────────────────────────────────────────────────
+
+class _MatchGoalEntry {
+  final String opponent;
+  final int goals;
+  _MatchGoalEntry({required this.opponent, required this.goals});
+}
+
+class _PlayerGoalChart extends StatelessWidget {
+  final String clubId;
+  final String playerName;
+  final int totalGoals;
+  final int appearances;
+  const _PlayerGoalChart({
+    required this.clubId,
+    required this.playerName,
+    required this.totalGoals,
+    required this.appearances,
+  });
+
+  Future<List<_MatchGoalEntry>> _load() async {
+    final homeSnap = await FirebaseFirestore.instance
+        .collection('matches')
+        .where('homeClubId', isEqualTo: clubId)
+        .where('status', isEqualTo: 'finished')
+        .get();
+    final awaySnap = await FirebaseFirestore.instance
+        .collection('matches')
+        .where('awayClubId', isEqualTo: clubId)
+        .where('status', isEqualTo: 'finished')
+        .get();
+
+    final allDocs = [...homeSnap.docs, ...awaySnap.docs];
+    allDocs.sort((a, b) {
+      final ta = (a.data()['scheduledAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
+      final tb = (b.data()['scheduledAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
+      return ta.compareTo(tb);
+    });
+
+    final recent = allDocs.length > 10 ? allDocs.sublist(allDocs.length - 10) : allDocs;
+
+    final results = await Future.wait(recent.map((doc) async {
+      final d = doc.data();
+      final isHome = d['homeClubId'] == clubId;
+      final opponent = (isHome ? d['awayClubName'] : d['homeClubName']) as String? ?? '?';
+      final eventsSnap = await FirebaseFirestore.instance
+          .collection('matches')
+          .doc(doc.id)
+          .collection('events')
+          .where('playerName', isEqualTo: playerName)
+          .where('type', isEqualTo: 'goal')
+          .get();
+      return _MatchGoalEntry(
+        opponent: opponent.length > 5 ? opponent.substring(0, 5) : opponent,
+        goals: eventsSnap.docs.length,
+      );
+    }));
+    return results;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final goalRate = appearances > 0
+        ? (totalGoals / appearances).toStringAsFixed(2)
+        : '—';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Rate summary row
+        Row(
+          children: [
+            _RateTile(label: 'Ρυθμός γκολ', value: goalRate, unit: '/ αγώνα', color: AppTheme.supportGreen),
+            const SizedBox(width: 10),
+            _RateTile(
+              label: 'Συνεισφορά',
+              value: appearances > 0 ? '${((totalGoals / appearances) * 100).round()}%' : '—',
+              unit: 'αγώνων με γκολ',
+              color: AppTheme.primaryLight,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Bar chart
+        FutureBuilder<List<_MatchGoalEntry>>(
+          future: _load(),
+          builder: (ctx, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 120,
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              );
+            }
+            final entries = snap.data ?? [];
+            if (entries.isEmpty || entries.every((e) => e.goals == 0)) {
+              return Container(
+                height: 80,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'Δεν υπάρχουν καταγεγραμμένα γκολ',
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                ),
+              );
+            }
+            final maxY = (entries.map((e) => e.goals).reduce((a, b) => a > b ? a : b) + 1).toDouble();
+            return Container(
+              height: 140,
+              padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.divider),
+              ),
+              child: BarChart(
+                BarChartData(
+                  maxY: maxY,
+                  minY: 0,
+                  gridData: const FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 22,
+                        getTitlesWidget: (val, meta) {
+                          final i = val.toInt();
+                          if (i < 0 || i >= entries.length) return const SizedBox();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              entries[i].opponent,
+                              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 8),
+                              textAlign: TextAlign.center,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (_) => AppTheme.cardBg2,
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final e = entries[group.x];
+                        return BarTooltipItem(
+                          '${e.opponent}\n${rod.toY.toInt()} γκολ',
+                          const TextStyle(color: Colors.white, fontSize: 11),
+                        );
+                      },
+                    ),
+                  ),
+                  barGroups: entries.asMap().entries.map((e) => BarChartGroupData(
+                    x: e.key,
+                    barRods: [
+                      BarChartRodData(
+                        toY: e.value.goals.toDouble(),
+                        color: e.value.goals > 0
+                            ? AppTheme.supportGreen
+                            : AppTheme.divider,
+                        width: 14,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                      ),
+                    ],
+                  )).toList(),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _RateTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  final Color color;
+  const _RateTile({required this.label, required this.value, required this.unit, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10)),
+          const SizedBox(height: 2),
+          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 18)),
+          Text(unit, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 9)),
+        ],
+      ),
+    ),
+  );
+}
+
+// ─── Event history row ────────────────────────────────────────────────────────
 
 class _EventRow extends StatelessWidget {
   final Map<String, dynamic> event;

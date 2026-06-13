@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 @pragma('vm:entry-point')
 Future<void> _backgroundHandler(RemoteMessage message) async {
@@ -72,6 +73,22 @@ class NotificationsService {
   static Future<void> _showLocal(RemoteMessage message) async {
     final n = message.notification;
     if (n == null) return;
+
+    // Filter by notification preferences stored in SharedPreferences
+    final type = message.data['type'] as String? ?? '';
+    const prefKeys = {
+      'goal': 'notif_goals',
+      'match_start': 'notif_match_start',
+      'match_end': 'notif_match_end',
+      'announcement': 'notif_announcements',
+      'prediction': 'notif_predictions',
+    };
+    final prefKey = prefKeys[type];
+    if (prefKey != null) {
+      final prefs = await SharedPreferences.getInstance();
+      if (!(prefs.getBool(prefKey) ?? true)) return;
+    }
+
     await _local.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
       n.title,

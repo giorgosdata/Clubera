@@ -407,13 +407,13 @@ exports.onMatchUpdated = onDocumentUpdated({ document: "matches/{matchId}", ...H
   if (scoreChanged && (after.status === "live" || after.status === "halftime")) {
     const title = "⚽ GOAL!";
     const body = `${after.homeClubName} ${after.homeScore} - ${after.awayScore} ${after.awayClubName}`;
-    if (after.homeClubId) await sendTopic(`club_${after.homeClubId}`, title, body, { matchId });
-    if (after.awayClubId) await sendTopic(`club_${after.awayClubId}`, title, body, { matchId });
+    if (after.homeClubId) await sendTopic(`club_${after.homeClubId}`, title, body, { matchId, type: "goal" });
+    if (after.awayClubId) await sendTopic(`club_${after.awayClubId}`, title, body, { matchId, type: "goal" });
   } else if (statusChanged && after.status === "finished") {
     const title = "🏁 Τελικό";
     const body = `${after.homeClubName} ${after.homeScore} - ${after.awayScore} ${after.awayClubName}`;
-    if (after.homeClubId) await sendTopic(`club_${after.homeClubId}`, title, body, { matchId });
-    if (after.awayClubId) await sendTopic(`club_${after.awayClubId}`, title, body, { matchId });
+    if (after.homeClubId) await sendTopic(`club_${after.homeClubId}`, title, body, { matchId, type: "match_end" });
+    if (after.awayClubId) await sendTopic(`club_${after.awayClubId}`, title, body, { matchId, type: "match_end" });
     // Skip resolution if scores were not recorded (data integrity guard)
     if (after.homeScore == null || after.awayScore == null) return;
     // Resolve predictions and award points
@@ -429,8 +429,8 @@ exports.onMatchUpdated = onDocumentUpdated({ document: "matches/{matchId}", ...H
   } else if (statusChanged && after.status === "live") {
     const title = "🔴 LIVE";
     const body = `Ξεκίνησε ο αγώνας ${after.homeClubName} vs ${after.awayClubName}`;
-    if (after.homeClubId) await sendTopic(`club_${after.homeClubId}`, title, body, { matchId });
-    if (after.awayClubId) await sendTopic(`club_${after.awayClubId}`, title, body, { matchId });
+    if (after.homeClubId) await sendTopic(`club_${after.homeClubId}`, title, body, { matchId, type: "match_start" });
+    if (after.awayClubId) await sendTopic(`club_${after.awayClubId}`, title, body, { matchId, type: "match_start" });
   }
 });
 
@@ -497,6 +497,21 @@ exports.onTransferCreated = onDocumentCreated("clubs/{clubId}/transfers/{transfe
     `🔄 ${verb}`,
     `${clubName}: ${t.playerName}`,
     { clubId: event.params.clubId }
+  );
+});
+
+// ─── NEW ANNOUNCEMENT ────────────────────────────────────────────────────────
+exports.onAnnouncementCreated = onDocumentCreated("clubs/{clubId}/announcements/{announcementId}", async (event) => {
+  const data = event.data?.data();
+  if (!data) return;
+  const clubSnap = await db.collection("clubs").doc(event.params.clubId).get();
+  const clubName = clubSnap.data()?.name || "Σωματείο";
+  await sendTopic(
+    `club_${event.params.clubId}`,
+    `📢 ${clubName}`,
+    data.title || "Νέα ανακοίνωση",
+    { clubId: event.params.clubId, announcementId: event.params.announcementId, type: "announcement" },
+    "📢"
   );
 });
 
