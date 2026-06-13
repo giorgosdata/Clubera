@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/image_utils.dart';
@@ -74,6 +75,19 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
     );
   }
 
+  void _shareMatch(MatchModel match) {
+    String text;
+    if (match.isFinished) {
+      text = '⚽ ${match.homeClubName} ${match.homeScore} – ${match.awayScore} ${match.awayClubName}\nFull Time on Clubera!';
+    } else if (match.isLive) {
+      text = '🔴 LIVE: ${match.homeClubName} ${match.homeScore} – ${match.awayScore} ${match.awayClubName} (${match.minute ?? 0}\')';
+    } else {
+      final date = DateFormat('d MMM, HH:mm').format(match.scheduledAt);
+      text = '📅 ${match.homeClubName} vs ${match.awayClubName} – $date\nFollow on Clubera!';
+    }
+    Share.share(text);
+  }
+
   SliverAppBar _buildAppBar(BuildContext context, MatchModel match, user) {
     final canOperate = user != null &&
         (user.role == 'admin' || (user.role == 'club' &&
@@ -86,6 +100,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
         onPressed: () => Navigator.pop(context),
       ),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.share_outlined, color: Colors.white),
+          tooltip: 'Share match',
+          onPressed: () => _shareMatch(match),
+        ),
         if (canOperate && !match.isFinished)
           IconButton(
             icon: const Icon(Icons.sports, color: AppTheme.primaryLight),

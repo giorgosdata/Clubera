@@ -1260,13 +1260,19 @@ class _StatsTab extends StatefulWidget {
 }
 
 class _StatsTabState extends State<_StatsTab> {
-  late final Future<List<Map<String, dynamic>>> _future;
+  late Future<List<Map<String, dynamic>>> _future;
   String get clubId => widget.clubId;
 
   @override
   void initState() {
     super.initState();
     _future = _loadStats();
+  }
+
+  Future<void> _refresh() async {
+    final next = _loadStats();
+    setState(() => _future = next);
+    await next;
   }
 
   Future<List<Map<String, dynamic>>> _loadStats() async {
@@ -1333,7 +1339,9 @@ class _StatsTabState extends State<_StatsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: FutureBuilder<List<Map<String, dynamic>>>(
       future: _future,
       builder: (ctx, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
@@ -1410,6 +1418,7 @@ class _StatsTabState extends State<_StatsTab> {
           ],
         );
       },
+    ),
     );
   }
 }

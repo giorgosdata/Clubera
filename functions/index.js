@@ -298,6 +298,7 @@ async function resolvePredictionsForMatch(matchId, homeScore, awayScore, homeNam
         if (pts > 0 && d.userId) {
           tx.update(db.collection("users").doc(d.userId), {
             points: admin.firestore.FieldValue.increment(pts),
+            seasonScore: admin.firestore.FieldValue.increment(pts),
           });
         }
         awarded = pts > 0 && !!d.userId;
@@ -349,6 +350,7 @@ async function resolvePredictionsForMatch(matchId, homeScore, awayScore, homeNam
         if (pts > 0 && d.userId) {
           tx.update(db.collection("users").doc(d.userId), {
             points: admin.firestore.FieldValue.increment(pts),
+            seasonScore: admin.firestore.FieldValue.increment(pts),
           });
         }
         awarded = pts > 0 && !!d.userId;
@@ -571,6 +573,7 @@ exports.monthlyTopFansBonus = onSchedule(
             }),
             db.collection("users").doc(fan.userId).update({
               points: admin.firestore.FieldValue.increment(bonus),
+              seasonScore: admin.firestore.FieldValue.increment(bonus),
             }),
             sendUser(
               fan.userId,
@@ -853,5 +856,58 @@ exports.onMatchFinished = onDocumentUpdated(
       tx.update(db.collection("clubs").doc(homeId), homeUpdate);
       tx.update(db.collection("clubs").doc(awayId), awayUpdate);
     });
+  }
+);
+
+// ─── Seasonal Reset ──────────────────────────────────────────────────────────
+// Runs on the 1st of every month at 00:05 UTC.
+// Archives the top 10 users by seasonScore into seasons/{year-month},
+// then batch-resets every user's seasonScore to 0.
+exports.seasonalReset = onSchedule(
+  { schedule: "5 0 1 * *", timeZone: "UTC", region: "us-central1" },
+  async () => {
+    const now = new Date();
+    // The season that just ended is the previous month
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const year = prevMonth.getFullYear();
+    const month = String(prevMonth.getMonth() + 1).padStart(2, "0");
+    const seasonKey = `${year}-${month}`;
+
+    // 1. Archive top 10 by seasonScore
+    const topSnap = await db
+      .collection("users")
+      .orderBy("seasonScore", "desc")
+      .limit(10)
+      .get();
+
+    if (!topSnap.empty) {
+      const winners = topSnap.docs.map((d, i) => ({
+        rank: i + 1,
+        userId: d.id,
+        name: d.data().name ?? "Unknown",
+        photoUrl: d.data().photoUrl ?? null,
+        seasonScore: d.data().seasonScore ?? 0,
+      }));
+      await db.collection("seasons").doc(seasonKey).set({
+        season: seasonKey,
+        archivedAt: admin.firestore.FieldValue.serverTimestamp(),
+        winners,
+      });
+    }
+
+    // 2. Reset all users' seasonScore in batches of 400
+    let lastDoc = null;
+    while (true) {
+      let q = db.collection("users").orderBy("__name__").limit(400);
+      if (lastDoc) q = q.startAfter(lastDoc);
+      const snap = await q.get();
+      if (snap.empty) break;
+      const batch = db.batch();
+      snap.docs.forEach((d) => batch.update(d.ref, { seasonScore: 0 }));
+      await batch.commit();
+      lastDoc = snap.docs[snap.docs.length - 1];
+    }
+
+    console.log(`[seasonalReset] season ${seasonKey} archived and scores reset.`);
   }
 );

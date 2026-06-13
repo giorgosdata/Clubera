@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/image_utils.dart';
@@ -1130,16 +1132,68 @@ class _AcademiesTab extends StatelessWidget {
 
 // ─── PLAYERS TAB ──────────────────────────────────────────────────────────────
 
-class _PlayersTab extends StatelessWidget {
+class _PlayersTab extends StatefulWidget {
   final String clubId;
   const _PlayersTab({required this.clubId});
+
+  @override
+  State<_PlayersTab> createState() => _PlayersTabState();
+}
+
+class _PlayersTabState extends State<_PlayersTab> {
+  bool _exporting = false;
+
+  Future<void> _exportCsv(List<PlayerModel> players) async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final buf = StringBuffer();
+      buf.writeln('Name,Position,Number,Age,Nationality,Goals,Yellow Cards,Red Cards,Appearances');
+      for (final p in players) {
+        final row = [
+          _csvEscape(p.name),
+          p.position,
+          p.number?.toString() ?? '',
+          p.age?.toString() ?? '',
+          _csvEscape(p.nationality ?? ''),
+          p.goals.toString(),
+          p.yellowCards.toString(),
+          p.redCards.toString(),
+          p.appearances.toString(),
+        ];
+        buf.writeln(row.join(','));
+      }
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/players_export.csv');
+      await file.writeAsString(buf.toString());
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'text/csv')],
+        text: 'Player stats export',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e'), backgroundColor: AppTheme.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  String _csvEscape(String s) {
+    if (s.contains(',') || s.contains('"') || s.contains('\n')) {
+      return '"${s.replaceAll('"', '""')}"';
+    }
+    return s;
+  }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('clubs')
-          .doc(clubId)
+          .doc(widget.clubId)
           .collection('players')
           .snapshots(),
       builder: (ctx, snap) {
@@ -1168,10 +1222,27 @@ class _PlayersTab extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: Colors.transparent,
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: AppTheme.supportGreen,
-            onPressed: () => _showAddPlayerDialog(context, clubId),
-            child: const Icon(Icons.add),
+          floatingActionButton: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (players.isNotEmpty)
+                FloatingActionButton.small(
+                  heroTag: 'exportCsv',
+                  backgroundColor: AppTheme.primaryLight,
+                  onPressed: _exporting ? null : () => _exportCsv(players),
+                  tooltip: 'Export CSV',
+                  child: _exporting
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.download_outlined, size: 18),
+                ),
+              const SizedBox(height: 8),
+              FloatingActionButton(
+                heroTag: 'addPlayer',
+                backgroundColor: AppTheme.supportGreen,
+                onPressed: () => _showAddPlayerDialog(context, widget.clubId),
+                child: const Icon(Icons.add),
+              ),
+            ],
           ),
           body: players.isEmpty
               ? const Center(
@@ -1223,7 +1294,7 @@ class _PlayersTab extends StatelessWidget {
                             ),
                           ),
                           ...group.map(
-                            (p) => _PlayerRow(player: p, clubId: clubId),
+                            (p) => _PlayerRow(player: p, clubId: widget.clubId),
                           ),
                           const SizedBox(height: 8),
                         ],

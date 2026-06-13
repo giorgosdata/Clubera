@@ -15,6 +15,7 @@ import '../../clubs/ui/create_club_screen.dart' show CreateClubScreen, kLeagues;
 import '../../admin/ui/admin_screen.dart';
 import '../../club_admin/ui/club_admin_screen.dart';
 import '../../help/ui/gazette_screen.dart';
+import '../../gamification/ui/prediction_history_screen.dart';
 import '../widgets/fan_card.dart';
 import '../widgets/badges_section.dart';
 import '../../../core/utils/image_utils.dart';
@@ -760,6 +761,18 @@ class _MenuSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
           ],
+          const _SectionLabel('My Activity'),
+          const SizedBox(height: 8),
+          _MenuItem(
+            icon: Icons.analytics_outlined,
+            label: 'Prediction History',
+            color: AppTheme.primaryLight,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PredictionHistoryScreen()),
+            ),
+          ),
+          const SizedBox(height: 16),
           const _SectionLabel('Account'),
           const SizedBox(height: 8),
           if (user.clubId == null)

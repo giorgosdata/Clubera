@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/image_utils.dart';
@@ -20,7 +21,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 2, vsync: this);
+    _tab = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -40,6 +41,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           controller: _tab,
           tabs: const [
             Tab(text: 'Points'),
+            Tab(text: 'Season'),
             Tab(text: 'Predictions'),
           ],
         ),
@@ -48,6 +50,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         controller: _tab,
         children: const [
           _PointsTab(),
+          _SeasonTab(),
           _PredictionsTab(),
         ],
       ),
@@ -106,6 +109,168 @@ class _PointsTab extends StatelessWidget {
   }
 }
 
+// ─── SEASON TAB ──────────────────────────────────────────────────────────────
+
+class _SeasonTab extends StatelessWidget {
+  const _SeasonTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final me = context.watch<AppProvider>().user;
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .orderBy('seasonScore', descending: true)
+          .limit(100)
+          .snapshots(),
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snap.hasError) {
+          return Center(child: Text('Σφάλμα: ${snap.error}', style: const TextStyle(color: Colors.red)));
+        }
+        final users = (snap.data?.docs ?? [])
+            .map((d) => UserModel.fromMap(d.data() as Map<String, dynamic>, d.id))
+            .where((u) => u.seasonScore > 0)
+            .toList();
+
+        if (users.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.emoji_events_outlined, size: 64, color: AppTheme.cardBg2),
+                SizedBox(height: 12),
+                Text('Season just started!', style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
+                SizedBox(height: 6),
+                Text('Earn points to appear here', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+              ],
+            ),
+          );
+        }
+
+        final myRank = me != null ? users.indexWhere((u) => u.uid == me.uid) + 1 : 0;
+
+        return RefreshIndicator(
+          onRefresh: () => Future.delayed(const Duration(milliseconds: 500)),
+          color: AppTheme.primaryLight,
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            itemCount: users.length + 1,
+            itemBuilder: (ctx, i) {
+              if (i == 0) {
+                // Header with user's own rank
+                if (me == null || myRank == 0) return const SizedBox(height: 8);
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryLight]),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today, color: AppTheme.accent, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Season Rank', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                            Text('#$myRank of ${users.length}',
+                                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('${me.seasonScore}',
+                              style: const TextStyle(color: AppTheme.accent, fontSize: 24, fontWeight: FontWeight.w900)),
+                          const Text('season pts', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }
+              final user = users[i - 1];
+              final rank = i;
+              final isMe = user.uid == me?.uid;
+              final isTop3 = rank <= 3;
+              final rankColors = [AppTheme.accent, Colors.grey[400]!, Colors.brown[400]!];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.navyGradient,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isMe
+                        ? AppTheme.primaryLight.withValues(alpha: 0.6)
+                        : isTop3
+                            ? rankColors[rank - 1].withValues(alpha: 0.4)
+                            : AppTheme.divider,
+                    width: isMe ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 32,
+                      child: Text(
+                        '$rank',
+                        style: TextStyle(
+                          color: isTop3 ? rankColors[rank - 1] : AppTheme.textSecondary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundColor: AppTheme.cardBg2,
+                      backgroundImage: safeNetworkImage(user.photoUrl),
+                      child: safeNetworkImage(user.photoUrl) == null
+                          ? Text(
+                              user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        user.name,
+                        style: TextStyle(
+                          color: isMe ? AppTheme.primaryLight : Colors.white,
+                          fontWeight: isMe ? FontWeight.w900 : FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '${user.seasonScore} pts',
+                      style: TextStyle(
+                        color: isTop3 ? rankColors[rank - 1] : AppTheme.textSecondary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
 // ─── PREDICTIONS TAB ─────────────────────────────────────────────────────────
 
 class _PredictionsTab extends StatefulWidget {
@@ -116,12 +281,18 @@ class _PredictionsTab extends StatefulWidget {
 }
 
 class _PredictionsTabState extends State<_PredictionsTab> {
-  late final Future<List<Map<String, dynamic>>> _future;
+  late Future<List<Map<String, dynamic>>> _future;
 
   @override
   void initState() {
     super.initState();
     _future = _loadStats();
+  }
+
+  Future<void> _refresh() async {
+    final next = _loadStats();
+    setState(() => _future = next);
+    await next;
   }
 
   Future<List<Map<String, dynamic>>> _loadStats() async {
@@ -174,7 +345,10 @@ class _PredictionsTabState extends State<_PredictionsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      color: AppTheme.primaryLight,
+      child: FutureBuilder<List<Map<String, dynamic>>>(
       future: _future,
       builder: (ctx, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
@@ -231,6 +405,7 @@ class _PredictionsTabState extends State<_PredictionsTab> {
           ],
         );
       },
+    ),
     );
   }
 }
@@ -375,6 +550,15 @@ class _MyRankBanner extends StatelessWidget {
                   style: const TextStyle(color: AppTheme.accent, fontSize: 24, fontWeight: FontWeight.w900)),
               const Text('pts', style: TextStyle(color: Colors.white70, fontSize: 12)),
             ],
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.share_outlined, color: Colors.white70, size: 20),
+            tooltip: 'Share ranking',
+            onPressed: () {
+              final text = '🏆 I\'m ranked #$rank on Clubera with ${user.points} points!';
+              Share.share(text);
+            },
           ),
         ],
       ),

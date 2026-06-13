@@ -6,6 +6,7 @@ class UserModel {
   final String? photoUrl;
   final String? clubId;
   final int points;
+  final int seasonScore;
   final int streak;
   final List<String> followedClubs;
   final double balance;
@@ -19,6 +20,7 @@ class UserModel {
     this.photoUrl,
     this.clubId,
     this.points = 0,
+    this.seasonScore = 0,
     this.streak = 0,
     this.followedClubs = const [],
     this.balance = 0.0,
@@ -33,6 +35,7 @@ class UserModel {
     photoUrl: m['photoUrl'],
     clubId: m['clubId'],
     points: (m['points'] as num?)?.toInt() ?? 0,
+    seasonScore: (m['seasonScore'] as num?)?.toInt() ?? 0,
     streak: (m['streak'] as num?)?.toInt() ?? 0,
     followedClubs: List<String>.from(m['followedClubs'] ?? []),
     balance: (m['balance'] as num?)?.toDouble() ?? 0.0,
@@ -46,6 +49,7 @@ class UserModel {
     'photoUrl': photoUrl,
     'clubId': clubId,
     'points': points,
+    'seasonScore': seasonScore,
     'streak': streak,
     'followedClubs': followedClubs,
     'balance': balance,
@@ -58,6 +62,7 @@ class UserModel {
     String? photoUrl,
     String? clubId,
     int? points,
+    int? seasonScore,
     int? streak,
     List<String>? followedClubs,
     double? balance,
@@ -69,6 +74,7 @@ class UserModel {
     photoUrl: photoUrl ?? this.photoUrl,
     clubId: clubId ?? this.clubId,
     points: points ?? this.points,
+    seasonScore: seasonScore ?? this.seasonScore,
     streak: streak ?? this.streak,
     followedClubs: followedClubs ?? this.followedClubs,
     balance: balance ?? this.balance,

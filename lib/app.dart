@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'core/providers/app_provider.dart';
 import 'core/services/streak_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/offline_banner.dart';
 import 'features/auth/ui/login_screen.dart';
 import 'features/home/ui/home_screen.dart';
 import 'features/matches/ui/matches_screen.dart';
@@ -34,7 +35,7 @@ class CluperaApp extends StatelessWidget {
               ),
             ),
           ),
-          child!,
+          Positioned.fill(child: OfflineBanner(child: child!)),
         ],
       ),
       home: const _Root(),
