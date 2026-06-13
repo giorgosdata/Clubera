@@ -61,7 +61,9 @@ service cloud.firestore {
     // ── CLUBS ────────────────────────────────────────────────────────────────
     match /clubs/{clubId} {
       allow read: if true;
-      allow create: if isSignedIn();
+      // Only admin can create club docs directly — regular users must go
+      // through the club_requests approval flow (CF creates the doc).
+      allow create: if isAdmin();
       // Staff/admin can update any field. Any signed-in user can change only
       // the followers/votes counters (used by follow/vote flows).
       allow update: if isClubStaff(clubId) || isAdmin() ||
@@ -173,9 +175,11 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         resource.data.userId == uid() || isAdmin()
       );
-      allow create, update: if isSignedIn() &&
+      // No update for regular users — users cannot change their prediction
+      // after submission; Cloud Functions resolve predictions via Admin SDK.
+      allow create: if isSignedIn() &&
         request.resource.data.userId == uid();
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     // ── GAME PLAYS (user playing history) ────────────────────────────────────
@@ -244,10 +248,9 @@ service cloud.firestore {
       );
       allow list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.userId == uid();
-      allow update: if isSignedIn() && (
-        resource.data.userId == uid() || isAdmin()
-      );
-      allow delete: if isAdmin();
+      // No client-side update — Cloud Functions resolve picks via Admin SDK.
+      // Removing user-level update prevents changing picks after submission.
+      allow update, delete: if isAdmin();
     }
 
     // ── NOTIFICATIONS (per-user inbox) ───────────────────────────────────────

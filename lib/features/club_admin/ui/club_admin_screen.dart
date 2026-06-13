@@ -378,21 +378,16 @@ class _OverviewTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // Revenue snapshot
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
+            // Revenue snapshot — uses aggregate sum to avoid downloading
+            // all donation documents.
+            FutureBuilder<AggregateQuerySnapshot>(
+              future: FirebaseFirestore.instance
                   .collection('donations')
                   .where('clubId', isEqualTo: clubId)
-                  .snapshots(),
+                  .aggregate(sum('amount'))
+                  .get(),
               builder: (ctx, snap) {
-                final total = (snap.data?.docs ?? []).fold<double>(
-                  0.0,
-                  (sum, d) =>
-                      sum +
-                      ((d.data() as Map<String, dynamic>)['amount'] as num? ??
-                              0)
-                          .toDouble(),
-                );
+                final total = snap.data?.getSum('amount') ?? 0.0;
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -1471,6 +1466,8 @@ class _RevenueTab extends StatelessWidget {
       stream: FirebaseFirestore.instance
           .collection('donations')
           .where('clubId', isEqualTo: clubId)
+          .orderBy('createdAt', descending: true)
+          .limit(100)
           .snapshots(),
       builder: (ctx, snap) {
         if (snap.hasError) {
