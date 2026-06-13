@@ -21,6 +21,7 @@ import '../../clubs/ui/club_profile_screen.dart';
 import '../../clubs/ui/create_club_screen.dart' show kCountryList, CreateClubScreen;
 import '../../admin/ui/sponsors_management.dart';
 import '../../admin/ui/trivia_admin_screen.dart';
+import '../../clubs/ui/announcements_tab.dart';
 import '../../../models/game_model.dart';
 
 class ClubAdminScreen extends StatefulWidget {
@@ -37,7 +38,7 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 9, vsync: this);
+    _tab = TabController(length: 10, vsync: this);
   }
 
   @override
@@ -165,6 +166,7 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
             Tab(text: 'Staff'),
             Tab(text: 'Sponsors'),
             Tab(text: 'Trivia'),
+            Tab(text: 'Ανακοινώσεις'),
           ],
         ),
       ),
@@ -180,6 +182,11 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
           _StaffTab(clubId: clubId),
           _ClubSponsorsTab(clubId: clubId),
           _ClubTriviaTab(clubId: clubId),
+          AnnouncementsTab(
+            clubId: clubId,
+            canAdmin: true,
+            authorName: user?.name ?? 'Club Admin',
+          ),
         ],
       ),
     );

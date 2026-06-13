@@ -14,6 +14,7 @@ import '../../../models/fan_stats_model.dart';
 import '../../../models/sponsor_model.dart';
 import '../../matches/ui/match_card.dart';
 import 'player_profile_screen.dart';
+import 'announcements_tab.dart';
 import '../../matches/ui/match_detail_screen.dart';
 import '../../profile/widgets/fan_card.dart';
 
@@ -32,7 +33,7 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 9, vsync: this);
+    _tab = TabController(length: 10, vsync: this);
   }
 
   @override
@@ -84,6 +85,7 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
                       Tab(text: 'Games'),
                       Tab(text: 'Sponsors'),
                       Tab(text: 'Top Fans'),
+                      Tab(text: 'Ανακοινώσεις'),
                     ],
                   ),
                 ),
@@ -101,6 +103,7 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
                 _RewardsPublicTab(clubId: widget.clubId),
                 _SponsorsTab(clubId: widget.clubId),
                 _TopFansTab(clubId: widget.clubId),
+                AnnouncementsTab(clubId: widget.clubId),
               ],
             ),
           );

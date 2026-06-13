@@ -17,6 +17,7 @@ import '../../admin/ui/admin_screen.dart';
 import '../../club_admin/ui/club_admin_screen.dart';
 import '../../help/ui/gazette_screen.dart';
 import '../../gamification/ui/prediction_history_screen.dart';
+import 'notification_prefs_screen.dart';
 import '../widgets/fan_card.dart';
 import '../widgets/badges_section.dart';
 import '../../../core/utils/image_utils.dart';
@@ -794,8 +795,11 @@ class _MenuSection extends StatelessWidget {
           ),
           _MenuItem(
             icon: Icons.notifications_outlined,
-            label: 'Notifications',
-            onTap: () => _showNotifications(context),
+            label: 'Ειδοποιήσεις',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotificationPrefsScreen()),
+            ),
           ),
           _MenuItem(
             icon: Icons.auto_stories,

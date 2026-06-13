@@ -28,7 +28,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 5, vsync: this);
+    _tab = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -59,7 +59,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
                   indicatorColor: AppTheme.accent,
                   labelColor: AppTheme.accent,
                   unselectedLabelColor: AppTheme.textSecondary,
-                  tabs: const [Tab(text: 'Events'), Tab(text: 'Line-Up'), Tab(text: 'Predict'), Tab(text: 'MVP'), Tab(text: 'Photos')],
+                  tabs: const [Tab(text: 'Events'), Tab(text: 'Line-Up'), Tab(text: 'Predict'), Tab(text: 'MVP'), Tab(text: 'Photos'), Tab(text: 'Ratings')],
                 )),
               ),
             ],
@@ -71,6 +71,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
                 _PredictSection(match: match, userId: user?.uid ?? ''),
                 _MvpSection(matchId: widget.matchId, match: match, userId: user?.uid ?? ''),
                 _PhotosSection(matchId: widget.matchId, match: match, user: user),
+                _RatingsSection(matchId: widget.matchId, match: match, userId: user?.uid ?? ''),
               ],
             ),
           );
@@ -1368,6 +1369,281 @@ class _FullscreenPhotoState extends State<_FullscreenPhoto> {
             child: Center(child: Image.network(url, fit: BoxFit.contain)),
           );
         },
+      ),
+    );
+  }
+}
+
+// ─── RATINGS SECTION ──────────────────────────────────────────────────────────
+
+class _RatingsSection extends StatefulWidget {
+  final String matchId;
+  final MatchModel match;
+  final String userId;
+  const _RatingsSection({required this.matchId, required this.match, required this.userId});
+
+  @override
+  State<_RatingsSection> createState() => _RatingsSectionState();
+}
+
+class _RatingsSectionState extends State<_RatingsSection>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  Map<String, int> _myRatings = {};
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.userId.isNotEmpty) _loadMyRatings();
+  }
+
+  Future<void> _loadMyRatings() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('matches')
+        .doc(widget.matchId)
+        .collection('ratings')
+        .doc(widget.userId)
+        .get();
+    if (doc.exists && mounted) {
+      setState(() {
+        _myRatings = (doc.data() ?? {}).map(
+          (k, v) => MapEntry(k, (v as num).toInt()),
+        );
+      });
+    }
+  }
+
+  Future<void> _rate(String playerName, int stars) async {
+    if (widget.userId.isEmpty) return;
+    setState(() => _myRatings[playerName] = stars);
+    await FirebaseFirestore.instance
+        .collection('matches')
+        .doc(widget.matchId)
+        .collection('ratings')
+        .doc(widget.userId)
+        .set({playerName: stars}, SetOptions(merge: true));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final allPlayers = [
+      ...widget.match.homeLineup,
+      ...widget.match.awayLineup,
+    ];
+    if (allPlayers.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.sports_soccer_outlined, size: 48, color: AppTheme.cardBg2),
+              SizedBox(height: 12),
+              Text(
+                'Δεν έχει καταχωρηθεί ενδεκάδα για αυτόν τον αγώνα',
+                style: TextStyle(color: AppTheme.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('matches')
+          .doc(widget.matchId)
+          .collection('ratings')
+          .snapshots(),
+      builder: (ctx, snap) {
+        final Map<String, List<int>> byPlayer = {};
+        if (snap.hasData) {
+          for (final doc in snap.data!.docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            for (final e in data.entries) {
+              byPlayer.putIfAbsent(e.key, () => []).add((e.value as num).toInt());
+            }
+          }
+        }
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (!widget.match.isFinished)
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
+                ),
+                child: const Text(
+                  'Η αξιολόγηση είναι διαθέσιμη μετά το τέλος του αγώνα',
+                  style: TextStyle(color: AppTheme.accent, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            _RatingTeamHeader(name: widget.match.homeClubName),
+            ...widget.match.homeLineup.map((p) {
+              final name = p['name'] as String? ?? '';
+              final ratings = byPlayer[name] ?? [];
+              final avg = ratings.isEmpty ? 0.0 : ratings.reduce((a, b) => a + b) / ratings.length;
+              return _PlayerRatingTile(
+                playerName: name,
+                number: p['number'],
+                position: p['position'] as String? ?? '',
+                avgRating: avg,
+                ratingCount: ratings.length,
+                myRating: _myRatings[name] ?? 0,
+                canRate: widget.match.isFinished && widget.userId.isNotEmpty,
+                onRate: (s) => _rate(name, s),
+              );
+            }),
+            const SizedBox(height: 16),
+            _RatingTeamHeader(name: widget.match.awayClubName),
+            ...widget.match.awayLineup.map((p) {
+              final name = p['name'] as String? ?? '';
+              final ratings = byPlayer[name] ?? [];
+              final avg = ratings.isEmpty ? 0.0 : ratings.reduce((a, b) => a + b) / ratings.length;
+              return _PlayerRatingTile(
+                playerName: name,
+                number: p['number'],
+                position: p['position'] as String? ?? '',
+                avgRating: avg,
+                ratingCount: ratings.length,
+                myRating: _myRatings[name] ?? 0,
+                canRate: widget.match.isFinished && widget.userId.isNotEmpty,
+                onRate: (s) => _rate(name, s),
+              );
+            }),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _RatingTeamHeader extends StatelessWidget {
+  final String name;
+  const _RatingTeamHeader({required this.name});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Text(
+      name.toUpperCase(),
+      style: const TextStyle(
+        color: AppTheme.textSecondary,
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1,
+      ),
+    ),
+  );
+}
+
+class _PlayerRatingTile extends StatelessWidget {
+  final String playerName;
+  final dynamic number;
+  final String position;
+  final double avgRating;
+  final int ratingCount;
+  final int myRating;
+  final bool canRate;
+  final void Function(int) onRate;
+  const _PlayerRatingTile({
+    required this.playerName,
+    required this.number,
+    required this.position,
+    required this.avgRating,
+    required this.ratingCount,
+    required this.myRating,
+    required this.canRate,
+    required this.onRate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (number != null) ...[
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBg2,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$number',
+                      style: const TextStyle(
+                        color: AppTheme.primaryLight,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Text(
+                  playerName,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ),
+              if (avgRating > 0) ...[
+                const Icon(Icons.star_rounded, color: AppTheme.accent, size: 16),
+                const SizedBox(width: 2),
+                Text(
+                  avgRating.toStringAsFixed(1),
+                  style: const TextStyle(
+                    color: AppTheme.accent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  ' ($ratingCount)',
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                ),
+              ],
+            ],
+          ),
+          if (canRate) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: List.generate(5, (i) {
+                final star = i + 1;
+                return GestureDetector(
+                  onTap: () => onRate(star),
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Icon(
+                      myRating >= star ? Icons.star_rounded : Icons.star_outline_rounded,
+                      color: myRating >= star ? AppTheme.accent : AppTheme.cardBg2,
+                      size: 28,
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ],
       ),
     );
   }

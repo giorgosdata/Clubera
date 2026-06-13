@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../models/player_model.dart';
+import 'player_compare_screen.dart';
 
 class PlayerProfileScreen extends StatelessWidget {
   final PlayerModel player;
@@ -23,6 +24,18 @@ class PlayerProfileScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(player.name),
         backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.compare_arrows),
+            tooltip: 'Σύγκριση',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PlayerCompareScreen(clubId: clubId, playerA: player),
+              ),
+            ),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

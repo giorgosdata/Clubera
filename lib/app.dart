@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/providers/app_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/services/streak_service.dart';
@@ -10,6 +11,7 @@ import 'features/home/ui/home_screen.dart';
 import 'features/matches/ui/matches_screen.dart';
 import 'features/teams/ui/teams_screen.dart';
 import 'features/profile/ui/profile_screen.dart';
+import 'features/onboarding/onboarding_screen.dart';
 
 class CluperaApp extends StatelessWidget {
   const CluperaApp({super.key});
@@ -55,16 +57,30 @@ class _Root extends StatefulWidget {
 }
 
 class _RootState extends State<_Root> {
+  bool _onboardingChecked = false;
+  bool _onboardingDone = false;
+
   @override
   void initState() {
     super.initState();
     Future.microtask(() => context.read<AppProvider>().init());
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _onboardingDone = prefs.getBool('onboarding_done') ?? false;
+        _onboardingChecked = true;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final prov = context.watch<AppProvider>();
-    if (!prov.initialized) {
+    if (!prov.initialized || !_onboardingChecked) {
       return const Scaffold(
         backgroundColor: Colors.transparent,
         body: Column(
@@ -78,6 +94,9 @@ class _RootState extends State<_Root> {
       );
     }
     if (!prov.isLoggedIn) return const LoginScreen();
+    if (!_onboardingDone) {
+      return OnboardingScreen(onDone: () => setState(() => _onboardingDone = true));
+    }
     return const _MainShell();
   }
 }
