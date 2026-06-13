@@ -257,6 +257,11 @@ function pickFromScore(h, a) {
   return h > a ? "1" : h < a ? "2" : "X";
 }
 
+// Exported for unit testing only.
+module.exports._pickFromScore = pickFromScore;
+module.exports._PREDICT_EXACT_PTS = PREDICT_EXACT_PTS;
+module.exports._PREDICT_OUTCOME_PTS = PREDICT_OUTCOME_PTS;
+
 // Resolve all coupon_picks + score_predictions for a finished match.
 // Awards points, marks docs as resolved, sends per-user notifications.
 async function resolvePredictionsForMatch(matchId, homeScore, awayScore, homeName, awayName, homeClubId, awayClubId) {
@@ -383,6 +388,8 @@ async function runInChunks(items, size, fn) {
     await Promise.all(items.slice(i, i + size).map(fn));
   }
 }
+
+module.exports._runInChunks = runInChunks;
 
 // ─── MATCH SCORE / STATUS UPDATE ─────────────────────────────────────────────
 exports.onMatchUpdated = onDocumentUpdated({ document: "matches/{matchId}", ...HEAVY }, async (event) => {
