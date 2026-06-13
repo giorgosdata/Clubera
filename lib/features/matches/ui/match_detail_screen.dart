@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/providers/app_provider.dart';
+import '../../../core/services/weather_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../models/match_model.dart';
@@ -168,6 +169,11 @@ class _MatchHeader extends StatelessWidget {
           if (match.isUpcoming)
             Text(DateFormat('EEEE, dd MMMM yyyy • HH:mm').format(match.scheduledAt),
               style: const TextStyle(color: AppTheme.accent, fontSize: 13, fontWeight: FontWeight.bold)),
+          if (match.isUpcoming)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: _MatchWeatherWidget(homeClubId: match.homeClubId, matchTime: match.scheduledAt),
+            ),
         ],
       ),
     );
@@ -1645,6 +1651,50 @@ class _PlayerRatingTile extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _MatchWeatherWidget extends StatelessWidget {
+  final String homeClubId;
+  final DateTime matchTime;
+  const _MatchWeatherWidget({required this.homeClubId, required this.matchTime});
+
+  Future<WeatherData?> _load() async {
+    // Get home club city
+    final snap = await FirebaseFirestore.instance.collection('clubs').doc(homeClubId).get();
+    if (!snap.exists) return null;
+    final city = snap.data()?['city'] as String? ?? '';
+    if (city.isEmpty) return null;
+    return WeatherService.forMatch(city, matchTime);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<WeatherData?>(
+      future: _load(),
+      builder: (ctx, snap) {
+        if (!snap.hasData || snap.data == null) return const SizedBox.shrink();
+        final w = snap.data!;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(w.emoji, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 6),
+              Text(
+                '${w.tempC}°C  •  ${w.description}  •  ${w.windKmh} km/h',
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

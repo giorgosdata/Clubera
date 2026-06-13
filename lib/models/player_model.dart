@@ -12,6 +12,10 @@ class PlayerModel {
   final int yellowCards;
   final int redCards;
   final int appearances;
+  // Injury tracking
+  final bool isInjured;
+  final String? injuryNote;
+  final DateTime? expectedReturn;
 
   const PlayerModel({
     required this.id,
@@ -26,6 +30,9 @@ class PlayerModel {
     this.yellowCards = 0,
     this.redCards = 0,
     this.appearances = 0,
+    this.isInjured = false,
+    this.injuryNote,
+    this.expectedReturn,
   });
 
   String get positionLabel {
@@ -51,6 +58,9 @@ class PlayerModel {
     yellowCards: (m['yellowCards'] as num?)?.toInt() ?? 0,
     redCards: (m['redCards'] as num?)?.toInt() ?? 0,
     appearances: (m['appearances'] as num?)?.toInt() ?? 0,
+    isInjured: m['isInjured'] ?? false,
+    injuryNote: m['injuryNote'] as String?,
+    expectedReturn: (m['expectedReturn'] as dynamic)?.toDate(),
   );
 
   Map<String, dynamic> toMap() => {
@@ -65,5 +75,44 @@ class PlayerModel {
     'yellowCards': yellowCards,
     'redCards': redCards,
     'appearances': appearances,
+    'isInjured': isInjured,
+    'injuryNote': injuryNote,
+    'expectedReturn': expectedReturn,
   };
+
+  PlayerModel copyWith({
+    String? id,
+    String? name,
+    String? position,
+    int? number,
+    String? photoUrl,
+    int? age,
+    String? nationality,
+    bool? isActive,
+    int? goals,
+    int? yellowCards,
+    int? redCards,
+    int? appearances,
+    bool? isInjured,
+    String? injuryNote,
+    DateTime? expectedReturn,
+  }) {
+    return PlayerModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      position: position ?? this.position,
+      number: number ?? this.number,
+      photoUrl: photoUrl ?? this.photoUrl,
+      age: age ?? this.age,
+      nationality: nationality ?? this.nationality,
+      isActive: isActive ?? this.isActive,
+      goals: goals ?? this.goals,
+      yellowCards: yellowCards ?? this.yellowCards,
+      redCards: redCards ?? this.redCards,
+      appearances: appearances ?? this.appearances,
+      isInjured: isInjured ?? this.isInjured,
+      injuryNote: injuryNote ?? this.injuryNote,
+      expectedReturn: expectedReturn ?? this.expectedReturn,
+    );
+  }
 }

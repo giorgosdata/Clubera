@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../models/player_model.dart';
@@ -108,6 +109,37 @@ class PlayerProfileScreen extends StatelessWidget {
                         clubName,
                         style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                       ),
+                      if (player.isInjured) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.red.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppTheme.red.withValues(alpha: 0.5)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.medical_services, color: AppTheme.red, size: 11),
+                              const SizedBox(width: 4),
+                              Text(
+                                player.expectedReturn != null
+                                    ? 'ΤΡΑΥΜΑΤΙΑΣ • Επιστροφή ${DateFormat('d MMM').format(player.expectedReturn!)}'
+                                    : 'ΤΡΑΥΜΑΤΙΑΣ',
+                                style: const TextStyle(color: AppTheme.red, fontWeight: FontWeight.bold, fontSize: 10),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (player.injuryNote != null && player.injuryNote!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            player.injuryNote!,
+                            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                          ),
+                        ],
+                      ],
                     ],
                   ),
                 ),

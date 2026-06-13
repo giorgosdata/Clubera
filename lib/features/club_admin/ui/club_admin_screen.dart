@@ -1430,7 +1430,7 @@ class _PlayerRow extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: _posColor(player.position).withOpacity(0.2),
+              color: _posColor(player.position).withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -1468,6 +1468,14 @@ class _PlayerRow extends StatelessWidget {
             ),
           ),
           IconButton(
+            icon: Icon(
+              Icons.medical_services,
+              color: player.isInjured ? AppTheme.red : AppTheme.textSecondary,
+              size: 20,
+            ),
+            onPressed: () => _showInjuryDialog(context),
+          ),
+          IconButton(
             icon: const Icon(
               Icons.delete_outline,
               color: AppTheme.red,
@@ -1493,6 +1501,13 @@ class _PlayerRow extends StatelessWidget {
       default:
         return Colors.white;
     }
+  }
+
+  void _showInjuryDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _InjuryDialog(player: player, clubId: clubId),
+    );
   }
 
   void _confirmDelete(BuildContext context) {
@@ -1528,6 +1543,125 @@ class _PlayerRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── INJURY DIALOG ────────────────────────────────────────────────────────────
+
+class _InjuryDialog extends StatefulWidget {
+  final PlayerModel player;
+  final String clubId;
+  const _InjuryDialog({required this.player, required this.clubId});
+
+  @override
+  State<_InjuryDialog> createState() => _InjuryDialogState();
+}
+
+class _InjuryDialogState extends State<_InjuryDialog> {
+  late bool _isInjured;
+  late TextEditingController _noteCtrl;
+  DateTime? _returnDate;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isInjured = widget.player.isInjured;
+    _noteCtrl = TextEditingController(text: widget.player.injuryNote ?? '');
+    _returnDate = widget.player.expectedReturn;
+  }
+
+  @override
+  void dispose() {
+    _noteCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _loading = true);
+    try {
+      await FirebaseFirestore.instance
+          .collection('clubs')
+          .doc(widget.clubId)
+          .collection('players')
+          .doc(widget.player.id)
+          .update({
+        'isInjured': _isInjured,
+        'injuryNote': _isInjured ? _noteCtrl.text.trim() : null,
+        'expectedReturn': _isInjured ? _returnDate : null,
+      });
+      if (mounted) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppTheme.cardBg,
+      title: Text(
+        '${widget.player.name} — Τραυματισμός',
+        style: const TextStyle(color: Colors.white),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SwitchListTile(
+            title: const Text('Τραυματίας', style: TextStyle(color: Colors.white)),
+            value: _isInjured,
+            activeColor: AppTheme.red,
+            onChanged: (v) => setState(() => _isInjured = v),
+          ),
+          if (_isInjured) ...[
+            const SizedBox(height: 8),
+            TextField(
+              controller: _noteCtrl,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Σημείωση',
+                labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                filled: true,
+                fillColor: AppTheme.cardBg2,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                _returnDate != null
+                    ? 'Επιστροφή: ${DateFormat('d MMM yyyy').format(_returnDate!)}'
+                    : 'Αναμενόμενη επιστροφή',
+                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+              ),
+              trailing: const Icon(Icons.calendar_today, color: AppTheme.textSecondary, size: 18),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _returnDate ?? DateTime.now().add(const Duration(days: 7)),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (picked != null) setState(() => _returnDate = picked);
+              },
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Άκυρο'),
+        ),
+        ElevatedButton(
+          onPressed: _loading ? null : _save,
+          child: _loading
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Αποθήκευση'),
+        ),
+      ],
     );
   }
 }
@@ -2906,7 +3040,7 @@ class _AcademyPlayerRow extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: _posColor(player.position).withOpacity(0.2),
+              color: _posColor(player.position).withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Center(
