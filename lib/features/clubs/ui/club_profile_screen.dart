@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../models/fan_stats_model.dart';
 import '../../../models/sponsor_model.dart';
 import '../../matches/ui/match_card.dart';
+import 'player_profile_screen.dart';
 import '../../matches/ui/match_detail_screen.dart';
 import '../../profile/widgets/fan_card.dart';
 
@@ -92,7 +93,7 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
               controller: _tab,
               children: [
                 _InfoTab(club: club),
-                _PlayersPublicTab(clubId: widget.clubId),
+                _PlayersPublicTab(clubId: widget.clubId, clubName: club.name),
                 _StatsTab(clubId: widget.clubId),
                 _MatchesTab(clubId: widget.clubId),
                 _TransfersTab(clubId: widget.clubId),
@@ -753,7 +754,8 @@ class _InfoTab extends StatelessWidget {
 
 class _PlayersPublicTab extends StatelessWidget {
   final String clubId;
-  const _PlayersPublicTab({required this.clubId});
+  final String clubName;
+  const _PlayersPublicTab({required this.clubId, required this.clubName});
 
   @override
   Widget build(BuildContext context) {
@@ -822,7 +824,7 @@ class _PlayersPublicTab extends StatelessWidget {
                       ),
                     ),
                   ),
-                  ...group.map((p) => _PlayerCard(player: p)),
+                  ...group.map((p) => _PlayerCard(player: p, clubId: clubId, clubName: clubName)),
                   const SizedBox(height: 8),
                 ],
               );
@@ -847,7 +849,9 @@ class _PlayersPublicTab extends StatelessWidget {
 
 class _PlayerCard extends StatelessWidget {
   final PlayerModel player;
-  const _PlayerCard({required this.player});
+  final String clubId;
+  final String clubName;
+  const _PlayerCard({required this.player, required this.clubId, required this.clubName});
 
   Color _posColor(String pos) {
     switch (pos) {
@@ -867,7 +871,18 @@ class _PlayerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _posColor(player.position);
-    return Container(
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PlayerProfileScreen(
+            player: player,
+            clubId: clubId,
+            clubName: clubName,
+          ),
+        ),
+      ),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -939,8 +954,11 @@ class _PlayerCard extends StatelessWidget {
                 fontSize: 13,
               ),
             ),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right, color: AppTheme.textSecondary, size: 16),
         ],
       ),
+    ),
     );
   }
 }

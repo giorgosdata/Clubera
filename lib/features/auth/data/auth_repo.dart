@@ -2,13 +2,18 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/user_model.dart';
 
 class AuthRepo {
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
+  final _localAuth = LocalAuthentication();
   static const _cacheKey = 'cached_user';
+  static const _biometricEnabledKey = 'biometric_enabled';
+  static const _savedEmailKey = 'saved_email';
+  static const _savedPassKey = 'saved_pass';
 
   Future<UserModel> login(String email, String password) async {
     final cred = await _auth.signInWithEmailAndPassword(
@@ -134,5 +139,57 @@ class AuthRepo {
   Future<void> _clearCache() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_cacheKey);
+  }
+
+  // ─── Biometric ─────────────────────────────────────────────────────────────
+
+  Future<bool> isBiometricAvailable() async {
+    try {
+      return await _localAuth.canCheckBiometrics ||
+          await _localAuth.isDeviceSupported();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> isBiometricEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_biometricEnabledKey) ?? false;
+  }
+
+  Future<void> setBiometricEnabled({
+    required bool enabled,
+    String? email,
+    String? password,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_biometricEnabledKey, enabled);
+    if (enabled && email != null && password != null) {
+      await prefs.setString(_savedEmailKey, email);
+      await prefs.setString(_savedPassKey, password);
+    } else if (!enabled) {
+      await prefs.remove(_savedEmailKey);
+      await prefs.remove(_savedPassKey);
+    }
+  }
+
+  Future<UserModel?> loginWithBiometric() async {
+    try {
+      final authenticated = await _localAuth.authenticate(
+        localizedReason: 'Χρησιμοποιήστε δακτυλικό αποτύπωμα για σύνδεση',
+        options: const AuthenticationOptions(
+          biometricOnly: false,
+          stickyAuth: true,
+        ),
+      );
+      if (!authenticated) return null;
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString(_savedEmailKey);
+      final pass = prefs.getString(_savedPassKey);
+      if (email == null || pass == null) return null;
+      return await login(email, pass);
+    } catch (_) {
+      return null;
+    }
   }
 }

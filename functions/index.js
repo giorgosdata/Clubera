@@ -738,6 +738,37 @@ exports.onFanStatsWritten = onDocumentWritten(
   }
 );
 
+// ─── LIVE SCORE NOTIFICATIONS ────────────────────────────────────────────────
+// When a goal event is added to a live match, notify followers of both clubs.
+exports.onMatchEventCreated = onDocumentCreated(
+  { document: "matches/{matchId}/events/{eventId}", ...HEAVY },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data || data.type !== "goal") return;
+
+    const matchId = event.params.matchId;
+    const matchSnap = await db.collection("matches").doc(matchId).get();
+    if (!matchSnap.exists) return;
+    const match = matchSnap.data();
+    if (match.status !== "live" && match.status !== "halftime") return;
+
+    const homeScore = match.homeScore ?? 0;
+    const awayScore = match.awayScore ?? 0;
+    const scorer = data.playerName ? ` ⚽ ${data.playerName}` : "";
+    const minute = data.minute ? ` (${data.minute}')` : "";
+    const title = `ΓΚΟΛ!${scorer}${minute}`;
+    const body = `${match.homeClubName} ${homeScore} – ${awayScore} ${match.awayClubName}`;
+
+    const clubIds = [match.homeClubId, match.awayClubId].filter(Boolean);
+    const notifyPromises = clubIds.map((clubId) =>
+      sendTopic(`club_${clubId}`, title, body, { matchId }, "⚽").catch((e) =>
+        console.error(`live-score notify club ${clubId}:`, e)
+      )
+    );
+    await Promise.all(notifyPromises);
+  }
+);
+
 // ─── PLAYER CAREER STATS ──────────────────────────────────────────────────────
 // When a match transitions to 'finished', aggregate events into player stat counters.
 exports.onMatchFinished = onDocumentUpdated(

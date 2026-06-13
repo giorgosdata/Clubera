@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
@@ -25,7 +28,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 4, vsync: this);
+    _tab = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -56,7 +59,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
                   indicatorColor: AppTheme.accent,
                   labelColor: AppTheme.accent,
                   unselectedLabelColor: AppTheme.textSecondary,
-                  tabs: const [Tab(text: 'Events'), Tab(text: 'Line-Up'), Tab(text: 'Predict'), Tab(text: 'MVP')],
+                  tabs: const [Tab(text: 'Events'), Tab(text: 'Line-Up'), Tab(text: 'Predict'), Tab(text: 'MVP'), Tab(text: 'Photos')],
                 )),
               ),
             ],
@@ -67,6 +70,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
                 _LineupSection(match: match),
                 _PredictSection(match: match, userId: user?.uid ?? ''),
                 _MvpSection(matchId: widget.matchId, match: match, userId: user?.uid ?? ''),
+                _PhotosSection(matchId: widget.matchId, match: match, user: user),
               ],
             ),
           );
@@ -1183,6 +1187,187 @@ class _MvpPlayerRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── PHOTOS SECTION ───────────────────────────────────────────────────────────
+
+class _PhotosSection extends StatefulWidget {
+  final String matchId;
+  final MatchModel match;
+  final dynamic user; // UserModel?
+  const _PhotosSection({required this.matchId, required this.match, required this.user});
+
+  @override
+  State<_PhotosSection> createState() => _PhotosSectionState();
+}
+
+class _PhotosSectionState extends State<_PhotosSection> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  bool _uploading = false;
+
+  bool get _canUpload {
+    final u = widget.user;
+    if (u == null) return false;
+    return u.role == 'admin' ||
+        (u.role == 'club' &&
+            (u.clubId == widget.match.homeClubId || u.clubId == widget.match.awayClubId));
+  }
+
+  Future<void> _pickAndUpload() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 75, maxWidth: 1280);
+    if (picked == null || !mounted) return;
+    setState(() => _uploading = true);
+    try {
+      final file = File(picked.path);
+      final ref = FirebaseStorage.instance
+          .ref('match_photos/${widget.matchId}/${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await ref.putFile(file);
+      final url = await ref.getDownloadURL();
+      await FirebaseFirestore.instance
+          .collection('matches')
+          .doc(widget.matchId)
+          .collection('photos')
+          .add({
+        'url': url,
+        'uploadedBy': widget.user?.uid ?? '',
+        'uploaderName': widget.user?.name ?? '',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Φωτογραφία ανέβηκε!'), backgroundColor: AppTheme.supportGreen),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Σφάλμα: $e'), backgroundColor: AppTheme.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('matches')
+          .doc(widget.matchId)
+          .collection('photos')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (ctx, snap) {
+        final photos = snap.data?.docs ?? [];
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          floatingActionButton: _canUpload
+              ? FloatingActionButton(
+                  backgroundColor: AppTheme.primaryLight,
+                  onPressed: _uploading ? null : _pickAndUpload,
+                  tooltip: 'Ανέβασε φωτογραφία',
+                  child: _uploading
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.add_photo_alternate_outlined),
+                )
+              : null,
+          body: photos.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.photo_library_outlined, size: 64, color: AppTheme.cardBg2),
+                      SizedBox(height: 12),
+                      Text('Δεν υπάρχουν φωτογραφίες', style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
+                      SizedBox(height: 6),
+                      Text('Οι διαχειριστές μπορούν να ανεβάσουν', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                    ],
+                  ),
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.all(8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 4,
+                    mainAxisSpacing: 4,
+                  ),
+                  itemCount: photos.length,
+                  itemBuilder: (ctx, i) {
+                    final data = photos[i].data() as Map<String, dynamic>;
+                    final url = data['url'] as String? ?? '';
+                    return GestureDetector(
+                      onTap: () => _showFullscreen(context, url, photos, i),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.network(url, fit: BoxFit.cover,
+                          loadingBuilder: (_, child, prog) => prog == null
+                              ? child
+                              : Container(color: AppTheme.cardBg2, child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
+                          errorBuilder: (_, __, ___) => Container(color: AppTheme.cardBg2, child: const Icon(Icons.broken_image, color: AppTheme.textSecondary)),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        );
+      },
+    );
+  }
+
+  void _showFullscreen(BuildContext context, String url, List<QueryDocumentSnapshot> photos, int index) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => _FullscreenPhoto(photos: photos, initialIndex: index),
+    ));
+  }
+}
+
+class _FullscreenPhoto extends StatefulWidget {
+  final List<QueryDocumentSnapshot> photos;
+  final int initialIndex;
+  const _FullscreenPhoto({required this.photos, required this.initialIndex});
+
+  @override
+  State<_FullscreenPhoto> createState() => _FullscreenPhotoState();
+}
+
+class _FullscreenPhotoState extends State<_FullscreenPhoto> {
+  late final PageController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
+      body: PageView.builder(
+        controller: _ctrl,
+        itemCount: widget.photos.length,
+        itemBuilder: (ctx, i) {
+          final data = widget.photos[i].data() as Map<String, dynamic>;
+          final url = data['url'] as String? ?? '';
+          return InteractiveViewer(
+            child: Center(child: Image.network(url, fit: BoxFit.contain)),
+          );
+        },
       ),
     );
   }

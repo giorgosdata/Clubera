@@ -17,6 +17,7 @@ import '../../matches/ui/match_detail_screen.dart';
 import '../../matches/ui/matches_screen.dart';
 import '../../clubs/ui/club_profile_screen.dart';
 import '../../teams/ui/teams_screen.dart';
+import '../../search/ui/search_screen.dart';
 import '../../gamification/ui/games_screen.dart';
 import 'news_detail_screen.dart';
 import 'notifications_screen.dart';
@@ -56,6 +57,14 @@ class _HomeScreenState extends State<HomeScreen>
             pinned: true,
             title: Image.asset('assets/images/logo.jpeg', height: 36),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.search, color: Colors.white),
+                tooltip: 'Αναζήτηση',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SearchScreen()),
+                ),
+              ),
               _NotificationsBell(userId: user?.uid),
             ],
             bottom: TabBar(
@@ -867,6 +876,8 @@ class _HeroUpcomingCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 6),
+                      Center(child: _MatchCountdown(scheduledAt: dt)),
                     ],
                   ),
                 ),
@@ -877,6 +888,69 @@ class _HeroUpcomingCard extends StatelessWidget {
       },
     );
   }
+}
+
+class _MatchCountdown extends StatefulWidget {
+  final DateTime scheduledAt;
+  const _MatchCountdown({required this.scheduledAt});
+
+  @override
+  State<_MatchCountdown> createState() => _MatchCountdownState();
+}
+
+class _MatchCountdownState extends State<_MatchCountdown> {
+  late Duration _remaining;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _remaining = widget.scheduledAt.difference(DateTime.now());
+    if (_remaining.isNegative) return;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final r = widget.scheduledAt.difference(DateTime.now());
+      if (mounted) setState(() => _remaining = r);
+      if (r.isNegative) _timer?.cancel();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_remaining.isNegative) return const SizedBox.shrink();
+    final d = _remaining.inDays;
+    final h = _remaining.inHours % 24;
+    final m = _remaining.inMinutes % 60;
+    final s = _remaining.inSeconds % 60;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.timer_outlined, color: Colors.white54, size: 14),
+        const SizedBox(width: 4),
+        if (d > 0) _unit('$d', 'μέρες'),
+        if (d > 0) const SizedBox(width: 8),
+        _unit(_pad(h), 'ώρες'),
+        const SizedBox(width: 8),
+        _unit(_pad(m), 'λεπτά'),
+        const SizedBox(width: 8),
+        _unit(_pad(s), 'δευτ.'),
+      ],
+    );
+  }
+
+  Widget _unit(String value, String label) => Column(
+    children: [
+      Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
+      Text(label, style: const TextStyle(color: Colors.white54, fontSize: 9)),
+    ],
+  );
+
+  String _pad(int n) => n.toString().padLeft(2, '0');
 }
 
 class _HeroEmptyCard extends StatelessWidget {

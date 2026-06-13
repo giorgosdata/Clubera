@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/providers/app_provider.dart';
+import 'core/providers/theme_provider.dart';
 import 'core/services/streak_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/offline_banner.dart';
@@ -15,10 +16,13 @@ class CluperaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
     return MaterialApp(
       title: 'Clubera',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeProvider.mode,
       builder: (context, child) => Stack(
         children: [
           Positioned.fill(

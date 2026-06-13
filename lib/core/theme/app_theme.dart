@@ -109,6 +109,90 @@ class AppTheme {
     ),
   );
 
+  static ThemeData get light => ThemeData(
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: const Color(0xFFF0F4FF),
+    primaryColor: primaryLight,
+    colorScheme: const ColorScheme.light(
+      primary: primaryLight,
+      secondary: supportGreen,
+      surface: Colors.white,
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.white,
+      foregroundColor: primary,
+      elevation: 0,
+      centerTitle: true,
+      titleTextStyle: TextStyle(
+        color: primary,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 0.5,
+      ),
+      iconTheme: IconThemeData(color: primary),
+    ),
+    cardTheme: CardThemeData(
+      color: Colors.white,
+      elevation: 1,
+      shadowColor: Color(0x224361EE),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: primaryLight,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: primaryLight,
+        side: const BorderSide(color: primaryLight),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: const Color(0xFFEEF2FF),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: primaryLight, width: 1.5),
+      ),
+      hintStyle: const TextStyle(color: Color(0xFF8899CC)),
+      labelStyle: const TextStyle(color: Color(0xFF8899CC)),
+    ),
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: Colors.white,
+      selectedItemColor: primaryLight,
+      unselectedItemColor: Color(0xFF8899CC),
+      type: BottomNavigationBarType.fixed,
+      elevation: 4,
+    ),
+    dividerTheme: const DividerThemeData(color: Color(0xFFDDE3F8), thickness: 1),
+    tabBarTheme: const TabBarThemeData(
+      indicatorColor: primaryLight,
+      labelColor: primaryLight,
+      unselectedLabelColor: Color(0xFF8899CC),
+      indicatorSize: TabBarIndicatorSize.label,
+    ),
+    textTheme: const TextTheme(
+      headlineLarge: TextStyle(color: primary, fontWeight: FontWeight.bold, fontSize: 28),
+      headlineMedium: TextStyle(color: primary, fontWeight: FontWeight.bold, fontSize: 22),
+      titleLarge: TextStyle(color: primary, fontWeight: FontWeight.bold, fontSize: 18),
+      titleMedium: TextStyle(color: primary, fontWeight: FontWeight.w600, fontSize: 16),
+      bodyLarge: TextStyle(color: Color(0xFF1A237E), fontSize: 15),
+      bodyMedium: TextStyle(color: Color(0xFF4A5A8A), fontSize: 14),
+      labelLarge: TextStyle(color: primary, fontWeight: FontWeight.bold, fontSize: 14),
+    ),
+  );
+
   // Gradient helpers
   static const LinearGradient navyGradient = LinearGradient(
     colors: [Color(0xFF1A2560), Color(0xFF101840)],

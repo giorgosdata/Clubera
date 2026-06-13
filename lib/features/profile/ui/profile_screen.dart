@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/app_provider.dart';
+import '../../../core/providers/theme_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/user_model.dart';
 import '../../../models/club_model.dart';
@@ -773,6 +774,10 @@ class _MenuSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          const _SectionLabel('Εμφάνιση'),
+          const SizedBox(height: 8),
+          _ThemeToggleTile(),
+          const SizedBox(height: 16),
           const _SectionLabel('Account'),
           const SizedBox(height: 8),
           if (user.clubId == null)
@@ -1471,6 +1476,36 @@ class _MenuItem extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );
+}
+
+class _ThemeToggleTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final tp = context.watch<ThemeProvider>();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: Icon(
+          tp.isDark ? Icons.dark_mode : Icons.light_mode,
+          color: tp.isDark ? AppTheme.primaryLight : AppTheme.accent,
+        ),
+        title: Text(
+          tp.isDark ? 'Dark Mode' : 'Light Mode',
+          style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
+        ),
+        trailing: Switch(
+          value: tp.isDark,
+          onChanged: (_) => tp.toggle(),
+          activeColor: AppTheme.primaryLight,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
 }
 
 // ─── JOIN WITH CODE SHEET ─────────────────────────────────────────────────────

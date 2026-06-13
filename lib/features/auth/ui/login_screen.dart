@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../data/auth_repo.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,9 +17,37 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _authRepo = AuthRepo();
   bool _loading = false;
   bool _obscure = true;
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometric();
+  }
+
+  Future<void> _checkBiometric() async {
+    final available = await _authRepo.isBiometricAvailable();
+    final enabled = await _authRepo.isBiometricEnabled();
+    if (mounted) setState(() { _biometricAvailable = available; _biometricEnabled = enabled; });
+    if (available && enabled) _loginWithBiometric();
+  }
+
+  Future<void> _loginWithBiometric() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final user = await _authRepo.loginWithBiometric();
+      if (user == null && mounted) setState(() => _error = 'Biometric failed. Use password.');
+    } catch (e) {
+      if (mounted) setState(() => _error = _friendlyAuthError(e));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -32,11 +61,44 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       await context.read<AppProvider>().login(_emailCtrl.text, _passCtrl.text);
+      // Offer to enable biometric after successful password login
+      if (_biometricAvailable && !_biometricEnabled && mounted) {
+        _offerBiometric();
+      }
     } catch (e) {
       if (mounted) setState(() => _error = _friendlyAuthError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _offerBiometric() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardBg,
+        title: const Text('Biometric Login', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Θέλεις να συνδέεσαι με δακτυλικό αποτύπωμα την επόμενη φορά;',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Όχι')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _authRepo.setBiometricEnabled(
+                enabled: true,
+                email: _emailCtrl.text,
+                password: _passCtrl.text,
+              );
+              if (mounted) setState(() => _biometricEnabled = true);
+            },
+            child: const Text('Ναι'),
+          ),
+        ],
+      ),
+    );
   }
 
   static String _friendlyAuthError(Object e) {
@@ -130,6 +192,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         : const Text('Sign In'),
                   ),
                 ),
+                if (_biometricAvailable) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _loading ? null : _loginWithBiometric,
+                      icon: const Icon(Icons.fingerprint, size: 22),
+                      label: Text(_biometricEnabled ? 'Σύνδεση με Biometric' : 'Ενεργοποίηση Biometric'),
+                    ),
+                  ),
+                ],
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
