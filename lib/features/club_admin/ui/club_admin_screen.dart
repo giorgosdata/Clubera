@@ -1595,6 +1595,7 @@ class _InjuryDialogState extends State<_InjuryDialog> {
       });
       if (mounted) Navigator.pop(context);
     } catch (e) {
+      debugPrint('InjuryDialog save error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Σφάλμα αποθήκευσης. Δοκίμασε ξανά.')),

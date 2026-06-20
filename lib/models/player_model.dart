@@ -99,7 +99,7 @@ class PlayerModel {
     int? appearances,
     bool? isInjured,
     String? injuryNote,
-    DateTime? expectedReturn,
+    Object? expectedReturn = _sentinel,
   }) {
     return PlayerModel(
       id: id ?? this.id,
@@ -116,7 +116,11 @@ class PlayerModel {
       appearances: appearances ?? this.appearances,
       isInjured: isInjured ?? this.isInjured,
       injuryNote: injuryNote ?? this.injuryNote,
-      expectedReturn: expectedReturn ?? this.expectedReturn,
+      expectedReturn: identical(expectedReturn, _sentinel)
+          ? this.expectedReturn
+          : expectedReturn as DateTime?,
     );
   }
 }
+
+const Object _sentinel = Object();
