@@ -1589,9 +1589,17 @@ class _InjuryDialogState extends State<_InjuryDialog> {
           .update({
         'isInjured': _isInjured,
         'injuryNote': _isInjured ? _noteCtrl.text.trim() : null,
-        'expectedReturn': _isInjured ? _returnDate : null,
+        'expectedReturn': _isInjured && _returnDate != null
+            ? Timestamp.fromDate(_returnDate!)
+            : null,
       });
       if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Σφάλμα αποθήκευσης. Δοκίμασε ξανά.')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }

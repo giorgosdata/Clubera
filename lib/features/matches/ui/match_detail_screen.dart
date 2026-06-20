@@ -503,7 +503,7 @@ class _LineupSection extends StatelessWidget {
                                 : null;
                             return _PlayerDot(
                               x: pos.dx * w,
-                              y: (0.52 + pos.dy * 0.45) * h,
+                              y: (0.52 + pos.dy * 0.40) * h,
                               number: player?['number']?.toString() ?? '${i + 1}',
                               name: player?['name'] ?? _defaultPosition(i),
                               isHome: true,

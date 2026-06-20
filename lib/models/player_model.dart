@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class PlayerModel {
   final String id;
   final String name;
@@ -60,7 +62,9 @@ class PlayerModel {
     appearances: (m['appearances'] as num?)?.toInt() ?? 0,
     isInjured: m['isInjured'] ?? false,
     injuryNote: m['injuryNote'] as String?,
-    expectedReturn: (m['expectedReturn'] as dynamic)?.toDate(),
+    expectedReturn: m['expectedReturn'] is Timestamp
+        ? (m['expectedReturn'] as Timestamp).toDate()
+        : null,
   );
 
   Map<String, dynamic> toMap() => {
@@ -77,7 +81,7 @@ class PlayerModel {
     'appearances': appearances,
     'isInjured': isInjured,
     'injuryNote': injuryNote,
-    'expectedReturn': expectedReturn,
+    'expectedReturn': expectedReturn != null ? Timestamp.fromDate(expectedReturn!) : null,
   };
 
   PlayerModel copyWith({
