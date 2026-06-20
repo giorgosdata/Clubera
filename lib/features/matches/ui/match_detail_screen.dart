@@ -493,7 +493,7 @@ class _LineupSection extends StatelessWidget {
                           size: Size(w, h),
                           painter: _FootballFieldPainter(),
                         ),
-                        // Home players (bottom half - y positions normal)
+                        // Home players (bottom half: y mapped to [0.52, 0.97])
                         ...List.generate(
                           homePositions.length.clamp(0, match.homeLineup.isNotEmpty ? match.homeLineup.length : homePositions.length),
                           (i) {
@@ -503,14 +503,14 @@ class _LineupSection extends StatelessWidget {
                                 : null;
                             return _PlayerDot(
                               x: pos.dx * w,
-                              y: pos.dy * h,
+                              y: (0.52 + pos.dy * 0.45) * h,
                               number: player?['number']?.toString() ?? '${i + 1}',
                               name: player?['name'] ?? _defaultPosition(i),
                               isHome: true,
                             );
                           },
                         ),
-                        // Away players (top half - y positions inverted)
+                        // Away players (top half: y mapped to [0.03, 0.48])
                         ...List.generate(
                           awayPositions.length.clamp(0, match.awayLineup.isNotEmpty ? match.awayLineup.length : awayPositions.length),
                           (i) {
@@ -520,7 +520,7 @@ class _LineupSection extends StatelessWidget {
                                 : null;
                             return _PlayerDot(
                               x: pos.dx * w,
-                              y: (1.0 - pos.dy) * h, // Mirror for away team
+                              y: ((1.0 - pos.dy) * 0.45 + 0.03) * h,
                               number: player?['number']?.toString() ?? '${i + 1}',
                               name: player?['name'] ?? _defaultPosition(i),
                               isHome: false,

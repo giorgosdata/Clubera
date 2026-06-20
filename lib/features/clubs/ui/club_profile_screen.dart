@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -760,6 +761,14 @@ class _PlayersPublicTab extends StatelessWidget {
   final String clubName;
   const _PlayersPublicTab({required this.clubId, required this.clubName});
 
+  static const _positions = ['GK', 'DEF', 'MID', 'FWD'];
+  static const _posLabels = {
+    'GK': 'ΤΕΡΜΑΤΟΦΥΛΑΚΕΣ',
+    'DEF': 'ΑΜΥΝΤΙΚΟΙ',
+    'MID': 'ΜΕΣΟΙ',
+    'FWD': 'ΕΠΙΘΕΤΙΚΟΙ',
+  };
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
@@ -785,10 +794,7 @@ class _PlayersPublicTab extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         final players = (snap.data?.docs ?? [])
-            .map(
-              (d) =>
-                  PlayerModel.fromMap(d.data() as Map<String, dynamic>, d.id),
-            )
+            .map((d) => PlayerModel.fromMap(d.data() as Map<String, dynamic>, d.id))
             .where((p) => p.isActive)
             .toList();
         if (players.isEmpty) {
@@ -798,170 +804,242 @@ class _PlayersPublicTab extends StatelessWidget {
               children: [
                 Icon(Icons.group_outlined, size: 64, color: AppTheme.cardBg2),
                 SizedBox(height: 12),
-                Text(
-                  'No players listed yet',
-                  style: TextStyle(color: AppTheme.textSecondary),
-                ),
+                Text('No players listed yet', style: TextStyle(color: AppTheme.textSecondary)),
               ],
             ),
           );
         }
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
           children: [
-            ...['GK', 'DEF', 'MID', 'FWD'].map((pos) {
-              final group = players.where((p) => p.position == pos).toList();
-              if (group.isEmpty) return const SizedBox.shrink();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Text(
-                      _posLabel(pos),
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
+            for (final pos in _positions) ...[
+              Builder(builder: (_) {
+                final group = players.where((p) => p.position == pos).toList();
+                if (group.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16, bottom: 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 3,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: _posColor(pos),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _posLabels[pos] ?? pos,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${group.length}',
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  ...group.map((p) => _PlayerCard(player: p, clubId: clubId, clubName: clubName)),
-                  const SizedBox(height: 8),
-                ],
-              );
-            }),
-            const SizedBox(height: 80),
+                    GridView.count(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 0.78,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: group
+                          .map((p) => _PlayerGridTile(
+                                player: p,
+                                clubId: clubId,
+                                clubName: clubName,
+                              ))
+                          .toList(),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                );
+              }),
+            ],
           ],
         );
       },
     );
   }
 
-  String _posLabel(String pos) {
-    const labels = {
-      'GK': 'GOALKEEPERS',
-      'DEF': 'DEFENDERS',
-      'MID': 'MIDFIELDERS',
-      'FWD': 'FORWARDS',
-    };
-    return labels[pos] ?? pos;
+  static Color _posColor(String pos) {
+    switch (pos) {
+      case 'GK': return AppTheme.accent;
+      case 'DEF': return AppTheme.primaryLight;
+      case 'MID': return AppTheme.supportGreen;
+      case 'FWD': return AppTheme.liveRed;
+      default: return Colors.white;
+    }
   }
 }
 
-class _PlayerCard extends StatelessWidget {
+class _PlayerGridTile extends StatelessWidget {
   final PlayerModel player;
   final String clubId;
   final String clubName;
-  const _PlayerCard({required this.player, required this.clubId, required this.clubName});
+  const _PlayerGridTile({required this.player, required this.clubId, required this.clubName});
 
-  Color _posColor(String pos) {
-    switch (pos) {
-      case 'GK':
-        return AppTheme.accent;
-      case 'DEF':
-        return AppTheme.primaryLight;
-      case 'MID':
-        return AppTheme.supportGreen;
-      case 'FWD':
-        return AppTheme.liveRed;
-      default:
-        return Colors.white;
+  Color get _color {
+    switch (player.position) {
+      case 'GK': return AppTheme.accent;
+      case 'DEF': return AppTheme.primaryLight;
+      case 'MID': return AppTheme.supportGreen;
+      case 'FWD': return AppTheme.liveRed;
+      default: return Colors.white;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final color = _posColor(player.position);
+    final initials = player.name.trim().split(' ')
+        .where((w) => w.isNotEmpty)
+        .take(2)
+        .map((w) => w[0].toUpperCase())
+        .join();
+
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => PlayerProfileScreen(
-            player: player,
-            clubId: clubId,
-            clubName: clubName,
-          ),
+          builder: (_) => PlayerProfileScreen(player: player, clubId: clubId, clubName: clubName),
         ),
       ),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.divider),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              shape: BoxShape.circle,
-              border: Border.all(color: color.withOpacity(0.4)),
-            ),
-            child: Center(
-              child: Text(
-                player.number != null ? '${player.number}' : player.position,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14,
-                ),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.divider),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  // Photo or avatar
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                    child: player.photoUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: player.photoUrl!,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => _AvatarFallback(initials: initials, color: _color),
+                          )
+                        : _AvatarFallback(initials: initials, color: _color),
+                  ),
+                  // Number badge
+                  if (player.number != null)
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _color,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${player.number}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  // Injury indicator
+                  if (player.isInjured)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: AppTheme.liveRed,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.medical_services, color: Colors.white, size: 10),
+                      ),
+                    ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  player.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                Text(
-                  player.positionLabel,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-                if (player.appearances > 0 || player.goals > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Row(
-                      children: [
-                        if (player.appearances > 0) _StatPill('👟', '${player.appearances}'),
-                        if (player.goals > 0) _StatPill('⚽', '${player.goals}'),
-                        if (player.yellowCards > 0) _StatPill('🟨', '${player.yellowCards}'),
-                        if (player.redCards > 0) _StatPill('🟥', '${player.redCards}'),
-                      ],
+            // Name + position strip
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBg2,
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+                border: Border(top: BorderSide(color: _color.withValues(alpha: 0.4))),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    player.name.split(' ').last,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-              ],
-            ),
-          ),
-          if (player.nationality != null)
-            Text(
-              player.nationality!,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
+                  if (player.goals > 0)
+                    Text(
+                      '⚽ ${player.goals}',
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10),
+                    ),
+                ],
               ),
             ),
-          const SizedBox(width: 4),
-          const Icon(Icons.chevron_right, color: AppTheme.textSecondary, size: 16),
-        ],
+          ],
+        ),
       ),
-    ),
+    );
+  }
+}
+
+class _AvatarFallback extends StatelessWidget {
+  final String initials;
+  final Color color;
+  const _AvatarFallback({required this.initials, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: color.withValues(alpha: 0.12),
+      child: Center(
+        child: Text(
+          initials,
+          style: TextStyle(
+            color: color,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 }
