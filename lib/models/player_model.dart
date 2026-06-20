@@ -98,7 +98,7 @@ class PlayerModel {
     int? redCards,
     int? appearances,
     bool? isInjured,
-    String? injuryNote,
+    Object? injuryNote = _sentinel,
     Object? expectedReturn = _sentinel,
   }) {
     return PlayerModel(
@@ -115,7 +115,9 @@ class PlayerModel {
       redCards: redCards ?? this.redCards,
       appearances: appearances ?? this.appearances,
       isInjured: isInjured ?? this.isInjured,
-      injuryNote: injuryNote ?? this.injuryNote,
+      injuryNote: identical(injuryNote, _sentinel)
+          ? this.injuryNote
+          : injuryNote as String?,
       expectedReturn: identical(expectedReturn, _sentinel)
           ? this.expectedReturn
           : expectedReturn as DateTime?,
