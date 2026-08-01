@@ -173,13 +173,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (_error != null) ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       color: AppTheme.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: AppTheme.red.withOpacity(0.3)),
                     ),
-                    child: Text(_error!, style: const TextStyle(color: AppTheme.red, fontSize: 13)),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(_error!, style: const TextStyle(color: AppTheme.red, fontSize: 13))),
+                        if (_error == 'Biometric failed. Use password.' && _biometricAvailable)
+                          TextButton(
+                            onPressed: _loading ? null : _loginWithBiometric,
+                            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                            child: const Text('Retry', style: TextStyle(color: AppTheme.primaryLight, fontSize: 13, fontWeight: FontWeight.bold)),
+                          ),
+                      ],
+                    ),
                   ),
                 ],
                 const SizedBox(height: 24),

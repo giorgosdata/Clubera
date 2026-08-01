@@ -34,7 +34,7 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 10, vsync: this);
+    _tab = TabController(length: 11, vsync: this);
   }
 
   @override
@@ -87,6 +87,7 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
                       Tab(text: 'Sponsors'),
                       Tab(text: 'Top Fans'),
                       Tab(text: 'Ανακοινώσεις'),
+                      Tab(text: 'Ακαδημίες'),
                     ],
                   ),
                 ),
@@ -105,6 +106,7 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
                 _SponsorsTab(clubId: widget.clubId),
                 _TopFansTab(clubId: widget.clubId),
                 AnnouncementsTab(clubId: widget.clubId),
+                _AcademiesPublicTab(clubId: widget.clubId),
               ],
             ),
           );
@@ -129,7 +131,7 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
           fit: StackFit.expand,
           children: [
             if (club.coverUrl != null)
-              Image.network(club.coverUrl!, fit: BoxFit.cover)
+              CachedNetworkImage(imageUrl: club.coverUrl!, fit: BoxFit.cover)
             else
               Container(
                 decoration: const BoxDecoration(
@@ -2076,6 +2078,107 @@ class _TopFansTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
           itemCount: fans.length,
           itemBuilder: (ctx, i) => TopFanRow(rank: i + 1, stats: fans[i]),
+        );
+      },
+    );
+  }
+}
+
+// ─── ACADEMIES PUBLIC TAB ──────────────────────────────────────────────────────
+
+class _AcademiesPublicTab extends StatelessWidget {
+  final String clubId;
+  const _AcademiesPublicTab({required this.clubId});
+
+  Color _catColor(String cat) {
+    switch (cat) {
+      case 'K19': return const Color(0xFF6C63FF);
+      case 'K18': return AppTheme.primaryLight;
+      case 'K17': return AppTheme.supportGreen;
+      case 'K16': return AppTheme.accent;
+      case 'K15': return Colors.orange;
+      case 'K14': return AppTheme.red;
+      default:    return AppTheme.textSecondary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('clubs')
+          .doc(clubId)
+          .collection('academies')
+          .orderBy('createdAt')
+          .snapshots(),
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final docs = snap.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.school_outlined, size: 64, color: AppTheme.cardBg2),
+                SizedBox(height: 12),
+                Text('Δεν υπάρχουν ακαδημίες', style: TextStyle(color: AppTheme.textSecondary)),
+                SizedBox(height: 6),
+                Text('Η ομάδα δεν έχει καταχωρήσει ακαδημίες', style: TextStyle(color: AppTheme.cardBg2, fontSize: 12)),
+              ],
+            ),
+          );
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          itemCount: docs.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 10),
+          itemBuilder: (_, i) {
+            final d = docs[i].data() as Map<String, dynamic>;
+            final name = d['name'] as String? ?? '';
+            final cat = d['category'] as String? ?? '';
+            final color = _catColor(cat);
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                gradient: AppTheme.navyGradient,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: color.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: color.withValues(alpha: 0.5)),
+                    ),
+                    child: Center(
+                      child: Text(
+                        cat,
+                        style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 13),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                        const SizedBox(height: 2),
+                        Text('Ακαδημία $cat', style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.school, color: color.withValues(alpha: 0.6), size: 20),
+                ],
+              ),
+            );
+          },
         );
       },
     );

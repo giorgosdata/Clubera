@@ -25,6 +25,7 @@ class _NotificationPrefsScreenState extends State<NotificationPrefsScreen> {
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _goals = prefs.getBool('notif_goals') ?? true;
       _matchStart = prefs.getBool('notif_match_start') ?? true;

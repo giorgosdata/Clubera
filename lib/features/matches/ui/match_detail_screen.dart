@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -1314,11 +1315,11 @@ class _PhotosSectionState extends State<_PhotosSection> with AutomaticKeepAliveC
                       onTap: () => _showFullscreen(context, url, photos, i),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(6),
-                        child: Image.network(url, fit: BoxFit.cover,
-                          loadingBuilder: (_, child, prog) => prog == null
-                              ? child
-                              : Container(color: AppTheme.cardBg2, child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
-                          errorBuilder: (_, __, ___) => Container(color: AppTheme.cardBg2, child: const Icon(Icons.broken_image, color: AppTheme.textSecondary)),
+                        child: CachedNetworkImage(
+                          imageUrl: url,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) => Container(color: AppTheme.cardBg2, child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
+                          errorWidget: (_, __, ___) => Container(color: AppTheme.cardBg2, child: const Icon(Icons.broken_image, color: AppTheme.textSecondary)),
                         ),
                       ),
                     );
@@ -1655,24 +1656,36 @@ class _PlayerRatingTile extends StatelessWidget {
   }
 }
 
-class _MatchWeatherWidget extends StatelessWidget {
+class _MatchWeatherWidget extends StatefulWidget {
   final String homeClubId;
   final DateTime matchTime;
   const _MatchWeatherWidget({required this.homeClubId, required this.matchTime});
 
+  @override
+  State<_MatchWeatherWidget> createState() => _MatchWeatherWidgetState();
+}
+
+class _MatchWeatherWidgetState extends State<_MatchWeatherWidget> {
+  late final Future<WeatherData?> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
   Future<WeatherData?> _load() async {
-    // Get home club city
-    final snap = await FirebaseFirestore.instance.collection('clubs').doc(homeClubId).get();
+    final snap = await FirebaseFirestore.instance.collection('clubs').doc(widget.homeClubId).get();
     if (!snap.exists) return null;
     final city = snap.data()?['city'] as String? ?? '';
     if (city.isEmpty) return null;
-    return WeatherService.forMatch(city, matchTime);
+    return WeatherService.forMatch(city, widget.matchTime);
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<WeatherData?>(
-      future: _load(),
+      future: _future,
       builder: (ctx, snap) {
         if (!snap.hasData || snap.data == null) return const SizedBox.shrink();
         final w = snap.data!;

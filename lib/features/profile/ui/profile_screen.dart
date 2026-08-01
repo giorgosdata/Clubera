@@ -23,6 +23,7 @@ import '../widgets/badges_section.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../core/utils/logo_picker.dart';
 import '../../../core/utils/storage_utils.dart';
+import '../../gamification/ui/my_prizes_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -44,6 +45,7 @@ class ProfileScreen extends StatelessWidget {
             SliverToBoxAdapter(child: _FanCardsSection(user: user)),
             SliverToBoxAdapter(child: BadgesSection(userId: user.uid)),
             SliverToBoxAdapter(child: _WalletCard(user: user)),
+            SliverToBoxAdapter(child: _MyPrizesSection(userId: user.uid)),
             SliverToBoxAdapter(child: _FollowedClubsSection(user: user)),
             SliverToBoxAdapter(child: _GamesSection(user: user)),
             SliverToBoxAdapter(child: _MenuSection(user: user)),
@@ -267,7 +269,7 @@ class _WalletCard extends StatelessWidget {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () => _showDepositSheet(context, user),
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: const Icon(Icons.add, size: 16),
                   label: const Text('Deposit'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.supportGreen,
@@ -279,11 +281,27 @@ class _WalletCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showWithdrawSheet(context, user),
+                  icon: const Icon(Icons.remove, size: 16),
+                  label: const Text('Withdraw'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _showHistorySheet(context, user.uid),
-                  icon: const Icon(Icons.history, size: 18),
+                  icon: const Icon(Icons.history, size: 16),
                   label: const Text('History'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
@@ -311,6 +329,18 @@ class _WalletCard extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => _DepositSheet(user: user),
+    );
+  }
+
+  void _showWithdrawSheet(BuildContext context, UserModel user) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.cardBg,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => _WithdrawSheet(user: user),
     );
   }
 
@@ -367,7 +397,6 @@ class _DepositSheetState extends State<_DepositSheet> {
     }
     setState(() => _loading = true);
     final messenger = ScaffoldMessenger.of(context);
-    final provider = context.read<AppProvider>();
     final navigator = Navigator.of(context);
     try {
       final batch = FirebaseFirestore.instance.batch();
@@ -386,12 +415,6 @@ class _DepositSheetState extends State<_DepositSheet> {
         },
       );
       await batch.commit();
-      final currentUser = provider.user;
-      if (currentUser != null) {
-        provider.updateUser(
-          currentUser.copyWith(balance: currentUser.balance + amount),
-        );
-      }
       if (mounted) navigator.pop();
       messenger.showSnackBar(
         SnackBar(
@@ -553,6 +576,188 @@ class _DepositSheetState extends State<_DepositSheet> {
           const Text(
             'Simulated deposit — payment integration coming soon',
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── WITHDRAW SHEET ──────────────────────────────────────────────────────────
+
+class _WithdrawSheet extends StatefulWidget {
+  final UserModel user;
+  const _WithdrawSheet({required this.user});
+
+  @override
+  State<_WithdrawSheet> createState() => _WithdrawSheetState();
+}
+
+class _WithdrawSheetState extends State<_WithdrawSheet> {
+  final _ctrl = TextEditingController();
+  double? _selectedQuick;
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _pickQuick(double amount) {
+    setState(() {
+      _selectedQuick = amount;
+      _ctrl.text = amount.toStringAsFixed(0);
+    });
+  }
+
+  Future<void> _withdraw(BuildContext context) async {
+    final raw = _ctrl.text.trim().replaceAll(',', '.');
+    final amount = double.tryParse(raw);
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid amount'), backgroundColor: AppTheme.red),
+      );
+      return;
+    }
+    if (amount > widget.user.balance) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Insufficient balance'), backgroundColor: AppTheme.red),
+      );
+      return;
+    }
+    setState(() => _loading = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+      batch.update(
+        FirebaseFirestore.instance.collection('users').doc(widget.user.uid),
+        {'balance': FieldValue.increment(-amount)},
+      );
+      batch.set(
+        FirebaseFirestore.instance.collection('payments').doc(),
+        {
+          'userId': widget.user.uid,
+          'userName': widget.user.name,
+          'type': 'withdrawal',
+          'amount': amount,
+          'createdAt': FieldValue.serverTimestamp(),
+        },
+      );
+      await batch.commit();
+      if (mounted) navigator.pop();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('€${amount.toStringAsFixed(2)} withdrawn successfully'),
+          backgroundColor: AppTheme.supportGreen,
+        ),
+      );
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+      messenger.showSnackBar(
+        SnackBar(content: Text('Withdrawal failed: $e'), backgroundColor: AppTheme.red),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 24, right: 24, top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40, height: 4,
+            decoration: BoxDecoration(color: AppTheme.divider, borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 20),
+          const Icon(Icons.arrow_circle_down_rounded, color: AppTheme.red, size: 40),
+          const SizedBox(height: 12),
+          const Text('Withdraw Funds',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+          const SizedBox(height: 4),
+          Text(
+            'Available: €${widget.user.balance.toStringAsFixed(2)}',
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+          ),
+          const SizedBox(height: 20),
+          // Quick amounts
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [1.0, 2.0, 5.0, 10.0, 20.0].map((a) {
+              final sel = _selectedQuick == a;
+              final disabled = a > widget.user.balance;
+              return GestureDetector(
+                onTap: disabled ? null : () => _pickQuick(a),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: disabled
+                        ? AppTheme.cardBg2.withOpacity(0.4)
+                        : sel ? AppTheme.red : AppTheme.cardBg2,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: disabled
+                          ? AppTheme.divider.withOpacity(0.3)
+                          : sel ? AppTheme.red : AppTheme.divider,
+                    ),
+                  ),
+                  child: Text(
+                    '€${a.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      color: disabled
+                          ? AppTheme.textSecondary.withOpacity(0.3)
+                          : sel ? Colors.white : AppTheme.textSecondary,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _ctrl,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+            decoration: InputDecoration(
+              prefixText: '€ ',
+              prefixStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 18),
+              hintText: '0.00',
+              hintStyle: const TextStyle(color: AppTheme.textSecondary),
+              filled: true,
+              fillColor: AppTheme.cardBg2,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _loading ? null : () => _withdraw(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: _loading
+                  ? const SizedBox(
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Withdraw', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
           ),
         ],
       ),
@@ -936,7 +1141,7 @@ class _MenuSection extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ).then((_) => pinCtrl.dispose());
   }
 
   void _showEditProfile(BuildContext context, UserModel user) {
@@ -1550,10 +1755,7 @@ class _JoinWithCodeSheetState extends State<_JoinWithCodeSheet> {
           .get();
 
       if (query.docs.isEmpty) {
-        setState(() {
-          _error = 'Invalid code. Check with your club admin.';
-          _loading = false;
-        });
+        if (mounted) setState(() { _error = 'Invalid code. Check with your club admin.'; _loading = false; });
         return;
       }
 
@@ -1561,19 +1763,13 @@ class _JoinWithCodeSheetState extends State<_JoinWithCodeSheet> {
       final clubData = query.docs.first.data();
 
       if (clubData['adminUid'] == widget.user.uid) {
-        setState(() {
-          _error = 'You are already the owner of this club.';
-          _loading = false;
-        });
+        if (mounted) setState(() { _error = 'You are already the owner of this club.'; _loading = false; });
         return;
       }
 
       final staffUids = List<String>.from(clubData['staffUids'] ?? []);
       if (staffUids.contains(widget.user.uid)) {
-        setState(() {
-          _error = 'You are already a member of this club.';
-          _loading = false;
-        });
+        if (mounted) setState(() { _error = 'You are already a member of this club.'; _loading = false; });
         return;
       }
 
@@ -1601,10 +1797,7 @@ class _JoinWithCodeSheetState extends State<_JoinWithCodeSheet> {
         );
       }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
   }
 
@@ -2237,7 +2430,7 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
         );
       }
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
   }
 
@@ -2359,6 +2552,95 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── MY PRIZES SECTION ────────────────────────────────────────────────────────
+
+class _MyPrizesSection extends StatelessWidget {
+  final String userId;
+  const _MyPrizesSection({required this.userId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('user_prizes')
+          .where('userId', isEqualTo: userId)
+          .where('status', isEqualTo: 'pending')
+          .snapshots(),
+      builder: (ctx, snap) {
+        final pendingCount = snap.data?.docs.length ?? 0;
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          child: GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MyPrizesScreen()),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: AppTheme.navyGradient,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: pendingCount > 0
+                      ? AppTheme.supportGreen.withOpacity(0.4)
+                      : AppTheme.divider,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Text('🎁', style: TextStyle(fontSize: 32)),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Τα Δώρα μου',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          'Δες τα δώρα και τα βραβεία σου',
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (pendingCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.red,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$pendingCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

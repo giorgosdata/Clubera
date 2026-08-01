@@ -113,10 +113,18 @@ class AnnouncementsTab extends StatelessWidget {
                               size: 18,
                             ),
                             onSelected: (v) async {
-                              if (v == 'delete') {
-                                await doc.reference.delete();
-                              } else if (v == 'pin') {
-                                await doc.reference.update({'pinned': !pinned});
+                              try {
+                                if (v == 'delete') {
+                                  await doc.reference.delete();
+                                } else if (v == 'pin') {
+                                  await doc.reference.update({'pinned': !pinned});
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Αποτυχία: $e'), backgroundColor: Colors.red),
+                                  );
+                                }
                               }
                             },
                             itemBuilder: (_) => [

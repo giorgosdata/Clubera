@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/game_model.dart';
+import '../../../models/prize_model.dart';
 import '../../../models/trivia_question.dart';
+import '../../../models/user_prize_model.dart';
 import 'leaderboard_screen.dart';
 
 class GamesScreen extends StatelessWidget {
@@ -151,46 +153,70 @@ class _GameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Text(game.typeEmoji, style: const TextStyle(fontSize: 40)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(game.title,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15)),
-                if (game.description.isNotEmpty)
-                  Text(game.description,
+    final expired = game.isExpired;
+    return Opacity(
+      opacity: expired ? 0.5 : 1.0,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Text(game.typeEmoji, style: const TextStyle(fontSize: 40)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(game.title,
                       style: const TextStyle(
-                          color: AppTheme.textSecondary, fontSize: 12)),
-                const SizedBox(height: 4),
-                Text('Win ${game.minPoints}–${game.maxPoints} pts',
-                    style: const TextStyle(
-                        color: AppTheme.accent,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold)),
-              ],
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15)),
+                  if (game.description.isNotEmpty)
+                    Text(game.description,
+                        style: const TextStyle(
+                            color: AppTheme.textSecondary, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Text('Win ${game.minPoints}–${game.maxPoints} pts',
+                      style: const TextStyle(
+                          color: AppTheme.accent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold)),
+                  if (game.expiresAt != null && !expired)
+                    Text(
+                      'Έως ${game.expiresAt!.day}/${game.expiresAt!.month}/${game.expiresAt!.year}',
+                      style: const TextStyle(
+                          color: AppTheme.textSecondary, fontSize: 11),
+                    ),
+                ],
+              ),
             ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accent),
-            onPressed: () => _openGame(context, game),
-            child: const Text('Play'),
-          ),
-        ],
+            if (expired)
+              Chip(
+                label: const Text(
+                  'Έληξε',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold),
+                ),
+                backgroundColor: Colors.red,
+                padding: EdgeInsets.zero,
+              )
+            else
+              ElevatedButton(
+                style:
+                    ElevatedButton.styleFrom(backgroundColor: AppTheme.accent),
+                onPressed: () => _openGame(context, game),
+                child: const Text('Play'),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -221,6 +247,7 @@ class _GamePlayScreenState extends State<GamePlayScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   int? _wonPoints;
+  UserPrizeModel? _wonPrize;
   bool _playing = false;
   bool _checkingLimit = true;
   bool _canPlay = false;
@@ -320,6 +347,10 @@ class _GamePlayScreenState extends State<GamePlayScreen>
       });
       await batch.commit();
       provider.updateUser(user.copyWith(points: user.points + won));
+      if (widget.game.prizes.isNotEmpty) {
+        final prize = _pickWeightedPrize(widget.game.prizes);
+        if (prize != null) await _saveUserPrize(prize);
+      }
       if (mounted) {
         setState(() {
           _wonPoints = won;
@@ -339,6 +370,46 @@ class _GamePlayScreenState extends State<GamePlayScreen>
           ),
         );
       }
+    }
+  }
+
+  PrizeModel? _pickWeightedPrize(List<PrizeModel> prizes) {
+    if (prizes.isEmpty) return null;
+    final total = prizes.fold(0, (sum, p) => sum + p.weight);
+    var r = Random().nextInt(total);
+    for (final p in prizes) {
+      r -= p.weight;
+      if (r < 0) return p;
+    }
+    return prizes.last;
+  }
+
+  Future<void> _saveUserPrize(PrizeModel prize) async {
+    if (!mounted) return;
+    final user = context.read<AppProvider>().user;
+    if (user == null) return;
+    try {
+      final ref = FirebaseFirestore.instance.collection('user_prizes').doc();
+      final userPrize = UserPrizeModel(
+        id: ref.id,
+        userId: user.uid,
+        gameId: widget.game.id,
+        gameTitle: widget.game.title,
+        gameType: widget.game.type,
+        prizeTitle: prize.title,
+        prizeEmoji: prize.emoji,
+        prizeType: prize.type,
+        pointsValue: prize.pointsValue,
+        description: prize.description,
+        wonAt: DateTime.now(),
+        photoUrl: prize.photoUrl,
+        digitalContent: prize.digitalContent,
+        redeemByDate: prize.redeemByDate,
+      );
+      await ref.set(userPrize.toMap());
+      if (mounted) setState(() => _wonPrize = userPrize);
+    } catch (_) {
+      // Prize save failure is non-fatal — points were already committed.
     }
   }
 
@@ -383,6 +454,7 @@ class _GamePlayScreenState extends State<GamePlayScreen>
   }
 
   Widget _buildResult() {
+    final redeemBy = _wonPrize?.redeemByDate;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -399,6 +471,14 @@ class _GamePlayScreenState extends State<GamePlayScreen>
               fontSize: 56,
               fontWeight: FontWeight.w900),
         ),
+        if (redeemBy != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Εξαργύρωση έως: ${redeemBy.day}/${redeemBy.month}/${redeemBy.year}',
+            style: const TextStyle(
+                color: AppTheme.textSecondary, fontSize: 12),
+          ),
+        ],
         const SizedBox(height: 24),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accent),

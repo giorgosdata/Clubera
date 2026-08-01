@@ -486,23 +486,30 @@ class _MatchTile extends StatelessWidget {
                   final as_ = int.tryParse(awayCtrl.text) ?? 0;
                   final winnerId = hs > as_ ? match.homeTeamId : (as_ > hs ? match.awayTeamId : null);
                   final winnerName = hs > as_ ? match.homeTeamName : (as_ > hs ? match.awayTeamName : null);
-                  await FirebaseFirestore.instance
-                      .collection('tournaments')
-                      .doc(tournament.id)
-                      .collection('matches')
-                      .doc(match.id)
-                      .update({
-                        'homeScore': hs,
-                        'awayScore': as_,
-                        'status': 'finished',
-                        'winnerId': winnerId,
-                        'winnerName': winnerName,
-                      });
-                  // Auto-advance winner to next knockout round
-                  if (match.phase == 'knockout' && winnerId != null) {
-                    await _advanceWinner(tournament.id, match, winnerId, winnerName!);
+                  try {
+                    await FirebaseFirestore.instance
+                        .collection('tournaments')
+                        .doc(tournament.id)
+                        .collection('matches')
+                        .doc(match.id)
+                        .update({
+                          'homeScore': hs,
+                          'awayScore': as_,
+                          'status': 'finished',
+                          'winnerId': winnerId,
+                          'winnerName': winnerName,
+                        });
+                    if (match.phase == 'knockout' && winnerId != null) {
+                      await _advanceWinner(tournament.id, match, winnerId, winnerName!);
+                    }
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(content: Text('Αποτυχία αποθήκευσης: $e'), backgroundColor: Colors.red),
+                      );
+                    }
                   }
-                  if (ctx.mounted) Navigator.pop(ctx);
                 },
                 child: const Text('Αποθήκευση', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               ),
