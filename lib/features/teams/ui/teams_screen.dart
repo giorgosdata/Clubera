@@ -556,9 +556,12 @@ class _StandingsTab extends StatefulWidget {
 class _StandingsTabState extends State<_StandingsTab> {
   String _country = kCountryList.first;
   String _category = kCategories.first;
+  String? _assocId;
 
   @override
   Widget build(BuildContext context) {
+    final countryCode = _kCountryToCode[_country] ?? '';
+
     return Column(
       children: [
         Padding(
@@ -584,10 +587,58 @@ class _StandingsTabState extends State<_StandingsTab> {
                   items: kCountryList
                       .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                       .toList(),
-                  onChanged: (v) => setState(() => _country = v!),
+                  onChanged: (v) => setState(() {
+                    _country = v!;
+                    _assocId = null;
+                  }),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
+              // Association dropdown (only if associations exist for country)
+              if (countryCode.isNotEmpty)
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('associations')
+                      .where('countryCode', isEqualTo: countryCode)
+                      .snapshots(),
+                  builder: (ctx, snap) {
+                    final docs = snap.data?.docs ?? [];
+                    if (docs.isEmpty) return const SizedBox.shrink();
+                    return Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          decoration: BoxDecoration(
+                            color: AppTheme.cardBg,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.divider),
+                          ),
+                          child: DropdownButton<String?>(
+                            value: _assocId,
+                            isExpanded: true,
+                            dropdownColor: AppTheme.cardBg,
+                            style: const TextStyle(color: Colors.white),
+                            underline: const SizedBox(),
+                            icon: const Icon(Icons.expand_more, color: AppTheme.textSecondary),
+                            hint: const Text('Όλες οι ενώσεις', style: TextStyle(color: AppTheme.textSecondary)),
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                child: Text('Όλες οι ενώσεις', style: TextStyle(color: AppTheme.textSecondary)),
+                              ),
+                              ...docs.map((d) {
+                                final name = (d.data() as Map<String, dynamic>)['name'] as String? ?? d.id;
+                                return DropdownMenuItem<String?>(value: d.id, child: Text(name));
+                              }),
+                            ],
+                            onChanged: (v) => setState(() { _assocId = v; }),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    );
+                  },
+                ),
               // Category chips
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -623,7 +674,13 @@ class _StandingsTabState extends State<_StandingsTab> {
             ],
           ),
         ),
-        Expanded(child: _StandingsList(country: _country, category: _category)),
+        Expanded(
+          child: _StandingsList(
+            country: _country,
+            category: _category,
+            assocId: _assocId,
+          ),
+        ),
       ],
     );
   }
@@ -632,16 +689,20 @@ class _StandingsTabState extends State<_StandingsTab> {
 class _StandingsList extends StatelessWidget {
   final String country;
   final String category;
-  const _StandingsList({required this.country, required this.category});
+  final String? assocId;
+  const _StandingsList({required this.country, required this.category, this.assocId});
 
   @override
   Widget build(BuildContext context) {
+    Query<Map<String, dynamic>> query = FirebaseFirestore.instance
+        .collection('clubs')
+        .where('country', isEqualTo: country)
+        .where('category', isEqualTo: category);
+    if (assocId != null) {
+      query = query.where('assocId', isEqualTo: assocId);
+    }
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('clubs')
-          .where('country', isEqualTo: country)
-          .where('category', isEqualTo: category)
-          .snapshots(),
+      stream: query.snapshots(),
       builder: (ctx, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -872,7 +933,18 @@ class _CountryTile extends StatelessWidget {
   }
 }
 
-const _kTeamFilters = ['All', 'Α΄ Ομάδα', 'Β΄ Ομάδα', 'Γυναικεία'];
+const _kCountryToCode = {
+  'Greece': 'GR', 'Germany': 'DE', 'England': 'GB', 'Spain': 'ES',
+  'Italy': 'IT', 'France': 'FR', 'Portugal': 'PT', 'Netherlands': 'NL',
+  'Turkey': 'TR', 'Cyprus': 'CY', 'Belgium': 'BE', 'Austria': 'AT',
+  'Switzerland': 'CH', 'Poland': 'PL', 'Romania': 'RO', 'Serbia': 'RS',
+  'Croatia': 'HR', 'Ukraine': 'UA', 'Sweden': 'SE', 'Norway': 'NO',
+  'Denmark': 'DK', 'Czech Republic': 'CZ', 'Slovakia': 'SK', 'Hungary': 'HU',
+  'Bulgaria': 'BG', 'Albania': 'AL', 'Kosovo': 'XK', 'North Macedonia': 'MK',
+  'Slovenia': 'SI', 'Bosnia': 'BA', 'Montenegro': 'ME',
+};
+
+const _kTeamFilters = ['All', 'Α΄ Ομάδα', 'Β΄ Ομάδα', 'Γυναικεία', 'Ακαδημίες'];
 
 class CountryClubsScreen extends StatefulWidget {
   final String country;
@@ -939,32 +1011,60 @@ class _CountryClubsScreenState extends State<CountryClubsScreen> {
                   ..sort((a, b) => b.votes.compareTo(a.votes));
                 final clubs = _filter == 'All'
                     ? all
-                    : all.where((c) => c.category == _filter).toList();
-                if (clubs.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(widget.flag, style: const TextStyle(fontSize: 64)),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No clubs in this category',
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 16),
+                    : _filter == 'Ακαδημίες'
+                        ? all.where((c) => c.academiesCount > 0).toList()
+                        : all.where((c) => c.category == _filter).toList();
+                final countryCode = _kCountryToCode[widget.country] ?? '';
+                return CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    if (countryCode.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: _AssociationsSection(
+                          countryCode: countryCode,
+                          flag: widget.flag,
                         ),
-                      ],
+                      ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                        child: Text(
+                          'ΣΥΛΛΟΓΟΙ',
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ),
                     ),
-                  );
-                }
-                return RefreshIndicator(
-                  onRefresh: () => Future.delayed(const Duration(milliseconds: 500)),
-                  color: AppTheme.primaryLight,
-                  child: ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    itemCount: clubs.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
-                    itemBuilder: (ctx, i) => _ClubListTile(club: clubs[i], rank: i + 1),
-                  ),
+                    if (clubs.isEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            children: [
+                              Text(widget.flag, style: const TextStyle(fontSize: 48)),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'No clubs in this category',
+                                style: TextStyle(color: AppTheme.textSecondary, fontSize: 15),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        sliver: SliverList.separated(
+                          itemCount: clubs.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 10),
+                          itemBuilder: (ctx, i) => _ClubListTile(club: clubs[i], rank: i + 1),
+                        ),
+                      ),
+                  ],
                 );
               },
             ),
@@ -1069,6 +1169,378 @@ class _ClubListTile extends StatelessWidget {
             const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Associations Section ───────────────────────────────────────────────────
+
+class _AssociationsSection extends StatelessWidget {
+  final String countryCode;
+  final String flag;
+
+  const _AssociationsSection({required this.countryCode, required this.flag});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('associations')
+          .where('countryCode', isEqualTo: countryCode)
+          .snapshots(),
+      builder: (ctx, snap) {
+        final docs = snap.data?.docs ?? [];
+        if (docs.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'ΕΝΩΣΕΙΣ',
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ),
+            ...docs.map((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              final name = data['name'] as String? ?? doc.id;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: _AssociationTile(
+                  assocId: doc.id,
+                  name: name,
+                  flag: flag,
+                ),
+              );
+            }),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AssociationTile extends StatelessWidget {
+  final String assocId;
+  final String name;
+  final String flag;
+
+  const _AssociationTile({
+    required this.assocId,
+    required this.name,
+    required this.flag,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AssociationDetailScreen(
+            assocId: assocId,
+            assocName: name,
+            flag: flag,
+          ),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: AppTheme.navyGradient,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.divider),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryLight.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.account_balance, color: AppTheme.primaryLight, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const Text(
+                    'Δες κατηγορίες & ομάδες',
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Association Detail Screen ──────────────────────────────────────────────
+
+class AssociationDetailScreen extends StatelessWidget {
+  final String assocId;
+  final String assocName;
+  final String flag;
+
+  const AssociationDetailScreen({
+    super.key,
+    required this.assocId,
+    required this.assocName,
+    required this.flag,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: Text(assocName),
+        backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('competitions')
+            .where('assocId', isEqualTo: assocId)
+            .snapshots(),
+        builder: (ctx, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final comps = snap.data?.docs ?? [];
+          if (comps.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.emoji_events, size: 48, color: AppTheme.textSecondary),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Δεν υπάρχουν πρωταθλήματα',
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 16),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    assocName,
+                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final menComps = comps.where((d) {
+            final gender = (d.data() as Map<String, dynamic>)['gender'] as String? ?? 'men';
+            return gender != 'women';
+          }).toList();
+          final womenComps = comps.where((d) {
+            final gender = (d.data() as Map<String, dynamic>)['gender'] as String? ?? 'men';
+            return gender == 'women';
+          }).toList();
+
+          Widget buildTile(QueryDocumentSnapshot doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final name = data['name'] as String? ?? doc.id;
+            final season = data['season'] as String? ?? '2024-2025';
+            return _CompetitionTile(compId: doc.id, name: name, season: season, assocName: assocName);
+          }
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (menComps.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: Text('ΑΝΔΡΙΚΟ', style: TextStyle(color: AppTheme.textSecondary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+                ),
+                ...menComps.map(buildTile),
+              ],
+              if (womenComps.isNotEmpty) ...[
+                Padding(
+                  padding: EdgeInsets.only(top: menComps.isNotEmpty ? 20 : 0, bottom: 8),
+                  child: const Text('ΓΥΝΑΙΚΕΙΟ', style: TextStyle(color: Color(0xFFf472b6), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+                ),
+                ...womenComps.map(buildTile),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CompetitionTile extends StatelessWidget {
+  final String compId;
+  final String name;
+  final String season;
+  final String assocName;
+
+  const _CompetitionTile({
+    required this.compId,
+    required this.name,
+    required this.season,
+    required this.assocName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CompetitionClubsScreen(
+            compId: compId,
+            compName: name,
+            assocName: assocName,
+            season: season,
+          ),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: AppTheme.navyGradient,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.divider),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppTheme.accent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.emoji_events, color: AppTheme.accent, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  Text(
+                    '$assocName • $season',
+                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Competition Clubs Screen ───────────────────────────────────────────────
+
+class CompetitionClubsScreen extends StatelessWidget {
+  final String compId;
+  final String compName;
+  final String assocName;
+  final String season;
+
+  const CompetitionClubsScreen({
+    super.key,
+    required this.compId,
+    required this.compName,
+    required this.assocName,
+    required this.season,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: Text(compName),
+        backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(20),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              '$assocName • $season',
+              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+            ),
+          ),
+        ),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('clubs')
+            .where('competitionId', isEqualTo: compId)
+            .snapshots(),
+        builder: (ctx, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final clubs = (snap.data?.docs ?? [])
+              .map((d) => ClubModel.fromMap(d.data() as Map<String, dynamic>, d.id))
+              .toList()
+            ..sort((a, b) => b.votes.compareTo(a.votes));
+
+          if (clubs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.sports_soccer, size: 48, color: AppTheme.textSecondary),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Δεν υπάρχουν σύλλογοι',
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 16),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    compName,
+                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: clubs.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            itemBuilder: (ctx, i) => _ClubListTile(club: clubs[i], rank: i + 1),
+          );
+        },
       ),
     );
   }

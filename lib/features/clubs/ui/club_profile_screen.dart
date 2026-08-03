@@ -34,7 +34,7 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 11, vsync: this);
+    _tab = TabController(length: 13, vsync: this);
   }
 
   @override
@@ -88,6 +88,8 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
                       Tab(text: 'Top Fans'),
                       Tab(text: 'Ανακοινώσεις'),
                       Tab(text: 'Ακαδημίες'),
+                      Tab(text: 'Γκαλερί'),
+                      Tab(text: 'Γυναίκες'),
                     ],
                   ),
                 ),
@@ -96,7 +98,7 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
             body: TabBarView(
               controller: _tab,
               children: [
-                _InfoTab(club: club),
+                _InfoTab(club: club, rawData: snap.data!.data() as Map<String, dynamic>),
                 _PlayersPublicTab(clubId: widget.clubId, clubName: club.name),
                 _StatsTab(clubId: widget.clubId),
                 _MatchesTab(clubId: widget.clubId),
@@ -107,6 +109,8 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
                 _TopFansTab(clubId: widget.clubId),
                 AnnouncementsTab(clubId: widget.clubId),
                 _AcademiesPublicTab(clubId: widget.clubId),
+                _GalleryTab(clubId: widget.clubId),
+                _WomenTab(clubId: widget.clubId),
               ],
             ),
           );
@@ -202,14 +206,27 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
                             fontSize: 12,
                           ),
                         ),
-                        Text(
-                          club.league,
-                          style: const TextStyle(
-                            color: AppTheme.accent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                        if (club.assocName != null || club.competitionName != null)
+                          Text(
+                            [
+                              if (club.assocName != null) club.assocName!,
+                              if (club.competitionName != null) club.competitionName!,
+                            ].join(' › '),
+                            style: const TextStyle(
+                              color: AppTheme.accent,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        else if (club.league.isNotEmpty)
+                          Text(
+                            club.league,
+                            style: const TextStyle(
+                              color: AppTheme.accent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -668,7 +685,8 @@ class _StatsBar extends StatelessWidget {
 
 class _InfoTab extends StatelessWidget {
   final ClubModel club;
-  const _InfoTab({required this.club});
+  final Map<String, dynamic> rawData;
+  const _InfoTab({required this.club, required this.rawData});
 
   @override
   Widget build(BuildContext context) {
@@ -715,15 +733,111 @@ class _InfoTab extends StatelessWidget {
           const SizedBox(height: 8),
           _infoRow(Icons.location_city_outlined, 'City', club.city),
           _infoRow(Icons.public, 'Country', club.country),
-          _infoRow(Icons.emoji_events_outlined, 'League', club.league),
+          if (club.assocName != null)
+            _infoRow(Icons.account_balance_outlined, 'Ένωση', club.assocName!),
+          if (club.competitionName != null)
+            _infoRow(Icons.emoji_events_outlined, 'Κατηγορία', club.competitionName!)
+          else
+            _infoRow(Icons.emoji_events_outlined, 'League', club.league),
           _infoRow(
             Icons.category_outlined,
             'Category',
             'Category ${club.category}',
           ),
+          // Social Media
+          ..._buildSocialMedia(context),
+
+          // GPS
+          ..._buildGps(context),
+
+          // Stadium Photos
+          _StadiumPhotosSection(clubId: club.id),
+
+          if (club.adminUid.isEmpty) ...[
+            const SizedBox(height: 20),
+            _ClaimClubButton(club: club),
+          ],
         ],
       ),
     );
+  }
+
+  List<Widget> _buildSocialMedia(BuildContext context) {
+    final sm = rawData['socialMedia'] as Map<String, dynamic>?;
+    if (sm == null) return [];
+    final links = <Map<String, String>>[];
+    if (sm['instagram'] != null) links.add({'label': 'Instagram', 'url': 'https://instagram.com/${(sm['instagram'] as String).replaceAll('@', '')}', 'handle': '@${(sm['instagram'] as String).replaceAll('@', '')}'});
+    if (sm['facebook'] != null) links.add({'label': 'Facebook', 'url': sm['facebook'] as String, 'handle': 'Facebook'});
+    if (sm['twitter'] != null) links.add({'label': 'Twitter / X', 'url': 'https://x.com/${(sm['twitter'] as String).replaceAll('@', '')}', 'handle': '@${(sm['twitter'] as String).replaceAll('@', '')}'});
+    if (sm['youtube'] != null) links.add({'label': 'YouTube', 'url': sm['youtube'] as String, 'handle': 'YouTube'});
+    if (sm['tiktok'] != null) links.add({'label': 'TikTok', 'url': 'https://tiktok.com/@${(sm['tiktok'] as String).replaceAll('@', '')}', 'handle': '@${(sm['tiktok'] as String).replaceAll('@', '')}'});
+    if (links.isEmpty) return [];
+    return [
+      const SizedBox(height: 20),
+      const Text('Social Media', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+      const SizedBox(height: 8),
+      ...links.map((l) => GestureDetector(
+        onTap: () => launchUrl(Uri.parse(l['url']!), mode: LaunchMode.externalApplication),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: AppTheme.navyGradient,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.divider),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.link, color: AppTheme.primaryLight, size: 18),
+              const SizedBox(width: 12),
+              Text(l['label']!, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+              const Spacer(),
+              Text(l['handle']!, style: const TextStyle(color: AppTheme.primaryLight, fontSize: 13, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 4),
+              const Icon(Icons.open_in_new, color: AppTheme.textSecondary, size: 13),
+            ],
+          ),
+        ),
+      )),
+    ];
+  }
+
+  List<Widget> _buildGps(BuildContext context) {
+    final gps = rawData['gps'] as Map<String, dynamic>?;
+    final lat = gps?['lat'] as num?;
+    final lng = gps?['lng'] as num?;
+    if (lat == null || lng == null) return [];
+    final mapsUrl = 'https://maps.google.com/?q=$lat,$lng';
+    return [
+      const SizedBox(height: 20),
+      const Text('Τοποθεσία', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+      const SizedBox(height: 8),
+      GestureDetector(
+        onTap: () => launchUrl(Uri.parse(mapsUrl), mode: LaunchMode.externalApplication),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: AppTheme.navyGradient,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.divider),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.map_outlined, color: AppTheme.primaryLight, size: 18),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  (rawData['venue'] as String? ?? rawData['stadiumAddress'] as String? ?? rawData['stadium'] as String? ?? 'Google Maps'),
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Icon(Icons.open_in_new, color: AppTheme.textSecondary, size: 13),
+            ],
+          ),
+        ),
+      ),
+    ];
   }
 
   Widget _infoRow(IconData icon, String label, String value) => Container(
@@ -754,6 +868,143 @@ class _InfoTab extends StatelessWidget {
       ],
     ),
   );
+}
+
+// ─── CLAIM CLUB BUTTON ───────────────────────────────────────────────────────
+
+class _ClaimClubButton extends StatefulWidget {
+  final ClubModel club;
+  const _ClaimClubButton({required this.club});
+
+  @override
+  State<_ClaimClubButton> createState() => _ClaimClubButtonState();
+}
+
+class _ClaimClubButtonState extends State<_ClaimClubButton> {
+  bool _sent = false;
+  bool _loading = false;
+  final _msgCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _msgCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit(String uid, String? userName, String? email) async {
+    setState(() => _loading = true);
+    try {
+      // Check if already claimed
+      final existing = await FirebaseFirestore.instance
+          .collection('club_claims')
+          .where('clubId', isEqualTo: widget.club.id)
+          .where('userUid', isEqualTo: uid)
+          .where('status', isEqualTo: 'pending')
+          .limit(1)
+          .get();
+
+      if (existing.docs.isNotEmpty) {
+        setState(() { _sent = true; _loading = false; });
+        return;
+      }
+
+      await FirebaseFirestore.instance.collection('club_claims').add({
+        'clubId': widget.club.id,
+        'clubName': widget.club.name,
+        'userUid': uid,
+        'userName': userName,
+        'userEmail': email,
+        'role': 'admin',
+        'message': _msgCtrl.text.trim().isEmpty ? null : _msgCtrl.text.trim(),
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      setState(() { _sent = true; });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Σφάλμα: $e'), backgroundColor: AppTheme.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.watch<AppProvider>().user;
+    if (user == null) return const SizedBox.shrink();
+
+    if (_sent) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryLight.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.3)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle_outline, color: AppTheme.primaryLight, size: 18),
+            SizedBox(width: 8),
+            Text('Το αίτημα σου στάλθηκε — θα σε ειδοποιήσουμε!',
+              style: TextStyle(color: AppTheme.primaryLight, fontSize: 12, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Είναι ο σύλλογός σου;',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+        const SizedBox(height: 6),
+        const Text('Αν είσαι admin αυτού του συλλόγου, μπορείς να κάνεις αίτημα ανάληψης.',
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _msgCtrl,
+          style: const TextStyle(color: Colors.white, fontSize: 13),
+          maxLines: 2,
+          decoration: InputDecoration(
+            hintText: 'Γιατί είσαι admin; (προαιρετικό)',
+            hintStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            contentPadding: const EdgeInsets.all(12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppTheme.divider),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppTheme.divider),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _loading
+                ? null
+                : () => _submit(user.uid, user.name, user.email),
+            icon: _loading
+                ? const SizedBox(width: 14, height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.shield_outlined, size: 16),
+            label: Text(_loading ? 'Αποστολή...' : 'Claim αυτόν τον σύλλογο'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryLight,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // ─── PLAYERS PUBLIC TAB ───────────────────────────────────────────────────────
@@ -2085,6 +2336,281 @@ class _TopFansTab extends StatelessWidget {
 }
 
 // ─── ACADEMIES PUBLIC TAB ──────────────────────────────────────────────────────
+
+// ─── STADIUM PHOTOS SECTION ───────────────────────────────────────────────────
+
+class _StadiumPhotosSection extends StatelessWidget {
+  final String clubId;
+  const _StadiumPhotosSection({required this.clubId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('clubs').doc(clubId).collection('stadium_photos')
+          .orderBy('uploadedAt', descending: true).limit(10).snapshots(),
+      builder: (ctx, snap) {
+        final docs = snap.data?.docs ?? [];
+        if (docs.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 20),
+            const Text('Γήπεδο — Φωτογραφίες', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 140,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: docs.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (ctx, i) {
+                  final url = (docs[i].data() as Map<String, dynamic>)['url'] as String? ?? '';
+                  return GestureDetector(
+                    onTap: () => showDialog(
+                      context: ctx,
+                      builder: (_) => Dialog(
+                        backgroundColor: Colors.black,
+                        child: CachedNetworkImage(imageUrl: url, fit: BoxFit.contain,
+                          errorWidget: (c, e, s) => const Icon(Icons.broken_image, color: Colors.white, size: 64)),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: CachedNetworkImage(
+                        imageUrl: url,
+                        width: 200,
+                        height: 140,
+                        fit: BoxFit.cover,
+                        errorWidget: (c, e, s) => Container(width: 200, color: AppTheme.cardBg2, child: const Icon(Icons.broken_image, color: AppTheme.textSecondary)),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ─── GALLERY TAB (PUBLIC) ─────────────────────────────────────────────────────
+
+class _GalleryTab extends StatelessWidget {
+  final String clubId;
+  const _GalleryTab({required this.clubId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('clubs')
+          .doc(clubId)
+          .collection('gallery')
+          .orderBy('uploadedAt', descending: true)
+          .limit(60)
+          .snapshots(),
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final docs = snap.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.photo_library_outlined, size: 64, color: AppTheme.cardBg2),
+                SizedBox(height: 12),
+                Text('Δεν υπάρχουν φωτογραφίες', style: TextStyle(color: AppTheme.textSecondary)),
+              ],
+            ),
+          );
+        }
+        return GridView.builder(
+          padding: const EdgeInsets.all(12),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 4,
+            mainAxisSpacing: 4,
+          ),
+          itemCount: docs.length,
+          itemBuilder: (ctx, i) {
+            final d = docs[i].data() as Map<String, dynamic>;
+            final url = d['url'] as String? ?? '';
+            final caption = d['caption'] as String? ?? '';
+            final isVideo = (d['type'] as String? ?? 'photo') == 'video';
+            return GestureDetector(
+              onTap: () {
+                if (isVideo) {
+                  launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                } else {
+                  _showPhoto(ctx, url, caption);
+                }
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    isVideo
+                        ? Container(color: AppTheme.cardBg2, child: const Icon(Icons.videocam_outlined, color: AppTheme.textSecondary, size: 32))
+                        : CachedNetworkImage(
+                            imageUrl: url,
+                            fit: BoxFit.cover,
+                            errorWidget: (ctx2, e, st) => Container(color: AppTheme.cardBg2, child: const Icon(Icons.broken_image, color: AppTheme.textSecondary)),
+                          ),
+                    if (isVideo)
+                      const Center(child: Icon(Icons.play_circle_fill, color: Colors.white70, size: 36)),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showPhoto(BuildContext context, String url, String caption) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.black,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CachedNetworkImage(
+              imageUrl: url,
+              fit: BoxFit.contain,
+              errorWidget: (ctx, e, st) => const Icon(Icons.broken_image, color: Colors.white, size: 64),
+            ),
+            if (caption.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(caption, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── WOMEN'S TEAM TAB (PUBLIC) ────────────────────────────────────────────────
+
+class _WomenTab extends StatelessWidget {
+  final String clubId;
+  const _WomenTab({required this.clubId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('clubs')
+          .doc(clubId)
+          .collection('women_players')
+          .orderBy('position')
+          .snapshots(),
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final players = (snap.data?.docs ?? [])
+            .map((d) => PlayerModel.fromMap(d.data() as Map<String, dynamic>, d.id))
+            .where((p) => p.isActive)
+            .toList();
+        if (players.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('♀', style: TextStyle(fontSize: 48)),
+                SizedBox(height: 12),
+                Text('Δεν υπάρχει γυναικεία ομάδα', style: TextStyle(color: AppTheme.textSecondary)),
+              ],
+            ),
+          );
+        }
+        final groups = <String, List<PlayerModel>>{};
+        for (final p in players) {
+          groups.putIfAbsent(p.position, () => []).add(p);
+        }
+        const order = ['GK', 'DEF', 'MID', 'FWD'];
+        const labels = {'GK': 'ΤΕΡΜΑΤΟΦΥΛΑΚΕΣ', 'DEF': 'ΑΜΥΝΤΙΚΟΙ', 'MID': 'ΜΕΣΟΙ', 'FWD': 'ΕΠΙΘΕΤΙΚΟΙ'};
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          children: [
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.pink.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.pink.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Text('♀', style: TextStyle(fontSize: 18)),
+                  SizedBox(width: 8),
+                  Text('Γυναικεία Ομάδα', style: TextStyle(color: Colors.pinkAccent, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            for (final pos in order)
+              if ((groups[pos] ?? []).isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(labels[pos] ?? pos,
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                ),
+                ...groups[pos]!.map((p) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.pink.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.pink.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            p.number != null ? '${p.number}' : p.position,
+                            style: const TextStyle(color: Colors.pinkAccent, fontWeight: FontWeight.w900, fontSize: 13),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(p.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                            Text(p.positionLabel, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+              ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ─── ACADEMIES TAB (PUBLIC) ───────────────────────────────────────────────────
 
 class _AcademiesPublicTab extends StatelessWidget {
   final String clubId;

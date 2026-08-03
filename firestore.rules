@@ -38,6 +38,10 @@ service cloud.firestore {
     match /{path=**}/players/{playerId} {
       allow read: if true;
     }
+    // collectionGroup('academies') — public read for academy listings
+    match /{path=**}/academies/{academyId} {
+      allow read: if true;
+    }
 
     // ── USERS ────────────────────────────────────────────────────────────────
     match /users/{userId} {
@@ -49,9 +53,16 @@ service cloud.firestore {
       // (covers the create-club flow; blocks arbitrary staff impersonation).
       allow update: if isAdmin() ||
         (isSignedIn() && uid() == userId &&
+          // Block privileged fields that only Cloud Functions may set
           !request.resource.data.diff(resource.data)
             .affectedKeys()
-            .hasAny(['role', 'points', 'balance', 'streak']) &&
+            .hasAny(['role', 'streak']) &&
+          // points: allow games to grant points, but never decrease
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['points']) ||
+            request.resource.data.points >= resource.data.points) &&
+          // balance: allow deposit/withdraw but never go negative
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['balance']) ||
+            request.resource.data.balance >= 0) &&
           (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['clubId']) ||
             request.resource.data.clubId == null ||
             isClubOwner(request.resource.data.clubId)));
@@ -285,6 +296,18 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.userId == uid();
       allow update, delete: if isAdmin();
+    }
+
+    // ── USER PRIZES ──────────────────────────────────────────────────────────
+    match /user_prizes/{prizeId} {
+      allow get: if isSignedIn() && (resource.data.userId == uid() || isAdmin());
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == uid();
+      allow update: if isAdmin() ||
+        (isSignedIn() && resource.data.userId == uid() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "redeemedAt"]) &&
+          request.resource.data.status == "redeemed");
+      allow delete: if isAdmin();
     }
   }
 }

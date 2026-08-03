@@ -29,6 +29,11 @@ class ClubModel {
   final DateTime createdAt;
   final String? inviteCode;
   final List<String> staffUids;
+  final int academiesCount;
+  final String? assocId;
+  final String? assocName;
+  final String? competitionId;
+  final String? competitionName;
 
   const ClubModel({
     required this.id,
@@ -51,6 +56,11 @@ class ClubModel {
     required this.createdAt,
     this.inviteCode,
     this.staffUids = const [],
+    this.academiesCount = 0,
+    this.assocId,
+    this.assocName,
+    this.competitionId,
+    this.competitionName,
   });
 
   int get played => wins + draws + losses;
@@ -78,6 +88,11 @@ class ClubModel {
     createdAt: (m['createdAt'] as dynamic)?.toDate() ?? DateTime.now(),
     inviteCode: m['inviteCode'],
     staffUids: List<String>.from(m['staffUids'] ?? []),
+    academiesCount: (m['academiesCount'] as num?)?.toInt() ?? 0,
+    assocId: m['assocId'],
+    assocName: m['assocName'],
+    competitionId: m['competitionId'],
+    competitionName: m['competitionName'],
   );
 
   Map<String, dynamic> toMap() => {
@@ -100,6 +115,7 @@ class ClubModel {
     'createdAt': createdAt,
     'inviteCode': inviteCode,
     'staffUids': staffUids,
+    'academiesCount': academiesCount,
   };
 }
 

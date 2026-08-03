@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -39,7 +40,7 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 10, vsync: this);
+    _tab = TabController(length: 13, vsync: this);
   }
 
   @override
@@ -168,6 +169,9 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
             Tab(text: 'Sponsors'),
             Tab(text: 'Παιχνίδια'),
             Tab(text: 'Ανακοινώσεις'),
+            Tab(text: 'Γκαλερί'),
+            Tab(text: 'Γυναίκες'),
+            Tab(text: 'Γήπεδο'),
           ],
         ),
       ),
@@ -188,6 +192,9 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
             canAdmin: true,
             authorName: user?.name ?? 'Club Admin',
           ),
+          _GalleryAdminTab(clubId: clubId),
+          _WomenAdminTab(clubId: clubId),
+          _StadiumPhotosAdminTab(clubId: clubId),
         ],
       ),
     );
@@ -4771,3 +4778,478 @@ class _PostFeedSheetState extends State<_PostFeedSheet> {
   }
 }
 
+// ─── GALLERY ADMIN TAB ────────────────────────────────────────────────────────
+
+class _GalleryAdminTab extends StatefulWidget {
+  final String clubId;
+  const _GalleryAdminTab({required this.clubId});
+
+  @override
+  State<_GalleryAdminTab> createState() => _GalleryAdminTabState();
+}
+
+class _GalleryAdminTabState extends State<_GalleryAdminTab> {
+  bool _uploading = false;
+
+  Future<void> _upload({bool isVideo = false}) async {
+    setState(() => _uploading = true);
+    try {
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      String url;
+      String type;
+      if (isVideo) {
+        final file = await StorageUtils.pickVideo();
+        if (file == null) { setState(() => _uploading = false); return; }
+        url = await StorageUtils.uploadGalleryVideo(file, widget.clubId, '$ts.mp4');
+        type = 'video';
+      } else {
+        final file = await StorageUtils.pickImage(maxSizeKB: 4096);
+        if (file == null) { setState(() => _uploading = false); return; }
+        url = await StorageUtils.uploadGalleryPhoto(file, widget.clubId, '$ts.jpg');
+        type = 'photo';
+      }
+      await FirebaseFirestore.instance
+          .collection('clubs').doc(widget.clubId).collection('gallery')
+          .add({'url': url, 'type': type, 'caption': '', 'uploadedAt': FieldValue.serverTimestamp()});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isVideo ? 'Το βίντεο ανέβηκε' : 'Η φωτογραφία ανέβηκε'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Σφάλμα: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  void _showUploadOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.cardBg,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.add_a_photo, color: AppTheme.supportGreen),
+              title: const Text('Φωτογραφία', style: TextStyle(color: Colors.white)),
+              onTap: () { Navigator.pop(context); _upload(); },
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam, color: Colors.blue),
+              title: const Text('Βίντεο', style: TextStyle(color: Colors.white)),
+              onTap: () { Navigator.pop(context); _upload(isVideo: true); },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deletePhoto(String docId) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppTheme.cardBg,
+        title: const Text('Διαγραφή φωτογραφίας', style: TextStyle(color: Colors.white)),
+        content: const Text('Είσαι σίγουρος;', style: TextStyle(color: AppTheme.textSecondary)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Άκυρο')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Διαγραφή', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await FirebaseFirestore.instance
+        .collection('clubs').doc(widget.clubId).collection('gallery').doc(docId).delete();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _uploading ? null : _showUploadOptions,
+        backgroundColor: AppTheme.supportGreen,
+        icon: _uploading
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+            : const Icon(Icons.add, color: Colors.black),
+        label: Text(_uploading ? 'Ανέβασμα...' : 'Προσθήκη', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('clubs').doc(widget.clubId).collection('gallery')
+            .orderBy('uploadedAt', descending: true)
+            .snapshots(),
+        builder: (ctx, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final docs = snap.data?.docs ?? [];
+          if (docs.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.photo_library_outlined, size: 64, color: AppTheme.cardBg2),
+                  SizedBox(height: 12),
+                  Text('Δεν υπάρχουν φωτογραφίες', style: TextStyle(color: AppTheme.textSecondary)),
+                  SizedBox(height: 4),
+                  Text('Πάτα + για να ανεβάσεις', style: TextStyle(color: AppTheme.cardBg2, fontSize: 12)),
+                ],
+              ),
+            );
+          }
+          return GridView.builder(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 4,
+              mainAxisSpacing: 4,
+            ),
+            itemCount: docs.length,
+            itemBuilder: (ctx, i) {
+              final doc = docs[i];
+              final d = doc.data() as Map<String, dynamic>;
+              final url = d['url'] as String? ?? '';
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: CachedNetworkImage(
+                      imageUrl: url,
+                      fit: BoxFit.cover,
+                      errorWidget: (ctx2, e, st) => Container(
+                        color: AppTheme.cardBg2,
+                        child: const Icon(Icons.broken_image, color: AppTheme.textSecondary),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 4, right: 4,
+                    child: GestureDetector(
+                      onTap: () => _deletePhoto(doc.id),
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                        child: const Icon(Icons.close, size: 14, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ─── WOMEN ADMIN TAB ──────────────────────────────────────────────────────────
+
+class _WomenAdminTab extends StatefulWidget {
+  final String clubId;
+  const _WomenAdminTab({required this.clubId});
+
+  @override
+  State<_WomenAdminTab> createState() => _WomenAdminTabState();
+}
+
+class _WomenAdminTabState extends State<_WomenAdminTab> {
+  Future<void> _showAddPlayerDialog() async {
+    final nameCtrl = TextEditingController();
+    String selectedPos = 'MID';
+    final numberCtrl = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          backgroundColor: AppTheme.cardBg,
+          title: const Text('Προσθήκη Παίκτριας', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'Όνομα',
+                  labelStyle: TextStyle(color: AppTheme.textSecondary),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: selectedPos,
+                dropdownColor: AppTheme.cardBg2,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'Θέση',
+                  labelStyle: TextStyle(color: AppTheme.textSecondary),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'GK', child: Text('Τερματοφύλακας')),
+                  DropdownMenuItem(value: 'DEF', child: Text('Αμυντικός')),
+                  DropdownMenuItem(value: 'MID', child: Text('Μέσος')),
+                  DropdownMenuItem(value: 'FWD', child: Text('Επιθετικός')),
+                ],
+                onChanged: (v) => setS(() => selectedPos = v ?? 'MID'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: numberCtrl,
+                style: const TextStyle(color: Colors.white),
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Αριθμός φανέλας (προαιρετικό)',
+                  labelStyle: TextStyle(color: AppTheme.textSecondary),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Άκυρο')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.pink),
+              onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty) return;
+                await FirebaseFirestore.instance
+                    .collection('clubs').doc(widget.clubId).collection('women_players')
+                    .add({
+                  'name': nameCtrl.text.trim(),
+                  'position': selectedPos,
+                  'number': numberCtrl.text.isNotEmpty ? int.tryParse(numberCtrl.text) : null,
+                  'isActive': true,
+                  'goals': 0,
+                  'yellowCards': 0,
+                  'redCards': 0,
+                  'appearances': 0,
+                  'isInjured': false,
+                });
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Αποθήκευση', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showAddPlayerDialog,
+        backgroundColor: Colors.pink,
+        icon: const Icon(Icons.person_add, color: Colors.white),
+        label: const Text('Προσθήκη', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('clubs').doc(widget.clubId).collection('women_players')
+            .orderBy('position')
+            .snapshots(),
+        builder: (ctx, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final players = (snap.data?.docs ?? [])
+              .map((d) => PlayerModel.fromMap(d.data() as Map<String, dynamic>, d.id))
+              .toList();
+          if (players.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('♀', style: TextStyle(fontSize: 48)),
+                  SizedBox(height: 12),
+                  Text('Δεν υπάρχουν παίκτριες', style: TextStyle(color: AppTheme.textSecondary)),
+                  SizedBox(height: 4),
+                  Text('Πάτα + για να προσθέσεις', style: TextStyle(color: AppTheme.cardBg2, fontSize: 12)),
+                ],
+              ),
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+            itemCount: players.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (ctx, i) {
+              final p = players[i];
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.pink.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(color: Colors.pink.withValues(alpha: 0.15), shape: BoxShape.circle),
+                      child: Center(
+                        child: Text(
+                          p.number != null ? '${p.number}' : p.position,
+                          style: const TextStyle(color: Colors.pinkAccent, fontWeight: FontWeight.w900, fontSize: 13),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(p.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          Text(p.positionLabel, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: p.isActive,
+                      activeColor: Colors.pinkAccent,
+                      onChanged: (val) => FirebaseFirestore.instance
+                          .collection('clubs').doc(widget.clubId).collection('women_players')
+                          .doc(p.id).update({'isActive': val}),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                      onPressed: () => FirebaseFirestore.instance
+                          .collection('clubs').doc(widget.clubId).collection('women_players')
+                          .doc(p.id).delete(),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+// ─── STADIUM PHOTOS ADMIN TAB ─────────────────────────────────────────────────
+
+class _StadiumPhotosAdminTab extends StatefulWidget {
+  final String clubId;
+  const _StadiumPhotosAdminTab({required this.clubId});
+
+  @override
+  State<_StadiumPhotosAdminTab> createState() => _StadiumPhotosAdminTabState();
+}
+
+class _StadiumPhotosAdminTabState extends State<_StadiumPhotosAdminTab> {
+  bool _uploading = false;
+
+  Future<void> _uploadPhoto() async {
+    setState(() => _uploading = true);
+    try {
+      final file = await StorageUtils.pickImage(maxSizeKB: 4096);
+      if (file == null) { setState(() => _uploading = false); return; }
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final url = await StorageUtils.uploadStadiumPhoto(file, widget.clubId, fileName);
+      await FirebaseFirestore.instance
+          .collection('clubs').doc(widget.clubId).collection('stadium_photos')
+          .add({'url': url, 'caption': '', 'uploadedAt': FieldValue.serverTimestamp()});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Η φωτογραφία γηπέδου ανέβηκε'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Σφάλμα: $e'), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _uploading ? null : _uploadPhoto,
+        backgroundColor: Colors.blueAccent,
+        icon: _uploading
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : const Icon(Icons.add_a_photo, color: Colors.white),
+        label: Text(_uploading ? 'Ανέβασμα...' : 'Φωτό Γηπέδου', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('clubs').doc(widget.clubId).collection('stadium_photos')
+            .orderBy('uploadedAt', descending: true).snapshots(),
+        builder: (ctx, snap) {
+          final docs = snap.data?.docs ?? [];
+          if (docs.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.stadium, size: 64, color: AppTheme.cardBg2),
+                  SizedBox(height: 12),
+                  Text('Δεν υπάρχουν φωτογραφίες γηπέδου', style: TextStyle(color: AppTheme.textSecondary)),
+                  SizedBox(height: 4),
+                  Text('Πάτα + για να ανεβάσεις', style: TextStyle(color: AppTheme.cardBg2, fontSize: 12)),
+                ],
+              ),
+            );
+          }
+          return GridView.builder(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 6,
+              mainAxisSpacing: 6,
+              childAspectRatio: 1.5,
+            ),
+            itemCount: docs.length,
+            itemBuilder: (ctx, i) {
+              final doc = docs[i];
+              final url = (doc.data() as Map<String, dynamic>)['url'] as String? ?? '';
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: CachedNetworkImage(
+                      imageUrl: url,
+                      fit: BoxFit.cover,
+                      errorWidget: (c, e, s) => Container(color: AppTheme.cardBg2, child: const Icon(Icons.broken_image, color: AppTheme.textSecondary)),
+                    ),
+                  ),
+                  Positioned(
+                    top: 6, right: 6,
+                    child: GestureDetector(
+                      onTap: () => FirebaseFirestore.instance
+                          .collection('clubs').doc(widget.clubId).collection('stadium_photos').doc(doc.id).delete(),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                        child: const Icon(Icons.close, size: 14, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}

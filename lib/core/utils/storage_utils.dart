@@ -74,10 +74,40 @@ class StorageUtils {
   static Future<String> uploadUserPhoto(File file, String userId) =>
       uploadImage(file: file, path: 'users/$userId/photo.jpg');
 
+  static Future<String> uploadPlayerPhoto(File file, String clubId, String playerId) =>
+      uploadImage(file: file, path: 'clubs/$clubId/players/$playerId/photo.jpg');
+
   static Future<String> uploadSponsorPdf({
     required File file,
     required String sponsorId,
     required String fileName,
   }) =>
       uploadPdf(file: file, path: 'sponsors/$sponsorId/$fileName');
+
+  static Future<String> uploadPuzzleImage(File file, String gameId) =>
+      uploadImage(file: file, path: 'games/$gameId/puzzle.jpg');
+
+  static Future<String> uploadPrizePhoto(File file, String prizeId) =>
+      uploadImage(file: file, path: 'prizes/$prizeId/photo.jpg');
+
+  static Future<String> uploadGalleryPhoto(File file, String clubId, String fileName) =>
+      uploadImage(file: file, path: 'clubs/$clubId/gallery/$fileName');
+
+  static Future<File?> pickVideo({int maxSizeMB = 100}) async {
+    final picked = await _picker.pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 5));
+    if (picked == null) return null;
+    final file = File(picked.path);
+    final sizeMB = (await file.length()) / (1024 * 1024);
+    if (sizeMB > maxSizeMB) throw Exception('Video too large (${sizeMB.toStringAsFixed(1)} MB). Max $maxSizeMB MB.');
+    return file;
+  }
+
+  static Future<String> uploadGalleryVideo(File file, String clubId, String fileName) async {
+    final ref = FirebaseStorage.instance.ref().child('clubs/$clubId/gallery/$fileName');
+    final task = await ref.putFile(file, SettableMetadata(contentType: 'video/mp4'));
+    return await task.ref.getDownloadURL();
+  }
+
+  static Future<String> uploadStadiumPhoto(File file, String clubId, String fileName) =>
+      uploadImage(file: file, path: 'clubs/$clubId/stadium_photos/$fileName');
 }

@@ -16,11 +16,21 @@ String generateInviteCode() {
   return List.generate(6, (_) => chars[rand.nextInt(chars.length)]).join();
 }
 
-const kLeagues = [
-  'Kreisliga A', 'Kreisliga B', 'Kreisliga C',
-  'Bezirksliga', 'Landesliga', 'Verbandsliga',
-  'Kreisklasse', 'Other',
-];
+const kLeaguesByCountry = <String, List<String>>{
+  'Greece': ["Α' Κατηγορία", "Β'1 Κατηγορία", "Β'2 Κατηγορία", "Γ'1 Κατηγορία", "Γ'2 Κατηγορία", 'Τοπικό', 'Other'],
+  'Germany': ['Kreisliga A', 'Kreisliga B', 'Kreisliga C', 'Bezirksliga', 'Landesliga', 'Verbandsliga', 'Other'],
+  'England': ['Step 7', 'Step 6', 'Step 5', 'Step 4', 'Step 3', 'County League', 'Other'],
+  'Spain': ['Tercera Federación', 'Regional Preferente', 'Primera Regional', 'Segunda Regional', 'Other'],
+  'Italy': ['Eccellenza', 'Promozione', 'Prima Categoria', 'Seconda Categoria', 'Terza Categoria', 'Other'],
+  'France': ['Régional 1', 'Régional 2', 'Régional 3', 'Départemental 1', 'Départemental 2', 'Other'],
+  'Netherlands': ['Hoofdklasse', 'Eerste Klasse', 'Tweede Klasse', 'Derde Klasse', 'Vierde Klasse', 'Other'],
+  'Portugal': ['Campeonato de Portugal', 'Divisão de Honra', 'Primeira Divisão', 'Segunda Divisão', 'Other'],
+  'Turkey': ['TFF 3. Lig', 'Bölgesel Amatör Lig', 'İl Amatör Ligi 1', 'İl Amatör Ligi 2', 'Other'],
+  'Cyprus': ["Α' Κατηγορία", "Β' Κατηγορία", "Γ' Κατηγορία", 'Επαρχιακό', 'Other'],
+};
+
+List<String> leaguesForCountry(String country) =>
+    kLeaguesByCountry[country] ?? ['Division 1', 'Division 2', 'Division 3', 'Regional League', 'District League', 'Other'];
 
 const kCountryList = [
   'Greece', 'Germany', 'England', 'Spain', 'Italy', 'France', 'Portugal',
@@ -43,8 +53,9 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
   final _cityCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _venueCtrl = TextEditingController();
-  String _league = kLeagues.first;
   String _country = kCountryList.first;
+  String get _defaultLeague => leaguesForCountry(_country).first;
+  late String _league = _defaultLeague;
   String _category = kCategories.first;
   bool _loading = false;
   File? _logoFile;
@@ -198,7 +209,10 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
                   style: const TextStyle(color: Colors.white),
                   underline: const SizedBox(),
                   items: kCountryList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                  onChanged: (v) => setState(() => _country = v!),
+                  onChanged: (v) => setState(() {
+                    _country = v!;
+                    _league = leaguesForCountry(_country).first;
+                  }),
                 ),
               ),
               const SizedBox(height: 16),
@@ -226,7 +240,7 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
                   dropdownColor: AppTheme.cardBg,
                   style: const TextStyle(color: Colors.white),
                   underline: const SizedBox(),
-                  items: kLeagues.map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(),
+                  items: leaguesForCountry(_country).map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(),
                   onChanged: (v) => setState(() => _league = v!),
                 ),
               ),

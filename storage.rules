@@ -10,13 +10,31 @@ service firebase.storage {
       return request.resource.contentType.matches('image/.*');
     }
 
-    // ── Club logos / covers / media ─────────────────────────────────────────
+    function isAdmin() {
+      return isSignedIn() &&
+        firestore.get(/databases/(default)/documents/users/$(uid())).data.role == 'admin';
+    }
+
+    function isClubAdmin(clubId) {
+      return isSignedIn() &&
+        firestore.get(/databases/(default)/documents/clubs/$(clubId)).data.adminUid == uid();
+    }
+
+    function isClubStaff(clubId) {
+      return isSignedIn() && (
+        isClubAdmin(clubId) ||
+        (uid() in firestore.get(/databases/(default)/documents/clubs/$(clubId)).data.get('staffUids', []))
+      );
+    }
+
+    // ── Club logos / covers / player photos ────────────────────────────────
+    // Write restricted to club staff or admin only.
     match /clubs/{clubId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn()
+      allow write: if (isClubStaff(clubId) || isAdmin())
         && isImage()
         && request.resource.size < maxImageSize();
-      allow delete: if isSignedIn();
+      allow delete: if isClubStaff(clubId) || isAdmin();
     }
 
     // ── User photos ─────────────────────────────────────────────────────────
@@ -27,6 +45,19 @@ service firebase.storage {
         && isImage()
         && request.resource.size < maxImageSize();
       allow delete: if isSignedIn() && uid() == userId;
+    }
+
+    // ── Game assets (puzzle images, prize photos) ───────────────────────────
+    // Write: admin only. Read: public (fans need to see prize photos & puzzles).
+    match /games/{gameId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && request.resource.size < maxImageSize();
+      allow delete: if isAdmin();
+    }
+    match /prizes/{prizeId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && isImage() && request.resource.size < maxImageSize();
+      allow delete: if isSignedIn();
     }
 
     // ── Sponsor PDFs (max 10 MB, signed-in users) ───────────────────────────

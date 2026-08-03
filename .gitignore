@@ -52,3 +52,4 @@ app.*.map.json
 # Cloud Functions dependencies
 functions/node_modules/
 lib/core/config/app_config.dart
+.vercel

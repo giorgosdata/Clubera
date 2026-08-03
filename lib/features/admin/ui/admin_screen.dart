@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/utils/image_utils.dart';
+import '../../../core/utils/storage_utils.dart';
 import '../../../models/user_model.dart';
 import '../../../models/club_model.dart';
 import '../../../models/match_model.dart';
@@ -12,6 +14,7 @@ import '../../../models/donation_model.dart';
 import '../../../models/player_model.dart';
 import '../../../models/reward_model.dart';
 import '../../../models/game_model.dart';
+import '../../../models/prize_model.dart';
 import '../../../models/news_model.dart';
 import 'trivia_admin_screen.dart';
 import 'sponsors_management.dart';
@@ -1518,10 +1521,11 @@ class _AdminGamesTab extends StatelessWidget {
   static void _showAddGameDialog(BuildContext context) {
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
-    final minCtrl = TextEditingController(text: '5');
-    final maxCtrl = TextEditingController(text: '50');
     final limitCtrl = TextEditingController(text: '1');
     String type = 'spin_wheel';
+    final List<Map<String, dynamic>> prizes = [];
+    DateTime? expiresAt;
+    File? puzzleImage;
 
     showDialog(
       context: context,
@@ -1543,6 +1547,7 @@ class _AdminGamesTab extends StatelessWidget {
                     {'v': 'scratch_card', 'l': '🎫 Ξυστό'},
                     {'v': 'daily_bonus', 'l': '🎁 Ημερήσιο Bonus'},
                     {'v': 'trivia', 'l': '🧠 Trivia'},
+                    {'v': 'puzzle', 'l': '🧩 Puzzle'},
                   ].map((e) {
                     final selected = type == e['v'];
                     return ChoiceChip(
@@ -1571,27 +1576,61 @@ class _AdminGamesTab extends StatelessWidget {
                   maxLength: 200,
                   decoration: const InputDecoration(labelText: 'Περιγραφή'),
                 ),
+                if (type == 'puzzle') ...[
+                  const SizedBox(height: 8),
+                  const Text('Εικόνα Puzzle', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () async {
+                      final f = await StorageUtils.pickImage();
+                      if (f != null) setS(() => puzzleImage = f);
+                    },
+                    child: Container(
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardBg2,
+                        borderRadius: BorderRadius.circular(10),
+                        image: puzzleImage != null
+                            ? DecorationImage(image: FileImage(puzzleImage!), fit: BoxFit.cover)
+                            : null,
+                      ),
+                      child: puzzleImage == null
+                          ? const Center(child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.add_photo_alternate, color: AppTheme.textSecondary, size: 32),
+                                SizedBox(height: 4),
+                                Text('Επίλεξε εικόνα', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                              ],
+                            ))
+                          : null,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: minCtrl,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(labelText: 'Min points'),
+                const Text('Δώρα', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                const SizedBox(height: 6),
+                if (prizes.isNotEmpty)
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: prizes.map((p) => Chip(
+                      backgroundColor: AppTheme.cardBg2,
+                      label: Text(
+                        '${p['emoji']} ${p['title']}',
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: maxCtrl,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(labelText: 'Max points'),
-                      ),
-                    ),
-                  ],
+                      deleteIcon: const Icon(Icons.close, size: 14, color: AppTheme.textSecondary),
+                      onDeleted: () => setS(() => prizes.remove(p)),
+                    )).toList(),
+                  ),
+                TextButton.icon(
+                  onPressed: () => _showAddPrizeDialog(ctx, (prize) {
+                    setS(() => prizes.add(prize));
+                  }),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('+ Πρόσθεσε Δώρο'),
+                  style: TextButton.styleFrom(foregroundColor: AppTheme.accent),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -1601,6 +1640,38 @@ class _AdminGamesTab extends StatelessWidget {
                   decoration: const InputDecoration(
                     labelText: 'Daily limit (πόσες φορές ανά ημέρα)',
                   ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.event, color: AppTheme.textSecondary, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        expiresAt != null
+                            ? DateFormat('d MMM yyyy').format(expiresAt!)
+                            : 'Χωρίς λήξη',
+                        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: ctx,
+                          initialDate: expiresAt ?? DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime(2030),
+                        );
+                        if (picked != null) setS(() => expiresAt = picked);
+                      },
+                      child: const Text('Λήξη'),
+                    ),
+                    if (expiresAt != null)
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 16, color: AppTheme.textSecondary),
+                        onPressed: () => setS(() => expiresAt = null),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -1615,26 +1686,24 @@ class _AdminGamesTab extends StatelessWidget {
                   );
                   return;
                 }
-                final minP = int.tryParse(minCtrl.text) ?? 1;
-                final maxP = int.tryParse(maxCtrl.text) ?? 100;
                 final limit = int.tryParse(limitCtrl.text) ?? 1;
-                if (minP > maxP) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Min cannot exceed Max')),
-                  );
-                  return;
-                }
                 try {
+                  String? puzzleImageUrl;
+                  if (type == 'puzzle' && puzzleImage != null) {
+                    final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+                    puzzleImageUrl = await StorageUtils.uploadPuzzleImage(puzzleImage!, tempId);
+                  }
                   await FirebaseFirestore.instance.collection('games').add(
                         GameModel(
                           id: '',
                           title: titleCtrl.text.trim(),
                           description: descCtrl.text.trim(),
                           type: type,
-                          minPoints: minP,
-                          maxPoints: maxP,
                           dailyLimit: limit,
                           createdAt: DateTime.now(),
+                          prizes: prizes.map((p) => PrizeModel.fromMap(p)).toList(),
+                          expiresAt: expiresAt,
+                          puzzleImageUrl: puzzleImageUrl,
                         ).toMap(),
                       );
                   if (ctx.mounted) Navigator.pop(ctx);
@@ -1657,9 +1726,236 @@ class _AdminGamesTab extends StatelessWidget {
     ).then((_) {
       titleCtrl.dispose();
       descCtrl.dispose();
-      minCtrl.dispose();
-      maxCtrl.dispose();
       limitCtrl.dispose();
+    });
+  }
+
+  static void _showAddPrizeDialog(BuildContext context, void Function(Map<String, dynamic>) onAdd) {
+    final emojiCtrl = TextEditingController(text: '🎁');
+    final titleCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final pointsCtrl = TextEditingController();
+    final digitalContentCtrl = TextEditingController();
+    String prizeType = 'points';
+    double weight = 1;
+    File? prizePhoto;
+    DateTime? redeemByDate;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          backgroundColor: AppTheme.cardBg,
+          title: const Text('Νέο Δώρο', style: TextStyle(color: Colors.white)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: emojiCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Emoji'),
+                ),
+                TextField(
+                  controller: titleCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  maxLength: 60,
+                  decoration: const InputDecoration(labelText: 'Τίτλος'),
+                ),
+                const SizedBox(height: 8),
+                const Text('Τύπος Δώρου', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: const [
+                    {'v': 'points', 'l': '🪙 Πόντοι'},
+                    {'v': 'physical', 'l': '📦 Φυσικό'},
+                    {'v': 'digital', 'l': '💾 Ψηφιακό'},
+                    {'v': 'nothing', 'l': '😔 Τίποτα'},
+                  ].map((e) {
+                    final selected = prizeType == e['v'];
+                    return ChoiceChip(
+                      label: Text(e['l']!),
+                      selected: selected,
+                      selectedColor: AppTheme.accent,
+                      labelStyle: TextStyle(
+                        color: selected ? Colors.white : AppTheme.textSecondary,
+                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      onSelected: (_) => setS(() => prizeType = e['v']!),
+                    );
+                  }).toList(),
+                ),
+                if (prizeType == 'points') ...[
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: pointsCtrl,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'Αξία σε πόντους'),
+                  ),
+                ],
+                if (prizeType == 'physical') ...[
+                  const SizedBox(height: 10),
+                  const Text('Φωτογραφία Δώρου', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () async {
+                      try {
+                        final file = await StorageUtils.pickImage();
+                        if (file != null) setS(() => prizePhoto = file);
+                      } catch (e) {
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(content: Text('$e'), backgroundColor: AppTheme.red),
+                          );
+                        }
+                      }
+                    },
+                    child: Container(
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardBg2,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: prizePhoto != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.file(prizePhoto!, fit: BoxFit.cover, width: double.infinity),
+                            )
+                          : const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_a_photo_outlined, color: AppTheme.textSecondary, size: 28),
+                                  SizedBox(height: 4),
+                                  Text('Επιλογή φωτογραφίας', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+                if (prizeType == 'digital') ...[
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: digitalContentCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    maxLines: 3,
+                    decoration: const InputDecoration(labelText: 'Περιεχόμενο (κωδικός, link, κείμενο...)'),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                TextField(
+                  controller: descCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'Περιγραφή (optional)'),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Πιθανότητα: ${weight.toInt()}',
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                ),
+                Slider(
+                  value: weight,
+                  min: 1,
+                  max: 5,
+                  divisions: 4,
+                  activeColor: AppTheme.accent,
+                  onChanged: (v) => setS(() => weight = v),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.event_available, color: AppTheme.textSecondary, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        redeemByDate != null
+                            ? DateFormat('d MMM yyyy').format(redeemByDate!)
+                            : 'Χωρίς λήξη εξαργύρωσης',
+                        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: ctx,
+                          initialDate: redeemByDate ?? DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime(2030),
+                        );
+                        if (picked != null) setS(() => redeemByDate = picked);
+                      },
+                      child: const Text('Λήξη'),
+                    ),
+                    if (redeemByDate != null)
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 16, color: AppTheme.textSecondary),
+                        onPressed: () => setS(() => redeemByDate = null),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (titleCtrl.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Τίτλος απαιτείται')),
+                  );
+                  return;
+                }
+                final data = <String, dynamic>{
+                  'id': DateTime.now().millisecondsSinceEpoch.toString(),
+                  'emoji': emojiCtrl.text.trim().isEmpty ? '🎁' : emojiCtrl.text.trim(),
+                  'title': titleCtrl.text.trim(),
+                  'type': prizeType,
+                  'description': descCtrl.text.trim(),
+                  'weight': weight.toInt(),
+                };
+                if (prizeType == 'points' && pointsCtrl.text.isNotEmpty) {
+                  data['pointsValue'] = int.tryParse(pointsCtrl.text) ?? 0;
+                }
+                if (prizeType == 'physical' && prizePhoto != null) {
+                  try {
+                    final url = await StorageUtils.uploadPrizePhoto(prizePhoto!, data['id'] as String);
+                    data['photoUrl'] = url;
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(content: Text('Photo upload failed: $e'), backgroundColor: AppTheme.red),
+                      );
+                    }
+                    return;
+                  }
+                }
+                if (prizeType == 'digital' && digitalContentCtrl.text.isNotEmpty) {
+                  data['digitalContent'] = digitalContentCtrl.text.trim();
+                }
+                if (redeemByDate != null) {
+                  data['redeemByDate'] = redeemByDate;
+                }
+                onAdd(data);
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Αποθήκευση'),
+            ),
+          ],
+        ),
+      ),
+    ).then((_) {
+      emojiCtrl.dispose();
+      titleCtrl.dispose();
+      descCtrl.dispose();
+      pointsCtrl.dispose();
+      digitalContentCtrl.dispose();
     });
   }
 }
@@ -1715,6 +2011,10 @@ class _GameAdminRow extends StatelessWidget {
               ),
             ),
             IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 18, color: AppTheme.textSecondary),
+              onPressed: () => _showEditDialog(context, game),
+            ),
+            IconButton(
               icon: const Icon(Icons.delete_outline, color: AppTheme.red, size: 20),
               onPressed: () => showDialog(
                 context: context,
@@ -1741,6 +2041,260 @@ class _GameAdminRow extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static void _showEditDialog(BuildContext context, GameModel game) {
+    final titleCtrl = TextEditingController(text: game.title);
+    final descCtrl = TextEditingController(text: game.description);
+    final limitCtrl = TextEditingController(text: game.dailyLimit.toString());
+    String type = game.type;
+    final List<Map<String, dynamic>> prizes = game.prizes.map((p) => p.toMap()).toList();
+    DateTime? expiresAt = game.expiresAt;
+    File? puzzleImage;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          backgroundColor: AppTheme.cardBg,
+          title: const Text('Επεξεργασία Παιχνιδιού', style: TextStyle(color: Colors.white)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Τύπος', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  children: const [
+                    {'v': 'spin_wheel', 'l': '🎡 Τυχερός Τροχός'},
+                    {'v': 'scratch_card', 'l': '🎫 Ξυστό'},
+                    {'v': 'daily_bonus', 'l': '🎁 Ημερήσιο Bonus'},
+                    {'v': 'trivia', 'l': '🧠 Trivia'},
+                    {'v': 'puzzle', 'l': '🧩 Puzzle'},
+                  ].map((e) {
+                    final selected = type == e['v'];
+                    return ChoiceChip(
+                      label: Text(e['l']!),
+                      selected: selected,
+                      selectedColor: AppTheme.accent,
+                      labelStyle: TextStyle(
+                        color: selected ? Colors.white : AppTheme.textSecondary,
+                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      onSelected: (_) => setS(() => type = e['v']!),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: titleCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  maxLength: 50,
+                  decoration: const InputDecoration(labelText: 'Τίτλος'),
+                ),
+                TextField(
+                  controller: descCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  maxLines: 2,
+                  maxLength: 200,
+                  decoration: const InputDecoration(labelText: 'Περιγραφή'),
+                ),
+                if (type == 'puzzle') ...[
+                  const SizedBox(height: 8),
+                  const Text('Εικόνα Puzzle', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () async {
+                      final f = await StorageUtils.pickImage();
+                      if (f != null) setS(() => puzzleImage = f);
+                    },
+                    child: Container(
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardBg2,
+                        borderRadius: BorderRadius.circular(10),
+                        image: puzzleImage != null
+                            ? DecorationImage(image: FileImage(puzzleImage!), fit: BoxFit.cover)
+                            : (game.puzzleImageUrl != null
+                                ? DecorationImage(
+                                    image: NetworkImage(game.puzzleImageUrl!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null),
+                      ),
+                      child: (puzzleImage == null && game.puzzleImageUrl == null)
+                          ? const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.add_photo_alternate, color: AppTheme.textSecondary, size: 32),
+                                  SizedBox(height: 4),
+                                  Text('Επίλεξε εικόνα', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                                ],
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                const Text('Δώρα', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                const SizedBox(height: 6),
+                if (prizes.isNotEmpty)
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: prizes.map((p) => Chip(
+                      backgroundColor: AppTheme.cardBg2,
+                      label: Text(
+                        '${p['emoji']} ${p['title']}',
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      deleteIcon: const Icon(Icons.close, size: 14, color: AppTheme.textSecondary),
+                      onDeleted: () => setS(() => prizes.remove(p)),
+                    )).toList(),
+                  ),
+                TextButton.icon(
+                  onPressed: () => _AdminGamesTab._showAddPrizeDialog(ctx, (prize) {
+                    setS(() => prizes.add(prize));
+                  }),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('+ Πρόσθεσε Δώρο'),
+                  style: TextButton.styleFrom(foregroundColor: AppTheme.accent),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: limitCtrl,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'Daily limit (πόσες φορές ανά ημέρα)',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.event, color: AppTheme.textSecondary, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        expiresAt != null
+                            ? DateFormat('d MMM yyyy').format(expiresAt!)
+                            : 'Χωρίς λήξη',
+                        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: ctx,
+                          initialDate: expiresAt ?? DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime(2030),
+                        );
+                        if (picked != null) setS(() => expiresAt = picked);
+                      },
+                      child: const Text('Λήξη'),
+                    ),
+                    if (expiresAt != null)
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 16, color: AppTheme.textSecondary),
+                        onPressed: () => setS(() => expiresAt = null),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: AppTheme.red),
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: ctx,
+                  builder: (c) => AlertDialog(
+                    backgroundColor: AppTheme.cardBg,
+                    title: const Text('Διαγραφή;', style: TextStyle(color: Colors.white)),
+                    content: Text(
+                      'Διαγραφή "${game.title}";',
+                      style: const TextStyle(color: AppTheme.textSecondary),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(c, false),
+                        child: const Text('Άκυρο'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.red),
+                        onPressed: () => Navigator.pop(c, true),
+                        child: const Text('Διαγραφή'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true && ctx.mounted) {
+                  await FirebaseFirestore.instance.collection('games').doc(game.id).delete();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                }
+              },
+              child: const Text('Διαγραφή'),
+            ),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (titleCtrl.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Title required')),
+                  );
+                  return;
+                }
+                final limit = int.tryParse(limitCtrl.text) ?? 1;
+                try {
+                  String? puzzleImageUrl = game.puzzleImageUrl;
+                  if (type == 'puzzle' && puzzleImage != null) {
+                    puzzleImageUrl = await StorageUtils.uploadPuzzleImage(puzzleImage!, game.id);
+                  }
+                  if (type != 'puzzle') puzzleImageUrl = null;
+                  await FirebaseFirestore.instance
+                      .collection('games')
+                      .doc(game.id)
+                      .update(
+                        GameModel(
+                          id: game.id,
+                          title: titleCtrl.text.trim(),
+                          description: descCtrl.text.trim(),
+                          type: type,
+                          dailyLimit: limit,
+                          createdAt: game.createdAt,
+                          prizes: prizes.map((p) => PrizeModel.fromMap(p)).toList(),
+                          expiresAt: expiresAt,
+                          puzzleImageUrl: puzzleImageUrl,
+                        ).toMap(),
+                      );
+                  if (ctx.mounted) Navigator.pop(ctx);
+                } catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed: $e'),
+                        backgroundColor: AppTheme.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Αποθήκευση'),
+            ),
+          ],
+        ),
+      ),
+    ).then((_) {
+      titleCtrl.dispose();
+      descCtrl.dispose();
+      limitCtrl.dispose();
+    });
   }
 }
 

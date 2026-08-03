@@ -3,6 +3,7 @@
 
 const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onRequest } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 // Heavier runtime config for functions that may fan-out to many docs.
@@ -955,5 +956,244 @@ exports.seasonalReset = onSchedule(
     }
 
     console.log(`[seasonalReset] season ${seasonKey} archived and scores reset.`);
+  }
+);
+
+// ─── PRIZE WON NOTIFICATION ──────────────────────────────────────────────────
+exports.onPrizeWon = onDocumentCreated("user_prizes/{prizeId}", async (event) => {
+  const prize = event.data.data();
+  if (!prize) return;
+
+  const { userId, prizeTitle, prizeEmoji, prizeType, gameTitle } = prize;
+  if (!userId) return;
+
+  const emoji = prizeEmoji || "🎁";
+  const typeLabel = prizeType === "points"   ? "Πόντοι"
+                  : prizeType === "physical"  ? "Φυσικό Δώρο"
+                  : prizeType === "digital"   ? "Ψηφιακό Δώρο"
+                  : "Δώρο";
+
+  const title = `${emoji} Κέρδισες ${typeLabel}!`;
+  const body  = prizeType === "nothing"
+    ? `Δοκίμασε ξανά στο "${gameTitle}"`
+    : `${prizeTitle} — από το παιχνίδι "${gameTitle}". Δες το στα Δώρα σου!`;
+
+  await sendUser(userId, title, body, { screen: "my_prizes" }, emoji);
+});
+
+
+// ─── Clubera Studio: AI Discovery ────────────────────────────────────────────
+const { defineSecret } = require("firebase-functions/params");
+const Anthropic = require("@anthropic-ai/sdk");
+
+const ANTHROPIC_KEY = defineSecret("ANTHROPIC_API_KEY");
+const API_FOOTBALL_KEY = defineSecret("API_FOOTBALL_KEY");
+
+// Country name (Greek) → English for api-football.com
+const COUNTRY_EN = {
+  "Ελλάδα": "Greece", "Αλβανία": "Albania", "Βουλγαρία": "Bulgaria",
+  "Κύπρος": "Cyprus", "Τουρκία": "Turkey", "Σερβία": "Serbia",
+  "Ρουμανία": "Romania", "Κροατία": "Croatia", "Σλοβενία": "Slovenia",
+  "Βόρεια Μακεδονία": "North Macedonia", "Κόσοβο": "Kosovo",
+};
+
+async function fetchFromApiFootball(apiKey, countryCode, countryName, association, competition, season) {
+  const seasonYear = parseInt((season || "2024-2025").split("-")[0]);
+  const countryEn = COUNTRY_EN[countryName] || countryName;
+  const base = "https://v3.football.api-sports.io";
+  const headers = { "x-apisports-key": apiKey, "x-rapidapi-host": "v3.football.api-sports.io" };
+
+  // Search leagues by country
+  const leagueRes = await fetch(
+    `${base}/leagues?country=${encodeURIComponent(countryEn)}&search=${encodeURIComponent(association)}`,
+    { headers }
+  );
+  const leagueData = await leagueRes.json();
+  const leagues = leagueData.response || [];
+  if (leagues.length === 0) return null;
+
+  // Pick best match: prefer exact name match, else first result
+  const compLower = competition.toLowerCase();
+  const best = leagues.find(l =>
+    l.league.name.toLowerCase().includes(compLower) ||
+    compLower.includes(l.league.name.toLowerCase())
+  ) || leagues[0];
+
+  const leagueId = best.league.id;
+  console.log(`api-football: found league "${best.league.name}" (id=${leagueId})`);
+
+  // Get teams
+  const teamsRes = await fetch(`${base}/teams?league=${leagueId}&season=${seasonYear}`, { headers });
+  const teamsData = await teamsRes.json();
+  const teams = teamsData.response || [];
+  if (teams.length === 0) return null;
+
+  console.log(`api-football: found ${teams.length} teams`);
+
+  // Fetch fixtures/matches
+  const fixturesRes = await fetch(`${base}/fixtures?league=${leagueId}&season=${seasonYear}`, { headers });
+  const fixturesData = await fixturesRes.json();
+  const fixtures = fixturesData.response || [];
+  console.log(`api-football: found ${fixtures.length} fixtures`);
+
+  return {
+    clubs: teams.map((t, i) => ({
+      cluberaId: `CLB-${countryCode || "XX"}-${String(i + 1).padStart(3, "0")}`,
+      name: t.team.name,
+      shortName: t.team.code || undefined,
+      city: t.venue?.city || undefined,
+      stadium: t.venue?.name || undefined,
+      confidence: 0.95,
+      sources: [`api-football.com league/${leagueId}`],
+      verificationStatus: "verified",
+      logoUrl: t.team.logo || undefined,
+      foundationYear: t.team.founded ? String(t.team.founded) : undefined,
+    })),
+    matches: fixtures.map(f => ({
+      homeTeam: f.teams.home.name,
+      awayTeam: f.teams.away.name,
+      date: f.fixture.date || null,
+      round: f.league.round || null,
+      score: f.goals.home !== null ? `${f.goals.home}-${f.goals.away}` : null,
+    })),
+    leagueName: best.league.name,
+    leagueId,
+    source: "api-football",
+  };
+}
+
+const CLAUDE_SYSTEM = `Act as the Clubera Football Mapping Engine.
+Use your training knowledge to list the clubs in the requested competition.
+Rules:
+- List EVERY club you know. Do not stop early.
+- If unsure, include with lower confidence (30-50). If confident, use 70-90.
+- Do NOT invent clubs. Return ONLY a JSON object — no markdown, no backticks.`;
+
+exports.discover = onRequest(
+  { secrets: [ANTHROPIC_KEY, API_FOOTBALL_KEY], timeoutSeconds: 300, memory: "512MiB", cors: true },
+  async (req, res) => {
+    if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return; }
+
+    const { country, countryCode, federation, association, competition, season } = req.body;
+    if (!country || !association || !competition) {
+      res.status(400).json({ error: "Missing context fields" }); return;
+    }
+
+    const s = season || "2024-2025";
+
+    // ── 1. Try api-football.com ──────────────────────────────────────────────
+    try {
+      const apiResult = await fetchFromApiFootball(
+        API_FOOTBALL_KEY.value(), countryCode, country, association, competition, s
+      );
+      if (apiResult && apiResult.clubs.length > 0) {
+        const { clubs, matches, leagueName, leagueId } = apiResult;
+        const stadiums = [...new Set(clubs.map(c => c.stadium).filter(Boolean))];
+        return res.json({
+          context: { country, countryCode, federation, association, competition, season: s },
+          clubs,
+          matches: matches || [],
+          stadiums,
+          totalRounds: undefined,
+          agentLogs: [
+            { agentId: 1, query: `api-football.com: ${leagueName} (id=${leagueId})`, status: "done", foundClubs: clubs.map(c => c.name) },
+          ],
+        });
+      }
+    } catch (e) {
+      console.warn("api-football failed, falling back to Claude:", e.message);
+    }
+
+    // ── 2. Fallback: Claude training knowledge ───────────────────────────────
+    const client = new Anthropic.default({ apiKey: ANTHROPIC_KEY.value() });
+    const userPrompt = `List all clubs in: ${competition} — ${association}, ${country}, season ${s}.
+From your training knowledge, list every club you know. Include clubs from previous seasons too.
+
+Return ONLY this JSON (no backticks):
+{
+  "regional_associations": [{
+    "name": "${association}",
+    "competitions": [{
+      "name": "${competition}",
+      "clubs": [
+        {
+          "clubera_id": "CLB-${countryCode || "XX"}-001",
+          "official_name": "Club Name",
+          "short_name": null,
+          "stadium": { "name": null, "city": "City" },
+          "verification_status": "unverified",
+          "confidence_score": 70,
+          "sources": [],
+          "current_competition": "${competition}"
+        }
+      ]
+    }]
+  }],
+  "matches": [],
+  "search_queries_used": []
+}`;
+
+    try {
+      const response = await client.messages.create({
+        model: "claude-sonnet-5",
+        max_tokens: 4000,
+        system: CLAUDE_SYSTEM,
+        messages: [{ role: "user", content: userPrompt }],
+      });
+
+      let jsonText = "";
+      for (const block of response.content) {
+        if (block.type === "text") jsonText = block.text;
+      }
+
+      let raw = {};
+      try { raw = JSON.parse(jsonText.trim()); }
+      catch {
+        const m = jsonText.match(/\{[\s\S]*\}/);
+        if (m) try { raw = JSON.parse(m[0]); } catch { /* ignore */ }
+      }
+
+      const rawClubs = (raw.regional_associations || [])
+        .flatMap(a => a.competitions || [])
+        .flatMap(c => c.clubs || [])
+        .filter(c => c.official_name && c.official_name !== "Club Name" && c.official_name.trim() !== "");
+
+      const clubs = rawClubs.map(c => ({
+        cluberaId: c.clubera_id,
+        name: c.official_name || "",
+        shortName: c.short_name || undefined,
+        city: c.stadium?.city || undefined,
+        stadium: c.stadium?.name || undefined,
+        confidence: ((c.confidence_score || 0) / 100),
+        sources: c.sources || [],
+        verificationStatus: c.verification_status || "unverified",
+        foundationYear: c.foundation_year ? String(c.foundation_year) : undefined,
+      }));
+
+      const stadiums = [...new Set(clubs.map(c => c.stadium).filter(Boolean))];
+      const queries = (raw.search_queries_used && raw.search_queries_used.length > 0)
+        ? raw.search_queries_used
+        : [`${association} ${competition} ${s}`, `βαθμολογία ${association} ${s}`];
+
+      res.json({
+        context: { country, countryCode, federation, association, competition, season: s },
+        clubs,
+        matches: raw.matches || [],
+        stadiums,
+        totalRounds: raw.total_rounds || undefined,
+        agentLogs: queries.map((q, i) => ({
+          agentId: i + 1,
+          query: q,
+          status: "done",
+          foundClubs: clubs.slice(
+            Math.floor(i * clubs.length / queries.length),
+            Math.floor((i + 1) * clubs.length / queries.length)
+          ).map(c => c.name),
+        })),
+      });
+    } catch (err) {
+      console.error("discover error:", err);
+      res.status(500).json({ error: err.message || "Discovery failed" });
+    }
   }
 );
