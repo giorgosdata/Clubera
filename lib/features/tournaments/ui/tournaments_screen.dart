@@ -15,7 +15,7 @@ class TournamentsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AppProvider>().user;
-    final canCreate = user != null;
+    final canCreate = user != null && user.role != 'fan';
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: showAppBar
