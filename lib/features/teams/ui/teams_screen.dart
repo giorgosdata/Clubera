@@ -269,6 +269,203 @@ const kDefaultAssociations = <String, List<Map<String, String>>>{
   ],
 };
 
+const kDefaultCompetitions = <String, List<Map<String, String>>>{
+  // ΕΠΣ Αθηνών
+  'eps_athinon': [
+    {'id': 'eps_ath_a', 'name': "Α' Ερασιτεχνική Αθηνών", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ath_b1', 'name': "Β' Κατηγορία Αθηνών (Α' Όμιλος)", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ath_b2', 'name': "Β' Κατηγορία Αθηνών (Β' Όμιλος)", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ath_c', 'name': "Γ' Κατηγορία Αθηνών", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ath_cup', 'name': 'Κύπελλο ΕΠΣ Αθηνών', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ath_w', 'name': "Α' Κατηγορία Γυναικών Αθηνών", 'season': '2024-2025', 'gender': 'women'},
+  ],
+  // ΕΠΣ Πειραιά
+  'eps_peiraios': [
+    {'id': 'eps_pei_a', 'name': "Α' Κατηγορία Πειραιά", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_pei_b1', 'name': "Β' Κατηγορία Πειραιά (Α' Όμιλος)", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_pei_b2', 'name': "Β' Κατηγορία Πειραιά (Β' Όμιλος)", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_pei_c', 'name': "Γ' Κατηγορία Πειραιά", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_pei_cup', 'name': 'Κύπελλο ΕΠΣ Πειραιά', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Θεσσαλονίκης
+  'eps_thessalonikis': [
+    {'id': 'eps_thes_a', 'name': "Α' Ερασιτεχνική Θεσσαλονίκης", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_thes_b1', 'name': "Β' Κατηγορία Θεσσαλονίκης (Α' Όμιλος)", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_thes_b2', 'name': "Β' Κατηγορία Θεσσαλονίκης (Β' Όμιλος)", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_thes_c', 'name': "Γ' Κατηγορία Θεσσαλονίκης", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_thes_cup', 'name': 'Κύπελλο ΕΠΣ Θεσσαλονίκης', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Μακεδονίας
+  'eps_makedonias': [
+    {'id': 'eps_mak_a', 'name': "Α' Κατηγορία Μακεδονίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_mak_b', 'name': "Β' Κατηγορία Μακεδονίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_mak_c', 'name': "Γ' Κατηγορία Μακεδονίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_mak_cup', 'name': 'Κύπελλο ΕΠΣ Μακεδονίας', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Κρήτης
+  'eps_kritis': [
+    {'id': 'eps_kri_a', 'name': "Α' Κατηγορία Κρήτης", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_kri_b1', 'name': "Β' Κατηγορία Κρήτης (Ανατολικά)", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_kri_b2', 'name': "Β' Κατηγορία Κρήτης (Δυτικά)", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_kri_c', 'name': "Γ' Κατηγορία Κρήτης", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_kri_cup', 'name': 'Κύπελλο ΕΠΣ Κρήτης', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Θεσσαλίας
+  'eps_thessalias': [
+    {'id': 'eps_thl_a', 'name': "Α' Κατηγορία Θεσσαλίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_thl_b', 'name': "Β' Κατηγορία Θεσσαλίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_thl_c', 'name': "Γ' Κατηγορία Θεσσαλίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_thl_cup', 'name': 'Κύπελλο ΕΠΣ Θεσσαλίας', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Αχαΐας
+  'eps_achaias': [
+    {'id': 'eps_ach_a', 'name': "Α' Κατηγορία Αχαΐας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ach_b', 'name': "Β' Κατηγορία Αχαΐας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ach_c', 'name': "Γ' Κατηγορία Αχαΐας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ach_cup', 'name': 'Κύπελλο ΕΠΣ Αχαΐας', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Ηπείρου
+  'eps_ipeirou': [
+    {'id': 'eps_ipe_a', 'name': "Α' Κατηγορία Ηπείρου", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ipe_b', 'name': "Β' Κατηγορία Ηπείρου", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ipe_cup', 'name': 'Κύπελλο ΕΠΣ Ηπείρου', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Κεντρικής Ελλάδας
+  'eps_kentrikis_elladas': [
+    {'id': 'eps_ken_a', 'name': "Α' Κατηγορία Κεντρικής Ελλάδας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ken_b', 'name': "Β' Κατηγορία Κεντρικής Ελλάδας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ken_cup', 'name': 'Κύπελλο ΕΠΣ Κεντρικής Ελλάδας', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Αιτωλοακαρνανίας
+  'eps_aitoloakarnanias': [
+    {'id': 'eps_ait_a', 'name': "Α' Κατηγορία Αιτωλοακαρνανίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ait_b', 'name': "Β' Κατηγορία Αιτωλοακαρνανίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ait_cup', 'name': 'Κύπελλο ΕΠΣ Αιτωλοακαρνανίας', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Δυτικής Μακεδονίας
+  'eps_dytikis_makedonias': [
+    {'id': 'eps_dym_a', 'name': "Α' Κατηγορία Δυτικής Μακεδονίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_dym_b', 'name': "Β' Κατηγορία Δυτικής Μακεδονίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_dym_cup', 'name': 'Κύπελλο ΕΠΣ Δυτικής Μακεδονίας', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Ανατολικής Μακεδονίας & Θράκης
+  'eps_anatolikis_makedonias': [
+    {'id': 'eps_anm_a', 'name': "Α' Κατηγορία Ανατολικής Μακεδονίας & Θράκης", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_anm_b', 'name': "Β' Κατηγορία Ανατολικής Μακεδονίας & Θράκης", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_anm_cup', 'name': 'Κύπελλο ΕΠΣ Ανατολικής Μακεδονίας', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Κέρκυρας
+  'eps_kerkyras': [
+    {'id': 'eps_ker_a', 'name': "Α' Κατηγορία Κέρκυρας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ker_b', 'name': "Β' Κατηγορία Κέρκυρας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ker_cup', 'name': 'Κύπελλο ΕΠΣ Κέρκυρας', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Λέσβου
+  'eps_lesvou': [
+    {'id': 'eps_les_a', 'name': "Α' Κατηγορία Λέσβου", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_les_b', 'name': "Β' Κατηγορία Λέσβου", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_les_cup', 'name': 'Κύπελλο ΕΠΣ Λέσβου', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Ρόδου
+  'eps_rodou': [
+    {'id': 'eps_rod_a', 'name': "Α' Κατηγορία Ρόδου", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_rod_b', 'name': "Β' Κατηγορία Ρόδου", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_rod_cup', 'name': 'Κύπελλο ΕΠΣ Ρόδου', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Νήσων
+  'eps_nison': [
+    {'id': 'eps_nis_a', 'name': "Α' Κατηγορία Νήσων", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_nis_b', 'name': "Β' Κατηγορία Νήσων", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_nis_cup', 'name': 'Κύπελλο ΕΠΣ Νήσων', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // Κύπρος
+  'cy_lefkosias': [
+    {'id': 'cy_lef_a', 'name': "Α' Κατηγορία Λευκωσίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'cy_lef_b', 'name': "Β' Κατηγορία Λευκωσίας", 'season': '2024-2025', 'gender': 'men'},
+  ],
+  'cy_lemesou': [
+    {'id': 'cy_lem_a', 'name': "Α' Κατηγορία Λεμεσού", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'cy_lem_b', 'name': "Β' Κατηγορία Λεμεσού", 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // Γερμανία
+  'de_bfv': [
+    {'id': 'de_bfv_1', 'name': 'Bayernliga', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'de_bfv_2', 'name': 'Landesliga Bayern', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'de_bfv_3', 'name': 'Bezirksliga', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'de_bfv_4', 'name': 'Kreisliga', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  'de_wdfv': [
+    {'id': 'de_wdfv_1', 'name': 'Niederrheinliga', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'de_wdfv_2', 'name': 'Landesliga Niederrhein', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'de_wdfv_3', 'name': 'Bezirksliga', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'de_wdfv_4', 'name': 'Kreisliga', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // Αγγλία
+  'gb_london_fa': [
+    {'id': 'gb_lon_1', 'name': 'London Senior Cup', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'gb_lon_2', 'name': 'London Intermediate Cup', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'gb_lon_3', 'name': 'London Junior Cup', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  'gb_manchester_fa': [
+    {'id': 'gb_man_1', 'name': 'Manchester FA County Cup', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'gb_man_2', 'name': 'Manchester Amateur League', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // Ισπανία
+  'es_rfm': [
+    {'id': 'es_rfm_1', 'name': 'Primera Autonómica Madrid', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'es_rfm_2', 'name': 'Primera Regional Madrid', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'es_rfm_3', 'name': 'Segunda Regional Madrid', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  'es_fcf': [
+    {'id': 'es_fcf_1', 'name': 'Primera Catalana', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'es_fcf_2', 'name': 'Segona Catalana', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'es_fcf_3', 'name': 'Tercera Catalana', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // Ιταλία
+  'it_lombardia': [
+    {'id': 'it_lom_1', 'name': 'Eccellenza Lombardia', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'it_lom_2', 'name': 'Promozione Lombardia', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'it_lom_3', 'name': 'Prima Categoria Lombardia', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'it_lom_4', 'name': 'Seconda Categoria Lombardia', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  'it_lazio': [
+    {'id': 'it_laz_1', 'name': 'Eccellenza Lazio', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'it_laz_2', 'name': 'Promozione Lazio', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'it_laz_3', 'name': 'Prima Categoria Lazio', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // Γαλλία
+  'fr_idf': [
+    {'id': 'fr_idf_1', 'name': 'Régional 1 Île-de-France', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'fr_idf_2', 'name': 'Régional 2 Île-de-France', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'fr_idf_3', 'name': 'Régional 3 Île-de-France', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'fr_idf_4', 'name': 'Départemental 1 Île-de-France', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // Πορτογαλία
+  'pt_afl': [
+    {'id': 'pt_afl_1', 'name': 'Campeonato de Lisboa', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'pt_afl_2', 'name': 'Primeira Divisão Lisboa', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'pt_afl_3', 'name': 'Segunda Divisão Lisboa', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // Ολλανδία
+  'nl_oost': [
+    {'id': 'nl_oost_1', 'name': 'Hoofdklasse Oost', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'nl_oost_2', 'name': 'Eerste Klasse Oost', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'nl_oost_3', 'name': 'Tweede Klasse Oost', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'nl_oost_4', 'name': 'Derde Klasse Oost', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  'nl_west1': [
+    {'id': 'nl_w1_1', 'name': 'Hoofdklasse West I', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'nl_w1_2', 'name': 'Eerste Klasse West I', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'nl_w1_3', 'name': 'Tweede Klasse West I', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // Τουρκία
+  'tr_istanbul': [
+    {'id': 'tr_ist_1', 'name': 'İstanbul Amatör Ligi 1', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'tr_ist_2', 'name': 'İstanbul Amatör Ligi 2', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'tr_ist_3', 'name': 'İstanbul Amatör Ligi 3', 'season': '2024-2025', 'gender': 'men'},
+  ],
+};
+
 class TeamsScreen extends StatefulWidget {
   const TeamsScreen({super.key});
 
@@ -1561,60 +1758,68 @@ class AssociationDetailScreen extends StatelessWidget {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          final comps = snap.data?.docs ?? [];
-          if (comps.isEmpty) {
+          final firestoreDocs = snap.data?.docs ?? [];
+          final firestoreIds = firestoreDocs.map((d) => d.id).toSet();
+
+          final hardcoded = kDefaultCompetitions[assocId] ?? [];
+          final extraHardcoded = hardcoded.where((c) => !firestoreIds.contains(c['id'])).toList();
+
+          // Merge: Firestore entries + hardcoded ones not already in Firestore
+          final allMen = <Map<String, String>>[];
+          final allWomen = <Map<String, String>>[];
+
+          for (final doc in firestoreDocs) {
+            final data = doc.data() as Map<String, dynamic>;
+            final entry = {
+              'id': doc.id,
+              'name': (data['name'] as String? ?? doc.id),
+              'season': (data['season'] as String? ?? '2024-2025'),
+              'gender': (data['gender'] as String? ?? 'men'),
+            };
+            if (entry['gender'] == 'women') { allWomen.add(entry); } else { allMen.add(entry); }
+          }
+          for (final c in extraHardcoded) {
+            if (c['gender'] == 'women') { allWomen.add(c); } else { allMen.add(c); }
+          }
+
+          if (allMen.isEmpty && allWomen.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.emoji_events, size: 48, color: AppTheme.textSecondary),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Δεν υπάρχουν πρωταθλήματα',
-                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 16),
-                  ),
+                  const Text('Δεν υπάρχουν πρωταθλήματα', style: TextStyle(color: AppTheme.textSecondary, fontSize: 16)),
                   const SizedBox(height: 6),
-                  Text(
-                    assocName,
-                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                  ),
+                  Text(assocName, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 ],
               ),
             );
           }
 
-          final menComps = comps.where((d) {
-            final gender = (d.data() as Map<String, dynamic>)['gender'] as String? ?? 'men';
-            return gender != 'women';
-          }).toList();
-          final womenComps = comps.where((d) {
-            final gender = (d.data() as Map<String, dynamic>)['gender'] as String? ?? 'men';
-            return gender == 'women';
-          }).toList();
-
-          Widget buildTile(QueryDocumentSnapshot doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final name = data['name'] as String? ?? doc.id;
-            final season = data['season'] as String? ?? '2024-2025';
-            return _CompetitionTile(compId: doc.id, name: name, season: season, assocName: assocName);
-          }
+          Widget buildTile(Map<String, String> c) => _CompetitionTile(
+            compId: c['id']!,
+            name: c['name']!,
+            season: c['season'] ?? '2024-2025',
+            assocName: assocName,
+          );
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              if (menComps.isNotEmpty) ...[
+              if (allMen.isNotEmpty) ...[
                 const Padding(
                   padding: EdgeInsets.only(bottom: 8),
                   child: Text('ΑΝΔΡΙΚΟ', style: TextStyle(color: AppTheme.textSecondary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
                 ),
-                ...menComps.map(buildTile),
+                ...allMen.map(buildTile),
               ],
-              if (womenComps.isNotEmpty) ...[
+              if (allWomen.isNotEmpty) ...[
                 Padding(
-                  padding: EdgeInsets.only(top: menComps.isNotEmpty ? 20 : 0, bottom: 8),
+                  padding: EdgeInsets.only(top: allMen.isNotEmpty ? 20 : 0, bottom: 8),
                   child: const Text('ΓΥΝΑΙΚΕΙΟ', style: TextStyle(color: Color(0xFFf472b6), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
                 ),
-                ...womenComps.map(buildTile),
+                ...allWomen.map(buildTile),
               ],
             ],
           );
