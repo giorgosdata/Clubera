@@ -43,6 +43,232 @@ const kCountries = [
   {'flag': '🇲🇪', 'name': 'Montenegro'},
 ];
 
+const kDefaultAssociations = <String, List<Map<String, String>>>{
+  'GR': [
+    {'id': 'eps_athinon', 'name': 'ΕΠΣ Αθηνών'},
+    {'id': 'eps_peiraios', 'name': 'ΕΠΣ Πειραιά'},
+    {'id': 'eps_thessalonikis', 'name': 'ΕΠΣ Θεσσαλονίκης'},
+    {'id': 'eps_makedonias', 'name': 'ΕΠΣ Μακεδονίας'},
+    {'id': 'eps_kritis', 'name': 'ΕΠΣ Κρήτης'},
+    {'id': 'eps_thessalias', 'name': 'ΕΠΣ Θεσσαλίας'},
+    {'id': 'eps_achaias', 'name': 'ΕΠΣ Αχαΐας'},
+    {'id': 'eps_ipeirou', 'name': 'ΕΠΣ Ηπείρου'},
+    {'id': 'eps_kentrikis_elladas', 'name': 'ΕΠΣ Κεντρικής Ελλάδας'},
+    {'id': 'eps_aitoloakarnanias', 'name': 'ΕΠΣ Αιτωλοακαρνανίας'},
+    {'id': 'eps_dytikis_makedonias', 'name': 'ΕΠΣ Δυτικής Μακεδονίας'},
+    {'id': 'eps_anatolikis_makedonias', 'name': 'ΕΠΣ Ανατολικής Μακεδονίας & Θράκης'},
+    {'id': 'eps_kerkyras', 'name': 'ΕΠΣ Κέρκυρας'},
+    {'id': 'eps_lesvou', 'name': 'ΕΠΣ Λέσβου'},
+    {'id': 'eps_rodou', 'name': 'ΕΠΣ Ρόδου'},
+    {'id': 'eps_nison', 'name': 'ΕΠΣ Νήσων'},
+  ],
+  'CY': [
+    {'id': 'cy_lefkosias', 'name': 'ΠΟΛ Λευκωσίας'},
+    {'id': 'cy_lemesou', 'name': 'ΠΟΛ Λεμεσού'},
+    {'id': 'cy_larnakas', 'name': 'ΠΟΛ Λάρνακας'},
+    {'id': 'cy_pafou', 'name': 'ΠΟΛ Πάφου'},
+    {'id': 'cy_ammochostou', 'name': 'ΠΟΛ Αμμοχώστου'},
+  ],
+  'DE': [
+    {'id': 'de_bfv', 'name': 'Bayerischer Fußball-Verband (BFV)'},
+    {'id': 'de_nfv', 'name': 'Niedersächsischer Fußballverband (NFV)'},
+    {'id': 'de_hfv', 'name': 'Hamburger Fußball-Verband (HFV)'},
+    {'id': 'de_bfv_berlin', 'name': 'Berliner Fußball-Verband'},
+    {'id': 'de_wdfv', 'name': 'Westdeutscher Fußball-Verband (WDFV)'},
+    {'id': 'de_nofv', 'name': 'Nordostdeutscher Fußballverband (NOFV)'},
+    {'id': 'de_swfv', 'name': 'Südwestdeutscher Fußballverband (SWFV)'},
+    {'id': 'de_sfv', 'name': 'Sächsischer Fußball-Verband (SFV)'},
+    {'id': 'de_bfv_bw', 'name': 'Badischer Fußballverband'},
+    {'id': 'de_wfv', 'name': 'Württembergischer Fußballverband (WFV)'},
+  ],
+  'GB': [
+    {'id': 'gb_london_fa', 'name': 'London FA'},
+    {'id': 'gb_manchester_fa', 'name': 'Manchester FA'},
+    {'id': 'gb_west_riding_fa', 'name': 'West Riding FA'},
+    {'id': 'gb_birmingham_fa', 'name': 'Birmingham County FA'},
+    {'id': 'gb_middlesex_fa', 'name': 'Middlesex FA'},
+    {'id': 'gb_kent_fa', 'name': 'Kent FA'},
+    {'id': 'gb_surrey_fa', 'name': 'Surrey FA'},
+    {'id': 'gb_liverpool_fa', 'name': 'Liverpool County FA'},
+    {'id': 'gb_sheffield_fa', 'name': 'Sheffield & Hallamshire FA'},
+  ],
+  'ES': [
+    {'id': 'es_rfm', 'name': 'Federación Madrileña de Fútbol'},
+    {'id': 'es_fcf', 'name': 'Federació Catalana de Futbol'},
+    {'id': 'es_fvf', 'name': 'Federación Valenciana de Fútbol'},
+    {'id': 'es_faf', 'name': 'Federación Andaluza de Fútbol'},
+    {'id': 'es_rfvf', 'name': 'Real Federación Vasca de Fútbol'},
+    {'id': 'es_fgf', 'name': 'Federación Gallega de Fútbol'},
+    {'id': 'es_ffib', 'name': 'Federació de Futbol de les Illes Balears'},
+  ],
+  'IT': [
+    {'id': 'it_lombardia', 'name': 'CR Lombardia (LND)'},
+    {'id': 'it_lazio', 'name': 'CR Lazio (LND)'},
+    {'id': 'it_campania', 'name': 'CR Campania (LND)'},
+    {'id': 'it_sicilia', 'name': 'CR Sicilia (LND)'},
+    {'id': 'it_veneto', 'name': 'CR Veneto (LND)'},
+    {'id': 'it_piemonte', 'name': 'CR Piemonte Valle d\'Aosta (LND)'},
+    {'id': 'it_toscana', 'name': 'CR Toscana (LND)'},
+    {'id': 'it_emilia', 'name': 'CR Emilia Romagna (LND)'},
+  ],
+  'FR': [
+    {'id': 'fr_idf', 'name': 'Ligue Paris Île-de-France de Football'},
+    {'id': 'fr_med', 'name': 'Ligue de Football de Méditerranée'},
+    {'id': 'fr_aqt', 'name': 'Ligue de Football d\'Aquitaine'},
+    {'id': 'fr_ara', 'name': 'Ligue Auvergne-Rhône-Alpes de Football'},
+    {'id': 'fr_nor', 'name': 'Ligue de Football de Normandie'},
+    {'id': 'fr_hdf', 'name': 'Ligue des Hauts-de-France de Football'},
+    {'id': 'fr_bre', 'name': 'Ligue de Bretagne de Football'},
+  ],
+  'PT': [
+    {'id': 'pt_afl', 'name': 'Associação de Futebol de Lisboa (AFL)'},
+    {'id': 'pt_afp', 'name': 'Associação de Futebol do Porto (AFP)'},
+    {'id': 'pt_afb', 'name': 'Associação de Futebol de Braga (AFB)'},
+    {'id': 'pt_afs', 'name': 'Associação de Futebol de Setúbal (AFS)'},
+    {'id': 'pt_afc', 'name': 'Associação de Futebol de Coimbra (AFC)'},
+    {'id': 'pt_afav', 'name': 'Associação de Futebol de Aveiro (AFAV)'},
+  ],
+  'NL': [
+    {'id': 'nl_oost', 'name': 'KNVB Amateurvoetbal Oost'},
+    {'id': 'nl_west1', 'name': 'KNVB Amateurvoetbal West I'},
+    {'id': 'nl_west2', 'name': 'KNVB Amateurvoetbal West II'},
+    {'id': 'nl_noord', 'name': 'KNVB Amateurvoetbal Noord'},
+    {'id': 'nl_zuid1', 'name': 'KNVB Amateurvoetbal Zuid I'},
+    {'id': 'nl_zuid2', 'name': 'KNVB Amateurvoetbal Zuid II'},
+  ],
+  'BE': [
+    {'id': 'be_vv', 'name': 'Voetbal Vlaanderen'},
+    {'id': 'be_acff', 'name': 'ACFF (Association des Clubs Francophones de Football)'},
+    {'id': 'be_rfcb', 'name': 'Royal Football Club de Bruxelles'},
+  ],
+  'AT': [
+    {'id': 'at_wien', 'name': 'Wiener Fußballverband'},
+    {'id': 'at_oefb_stmk', 'name': 'Steirischer Fußballverband'},
+    {'id': 'at_oefb_ooe', 'name': 'OÖ Fußballverband'},
+    {'id': 'at_oefb_tir', 'name': 'Tiroler Fußballverband'},
+    {'id': 'at_oefb_sbg', 'name': 'Salzburger Fußballverband'},
+  ],
+  'CH': [
+    {'id': 'ch_afm', 'name': 'Association de Football du Mittelland'},
+    {'id': 'ch_asvz', 'name': 'Verband Zentralschweiz'},
+    {'id': 'ch_asf_rom', 'name': 'ASF Région Romande'},
+    {'id': 'ch_sfv_ost', 'name': 'Regionalverband Ostschweiz'},
+  ],
+  'PL': [
+    {'id': 'pl_mazowiecka', 'name': 'Mazowiecki ZPN'},
+    {'id': 'pl_slaska', 'name': 'Śląski ZPN'},
+    {'id': 'pl_malopolska', 'name': 'Małopolski ZPN'},
+    {'id': 'pl_wielkopolska', 'name': 'Wielkopolski ZPN'},
+    {'id': 'pl_podkarpacie', 'name': 'Podkarpacki ZPN'},
+  ],
+  'RO': [
+    {'id': 'ro_bucuresti', 'name': 'AJF București'},
+    {'id': 'ro_cluj', 'name': 'AJF Cluj'},
+    {'id': 'ro_iasi', 'name': 'AJF Iași'},
+    {'id': 'ro_timis', 'name': 'AJF Timiș'},
+    {'id': 'ro_constanta', 'name': 'AJF Constanța'},
+  ],
+  'RS': [
+    {'id': 'rs_belgrade', 'name': 'FS Beograda'},
+    {'id': 'rs_vojvodina', 'name': 'FS Vojvodine'},
+    {'id': 'rs_sumadija', 'name': 'FS Šumadije i Zapadne Srbije'},
+    {'id': 'rs_istocna', 'name': 'FS Istočne Srbije'},
+  ],
+  'HR': [
+    {'id': 'hr_zagreb', 'name': 'NŠ Zagreb'},
+    {'id': 'hr_split', 'name': 'NŠ Split'},
+    {'id': 'hr_rijeka', 'name': 'NŠ Rijeka'},
+    {'id': 'hr_osijek', 'name': 'NŠ Osijek'},
+  ],
+  'TR': [
+    {'id': 'tr_istanbul', 'name': 'İstanbul İl Futbol Federasyonu'},
+    {'id': 'tr_ankara', 'name': 'Ankara İl Futbol Federasyonu'},
+    {'id': 'tr_izmir', 'name': 'İzmir İl Futbol Federasyonu'},
+    {'id': 'tr_bursa', 'name': 'Bursa İl Futbol Federasyonu'},
+    {'id': 'tr_antalya', 'name': 'Antalya İl Futbol Federasyonu'},
+    {'id': 'tr_adana', 'name': 'Adana İl Futbol Federasyonu'},
+  ],
+  'UA': [
+    {'id': 'ua_kyiv', 'name': 'ФФ Київської області'},
+    {'id': 'ua_kharkiv', 'name': 'ФФ Харківської області'},
+    {'id': 'ua_dnipro', 'name': 'ФФ Дніпропетровської області'},
+    {'id': 'ua_odessa', 'name': 'ФФ Одеської області'},
+    {'id': 'ua_lviv', 'name': 'ФФ Львівської області'},
+  ],
+  'SE': [
+    {'id': 'se_stockholm', 'name': 'Stockholms FF'},
+    {'id': 'se_skane', 'name': 'Skånska FF'},
+    {'id': 'se_vastra', 'name': 'Västra Götalands FF'},
+    {'id': 'se_ostergotland', 'name': 'Östergötlands FF'},
+  ],
+  'NO': [
+    {'id': 'no_oslo', 'name': 'Oslo Fotballkrets'},
+    {'id': 'no_hordaland', 'name': 'Hordaland Fotballkrets'},
+    {'id': 'no_rogaland', 'name': 'Rogaland Fotballkrets'},
+    {'id': 'no_akershus', 'name': 'Akershus Fotballkrets'},
+  ],
+  'DK': [
+    {'id': 'dk_kobenhavn', 'name': 'Københavns Boldspil-Union (KBU)'},
+    {'id': 'dk_jylland', 'name': 'Jyllands-Posten BU'},
+    {'id': 'dk_fyn', 'name': 'Fyns Boldspil-Union'},
+    {'id': 'dk_bornholm', 'name': 'Bornholms Boldspil-Union'},
+  ],
+  'CZ': [
+    {'id': 'cz_prag', 'name': 'Pražský fotbalový svaz'},
+    {'id': 'cz_jihomoravsky', 'name': 'Jihomoravský KFS'},
+    {'id': 'cz_stredocesky', 'name': 'Středočeský KFS'},
+    {'id': 'cz_moravskoslezsky', 'name': 'Moravskoslezský KFS'},
+  ],
+  'SK': [
+    {'id': 'sk_bratislava', 'name': 'BFZ Bratislava'},
+    {'id': 'sk_zapadoslovensky', 'name': 'ZsFZ Západoslovenský'},
+    {'id': 'sk_stredoslovensky', 'name': 'SsFZ Stredoslovenský'},
+    {'id': 'sk_vychod', 'name': 'VsFZ Východoslovenský'},
+  ],
+  'HU': [
+    {'id': 'hu_budapest', 'name': 'BLSZ Budapest'},
+    {'id': 'hu_pest', 'name': 'Pest Megye MLSz'},
+    {'id': 'hu_borsod', 'name': 'Borsod-Abaúj-Zemplén MLSz'},
+    {'id': 'hu_gyor', 'name': 'Győr-Moson-Sopron MLSz'},
+  ],
+  'BG': [
+    {'id': 'bg_sofia', 'name': 'СОФИЙСКИ ФУТБОЛЕН СЪЮЗ'},
+    {'id': 'bg_plovdiv', 'name': 'ПЛОВДИВСКИ ФУТБОЛЕН СЪЮЗ'},
+    {'id': 'bg_varna', 'name': 'ВАРНЕНСКИ ФУТБОЛЕН СЪЮЗ'},
+    {'id': 'bg_burgas', 'name': 'БУРГАСКИ ФУТБОЛЕН СЪЮЗ'},
+  ],
+  'AL': [
+    {'id': 'al_tirane', 'name': 'FSHF Tiranës'},
+    {'id': 'al_durres', 'name': 'FSHF Durrësit'},
+    {'id': 'al_shkoder', 'name': 'FSHF Shkodrës'},
+  ],
+  'XK': [
+    {'id': 'xk_prishtine', 'name': 'Prishtina FF'},
+    {'id': 'xk_prizren', 'name': 'Prizren FF'},
+    {'id': 'xk_peje', 'name': 'Peja FF'},
+  ],
+  'MK': [
+    {'id': 'mk_skopje', 'name': 'ФФС Скопје'},
+    {'id': 'mk_bitola', 'name': 'ФФС Битола'},
+    {'id': 'mk_tetovo', 'name': 'ФФС Тетово'},
+  ],
+  'SI': [
+    {'id': 'si_ljubljana', 'name': 'NZS Ljubljana'},
+    {'id': 'si_maribor', 'name': 'NZS Maribor'},
+    {'id': 'si_celje', 'name': 'NZS Celje'},
+  ],
+  'BA': [
+    {'id': 'ba_sarajevo', 'name': 'NFSBiH Sarajevo'},
+    {'id': 'ba_banja_luka', 'name': 'FSRS Banja Luka'},
+    {'id': 'ba_mostar', 'name': 'HNSBiH Mostar'},
+  ],
+  'ME': [
+    {'id': 'me_podgorica', 'name': 'FSCG Podgorice'},
+    {'id': 'me_niksic', 'name': 'FSCG Nikšića'},
+    {'id': 'me_bar', 'name': 'FSCG Bara'},
+  ],
+};
+
 class TeamsScreen extends StatefulWidget {
   const TeamsScreen({super.key});
 
@@ -1190,8 +1416,14 @@ class _AssociationsSection extends StatelessWidget {
           .where('countryCode', isEqualTo: countryCode)
           .snapshots(),
       builder: (ctx, snap) {
-        final docs = snap.data?.docs ?? [];
-        if (docs.isEmpty) return const SizedBox.shrink();
+        final firestoreDocs = snap.data?.docs ?? [];
+        final firestoreIds = firestoreDocs.map((d) => d.id).toSet();
+
+        final hardcoded = kDefaultAssociations[countryCode] ?? [];
+        final extraHardcoded = hardcoded.where((a) => !firestoreIds.contains(a['id'])).toList();
+
+        final totalCount = firestoreDocs.length + extraHardcoded.length;
+        if (totalCount == 0) return const SizedBox.shrink();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1208,18 +1440,18 @@ class _AssociationsSection extends StatelessWidget {
                 ),
               ),
             ),
-            ...docs.map((doc) {
+            ...firestoreDocs.map((doc) {
               final data = doc.data() as Map<String, dynamic>;
               final name = data['name'] as String? ?? doc.id;
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: _AssociationTile(
-                  assocId: doc.id,
-                  name: name,
-                  flag: flag,
-                ),
+                child: _AssociationTile(assocId: doc.id, name: name, flag: flag),
               );
             }),
+            ...extraHardcoded.map((a) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: _AssociationTile(assocId: a['id']!, name: a['name']!, flag: flag),
+            )),
             const SizedBox(height: 8),
           ],
         );
