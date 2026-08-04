@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -88,8 +89,16 @@ class AuthRepo {
     return _auth.signOut();
   }
 
-  Future<void> resetPassword(String email) =>
-      _auth.sendPasswordResetEmail(email: email.trim());
+  Future<void> resetPassword(String email) async {
+    final res = await http.post(
+      Uri.parse('https://us-central1-clubera-app.cloudfunctions.net/sendPasswordReset'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email.trim()}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Σφάλμα αποστολής email. Δοκιμάστε ξανά.');
+    }
+  }
 
   Future<void> _saveCache(UserModel user) async {
     final prefs = await SharedPreferences.getInstance();

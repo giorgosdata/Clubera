@@ -988,6 +988,7 @@ const Anthropic = require("@anthropic-ai/sdk");
 
 const ANTHROPIC_KEY = defineSecret("ANTHROPIC_API_KEY");
 const API_FOOTBALL_KEY = defineSecret("API_FOOTBALL_KEY");
+const BREVO_API_KEY = defineSecret("BREVO_API_KEY");
 
 // Country name (Greek) → English for api-football.com
 const COUNTRY_EN = {
@@ -1194,6 +1195,72 @@ Return ONLY this JSON (no backticks):
     } catch (err) {
       console.error("discover error:", err);
       res.status(500).json({ error: err.message || "Discovery failed" });
+    }
+  }
+);
+
+// ─── Password Reset via Brevo ────────────────────────────────────────────────
+exports.sendPasswordReset = onRequest(
+  { secrets: [BREVO_API_KEY], cors: true },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    try {
+      // Generate Firebase password reset link
+      const resetLink = await admin.auth().generatePasswordResetLink(email);
+
+      // Send via Brevo
+      const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": BREVO_API_KEY.value(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sender: { name: "Clubera", email: "noreply@clubera.app" },
+          to: [{ email }],
+          subject: "Επαναφορά κωδικού — Clubera",
+          htmlContent: `
+            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;">
+              <h2 style="color:#111;">Επαναφορά κωδικού</h2>
+              <p style="color:#444;line-height:1.6;">
+                Λάβαμε αίτημα επαναφοράς κωδικού για τον λογαριασμό σας στο <strong>Clubera</strong>.
+              </p>
+              <a href="${resetLink}"
+                style="display:inline-block;margin:24px 0;padding:14px 28px;background:#22c55e;color:#000;font-weight:bold;border-radius:8px;text-decoration:none;">
+                Επαναφορά κωδικού
+              </a>
+              <p style="color:#888;font-size:13px;">
+                Ο σύνδεσμος λήγει σε 1 ώρα. Αν δεν ζητήσατε επαναφορά κωδικού, αγνοήστε αυτό το email.
+              </p>
+              <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+              <p style="color:#bbb;font-size:11px;">Clubera · Το ποδόσφαιρό σου, παντού.</p>
+            </div>
+          `,
+        }),
+      });
+
+      if (!brevoRes.ok) {
+        const err = await brevoRes.text();
+        console.error("[brevo]", brevoRes.status, err);
+        return res.status(500).json({ error: "Email delivery failed" });
+      }
+
+      return res.json({ ok: true });
+    } catch (err) {
+      console.error("[sendPasswordReset]", err);
+      // User not found → still return ok (don't reveal existence)
+      if (err.code === "auth/user-not-found") {
+        return res.json({ ok: true });
+      }
+      return res.status(500).json({ error: err.message || "Failed" });
     }
   }
 );
