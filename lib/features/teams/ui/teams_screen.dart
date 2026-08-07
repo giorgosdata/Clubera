@@ -58,6 +58,17 @@ const kDefaultAssociations = <String, List<Map<String, String>>>{
     {'id': 'eps_dytikis_makedonias', 'name': 'ΕΠΣ Δυτικής Μακεδονίας'},
     {'id': 'eps_anatolikis_makedonias', 'name': 'ΕΠΣ Ανατολικής Μακεδονίας & Θράκης'},
     {'id': 'eps_kerkyras', 'name': 'ΕΠΣ Κέρκυρας'},
+    {'id': 'eps_larissas', 'name': 'ΕΠΣ Λάρισας'},
+    {'id': 'eps_kozanis', 'name': 'ΕΠΣ Κοζάνης'},
+    {'id': 'eps_florinas', 'name': 'ΕΠΣ Φλώρινας'},
+    {'id': 'eps_pellas', 'name': 'ΕΠΣ Πέλλας'},
+    {'id': 'eps_serron', 'name': 'ΕΠΣ Σερρών'},
+    {'id': 'eps_dramas', 'name': 'ΕΠΣ Δράμας'},
+    {'id': 'eps_kavalas', 'name': 'ΕΠΣ Καβάλας'},
+    {'id': 'eps_evrou', 'name': 'ΕΠΣ Έβρου'},
+    {'id': 'eps_irakliou', 'name': 'ΕΠΣ Ηρακλείου'},
+    {'id': 'eps_hanion', 'name': 'ΕΠΣ Χανίων'},
+    {'id': 'eps_kykladon', 'name': 'ΕΠΣ Κυκλάδων'},
     {'id': 'eps_lesvou', 'name': 'ΕΠΣ Λέσβου'},
     {'id': 'eps_rodou', 'name': 'ΕΠΣ Ρόδου'},
     {'id': 'eps_nison', 'name': 'ΕΠΣ Νήσων'},
@@ -281,11 +292,9 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
   ],
   // ΕΠΣ Πειραιά
   'eps_peiraios': [
-    {'id': 'eps_pei_a', 'name': "Α' Κατηγορία Πειραιά", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_pei_b1', 'name': "Β' Κατηγορία Πειραιά (Α' Όμιλος)", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_pei_b2', 'name': "Β' Κατηγορία Πειραιά (Β' Όμιλος)", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_pei_c', 'name': "Γ' Κατηγορία Πειραιά", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_pei_cup', 'name': 'Κύπελλο ΕΠΣ Πειραιά', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_peiraios_a', 'name': "Α' Κατηγορία Πειραιά", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_peiraios_b', 'name': "Β' Κατηγορία Πειραιά", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_peiraios_c', 'name': "Γ' Κατηγορία Πειραιά", 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Θεσσαλονίκης
   'eps_thessalonikis': [
@@ -340,9 +349,8 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
   ],
   // ΕΠΣ Αιτωλοακαρνανίας
   'eps_aitoloakarnanias': [
-    {'id': 'eps_ait_a', 'name': "Α' Κατηγορία Αιτωλοακαρνανίας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_ait_b', 'name': "Β' Κατηγορία Αιτωλοακαρνανίας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_ait_cup', 'name': 'Κύπελλο ΕΠΣ Αιτωλοακαρνανίας', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_aitoloakarnanias_a', 'name': "Α' Κατηγορία Αιτωλοακαρνανίας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_aitoloakarnanias_b', 'name': "Β' Κατηγορία Αιτωλοακαρνανίας", 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Δυτικής Μακεδονίας
   'eps_dytikis_makedonias': [
@@ -361,6 +369,64 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
     {'id': 'eps_kerkyras_a', 'name': "Α' Κατηγορία Κέρκυρας", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_kerkyras_b', 'name': "Β' Κατηγορία Κέρκυρας", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_kerkyras_cup', 'name': 'Κύπελλο ΕΠΣ Κέρκυρας', 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Λάρισας
+  'eps_larissas': [
+    {'id': 'eps_larissas_a', 'name': "Α' DE-TOX Κατηγορία Λάρισας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_larissas_b', 'name': "Β' Κατηγορία Λάρισας", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Κοζάνης
+  'eps_kozanis': [
+    {'id': 'eps_kozanis_a', 'name': "Α' Κατηγορία Κοζάνης", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_kozanis_b', 'name': "Β' Κατηγορία Κοζάνης", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Φλώρινας
+  'eps_florinas': [
+    {'id': 'eps_florinas_a', 'name': "Α' Κατηγορία Φλώρινας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_florinas_b', 'name': "Β' Κατηγορία Φλώρινας", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Πέλλας
+  'eps_pellas': [
+    {'id': 'eps_pellas_a1', 'name': "Α1' Κατηγορία Πέλλας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_pellas_a', 'name': "Α' Κατηγορία Πέλλας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_pellas_b', 'name': "Β' Κατηγορία Πέλλας", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Σερρών
+  'eps_serron': [
+    {'id': 'eps_serron_a', 'name': "Α' Κατηγορία Σερρών", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Δράμας
+  'eps_dramas': [
+    {'id': 'eps_dramas_a', 'name': "Α' Κατηγορία Δράμας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_dramas_b', 'name': "Β' Κατηγορία Δράμας", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Καβάλας
+  'eps_kavalas': [
+    {'id': 'eps_kavalas_a', 'name': "Α' Κατηγορία Καβάλας", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Έβρου
+  'eps_evrou': [
+    {'id': 'eps_evrou_a', 'name': "Α' Κατηγορία Έβρου", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_evrou_b', 'name': "Β' Κατηγορία Έβρου", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Ηρακλείου
+  'eps_irakliou': [
+    {'id': 'eps_irakliou_a1', 'name': "Α1' Κατηγορία Ηρακλείου", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_irakliou_a', 'name': "Α' Κατηγορία Ηρακλείου", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_irakliou_b', 'name': "Β' Κατηγορία Ηρακλείου", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Χανίων
+  'eps_hanion': [
+    {'id': 'eps_hanion_a', 'name': "Α' Κατηγορία Χανίων", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_hanion_w', 'name': "Α' Κατηγορία Γυναικών Χανίων", 'season': '2025-2026', 'gender': 'women'},
+  ],
+  // ΕΠΣ Κυκλάδων
+  'eps_kykladon': [
+    {'id': 'eps_kykladon_a', 'name': "Α' Κατηγορία Κυκλάδων", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_kykladon_b', 'name': "Β' Κατηγορία Κυκλάδων", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_kykladon_c', 'name': "Γ' Κατηγορία Κυκλάδων", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_kykladon_cup', 'name': 'Κύπελλο ΕΠΣ Κυκλάδων', 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_kykladon_w', 'name': "Α' Κατηγορία Γυναικών Κυκλάδων", 'season': '2025-2026', 'gender': 'women'},
   ],
   // ΕΠΣ Λέσβου
   'eps_lesvou': [
