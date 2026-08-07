@@ -32,6 +32,8 @@ const kLeaguesByCountry = <String, List<String>>{
 List<String> leaguesForCountry(String country) =>
     kLeaguesByCountry[country] ?? ['Division 1', 'Division 2', 'Division 3', 'Regional League', 'District League', 'Other'];
 
+const kLeagues = ["Α' Κατηγορία", "Β'1 Κατηγορία", "Β'2 Κατηγορία", "Γ'1 Κατηγορία", "Γ'2 Κατηγορία", 'Division 1', 'Division 2', 'Regional League', 'Other'];
+
 const kCountryList = [
   'Greece', 'Germany', 'England', 'Spain', 'Italy', 'France', 'Portugal',
   'Netherlands', 'Belgium', 'Austria', 'Switzerland', 'Poland', 'Romania',
