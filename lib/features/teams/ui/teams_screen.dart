@@ -47,6 +47,7 @@ const kDefaultAssociations = <String, List<Map<String, String>>>{
   'GR': [
     {'id': 'eps_athinon', 'name': 'ΕΠΣ Αθηνών'},
     {'id': 'eps_peiraios', 'name': 'ΕΠΣ Πειραιά'},
+    {'id': 'eps_ana', 'name': 'ΕΠΣΑΝΑ'},
     {'id': 'eps_thessalonikis', 'name': 'ΕΠΣ Θεσσαλονίκης'},
     {'id': 'eps_makedonias', 'name': 'ΕΠΣ Μακεδονίας'},
     {'id': 'eps_kritis', 'name': 'ΕΠΣ Κρήτης'},
@@ -54,6 +55,7 @@ const kDefaultAssociations = <String, List<Map<String, String>>>{
     {'id': 'eps_achaias', 'name': 'ΕΠΣ Αχαΐας'},
     {'id': 'eps_ipeirou', 'name': 'ΕΠΣ Ηπείρου'},
     {'id': 'eps_kentrikis_elladas', 'name': 'ΕΠΣ Κεντρικής Ελλάδας'},
+    {'id': 'eps_voiotias', 'name': 'ΕΠΣ Βοιωτίας'},
     {'id': 'eps_aitoloakarnanias', 'name': 'ΕΠΣ Αιτωλοακαρνανίας'},
     {'id': 'eps_dytikis_makedonias', 'name': 'ΕΠΣ Δυτικής Μακεδονίας'},
     {'id': 'eps_anatolikis_makedonias', 'name': 'ΕΠΣ Ανατολικής Μακεδονίας & Θράκης'},
@@ -65,6 +67,7 @@ const kDefaultAssociations = <String, List<Map<String, String>>>{
     {'id': 'eps_serron', 'name': 'ΕΠΣ Σερρών'},
     {'id': 'eps_dramas', 'name': 'ΕΠΣ Δράμας'},
     {'id': 'eps_kavalas', 'name': 'ΕΠΣ Καβάλας'},
+    {'id': 'eps_xanthis', 'name': 'ΕΠΣ Ξάνθης'},
     {'id': 'eps_evrou', 'name': 'ΕΠΣ Έβρου'},
     {'id': 'eps_irakliou', 'name': 'ΕΠΣ Ηρακλείου'},
     {'id': 'eps_hanion', 'name': 'ΕΠΣ Χανίων'},
@@ -296,6 +299,10 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
     {'id': 'eps_peiraios_b', 'name': "Β' Κατηγορία Πειραιά", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_peiraios_c', 'name': "Γ' Κατηγορία Πειραιά", 'season': '2025-2026', 'gender': 'men'},
   ],
+  // ΕΠΣΑΝΑ
+  'eps_ana': [
+    {'id': 'eps_ana_a', 'name': "Α' Κατηγορία ΕΠΣΑΝΑ", 'season': '2025-2026', 'gender': 'men'},
+  ],
   // ΕΠΣ Θεσσαλονίκης
   'eps_thessalonikis': [
     {'id': 'eps_thes_a', 'name': "Α' Ερασιτεχνική Θεσσαλονίκης", 'season': '2024-2025', 'gender': 'men'},
@@ -346,6 +353,11 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
     {'id': 'eps_ken_a', 'name': "Α' Κατηγορία Κεντρικής Ελλάδας", 'season': '2024-2025', 'gender': 'men'},
     {'id': 'eps_ken_b', 'name': "Β' Κατηγορία Κεντρικής Ελλάδας", 'season': '2024-2025', 'gender': 'men'},
     {'id': 'eps_ken_cup', 'name': 'Κύπελλο ΕΠΣ Κεντρικής Ελλάδας', 'season': '2024-2025', 'gender': 'men'},
+  ],
+  // ΕΠΣ Βοιωτίας
+  'eps_voiotias': [
+    {'id': 'eps_voiotias_a', 'name': "Α' Κατηγορία Βοιωτίας", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_voiotias_b', 'name': "Β' Κατηγορία Βοιωτίας", 'season': '2024-2025', 'gender': 'men'},
   ],
   // ΕΠΣ Αιτωλοακαρνανίας
   'eps_aitoloakarnanias': [
@@ -403,6 +415,12 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
   // ΕΠΣ Καβάλας
   'eps_kavalas': [
     {'id': 'eps_kavalas_a', 'name': "Α' Κατηγορία Καβάλας", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Ξάνθης
+  'eps_xanthis': [
+    {'id': 'eps_xanthis_a', 'name': "Α' Κατηγορία Ξάνθης", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_xanthis_b1', 'name': "Β1' Κατηγορία Ξάνθης", 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_xanthis_b2', 'name': "Β2' Κατηγορία Ξάνθης", 'season': '2024-2025', 'gender': 'men'},
   ],
   // ΕΠΣ Έβρου
   'eps_evrou': [
