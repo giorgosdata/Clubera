@@ -297,10 +297,11 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
   ],
   // ΕΠΣ Μακεδονίας
   'eps_makedonias': [
-    {'id': 'eps_mak_a', 'name': "Α' Κατηγορία Μακεδονίας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_mak_b', 'name': "Β' Κατηγορία Μακεδονίας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_mak_c', 'name': "Γ' Κατηγορία Μακεδονίας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_mak_cup', 'name': 'Κύπελλο ΕΠΣ Μακεδονίας', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_makedonias_a1', 'name': "Α1' Κατηγορία Μακεδονίας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_makedonias_a', 'name': "Α' Κατηγορία Μακεδονίας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_makedonias_b', 'name': "Β' Κατηγορία Μακεδονίας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_makedonias_c', 'name': "Γ' Κατηγορία Μακεδονίας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_makedonias_cup', 'name': 'Κύπελλο ΕΠΣ Μακεδονίας', 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Κρήτης
   'eps_kritis': [
@@ -312,23 +313,24 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
   ],
   // ΕΠΣ Θεσσαλίας
   'eps_thessalias': [
-    {'id': 'eps_thl_a', 'name': "Α' Κατηγορία Θεσσαλίας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_thl_b', 'name': "Β' Κατηγορία Θεσσαλίας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_thl_c', 'name': "Γ' Κατηγορία Θεσσαλίας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_thl_cup', 'name': 'Κύπελλο ΕΠΣ Θεσσαλίας', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_thessalias_a', 'name': "Α' Κατηγορία Θεσσαλίας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_thessalias_b', 'name': "Β' Κατηγορία Θεσσαλίας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_thessalias_c', 'name': "Γ' Κατηγορία Θεσσαλίας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_thessalias_w', 'name': 'Γυναικείο Πρωτάθλημα Θεσσαλίας', 'season': '2025-2026', 'gender': 'women'},
   ],
   // ΕΠΣ Αχαΐας
   'eps_achaias': [
-    {'id': 'eps_ach_a', 'name': "Α' Κατηγορία Αχαΐας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_ach_b', 'name': "Β' Κατηγορία Αχαΐας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_ach_c', 'name': "Γ' Κατηγορία Αχαΐας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_ach_cup', 'name': 'Κύπελλο ΕΠΣ Αχαΐας', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_achaias_a', 'name': "Α' Κατηγορία Αχαΐας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_achaias_b', 'name': "Β' Κατηγορία Αχαΐας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_achaias_c', 'name': "Γ' Κατηγορία Αχαΐας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_achaias_cup', 'name': 'Κύπελλο ΕΠΣ Αχαΐας', 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Ηπείρου
   'eps_ipeirou': [
-    {'id': 'eps_ipe_a', 'name': "Α' Κατηγορία Ηπείρου", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_ipe_b', 'name': "Β' Κατηγορία Ηπείρου", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_ipe_cup', 'name': 'Κύπελλο ΕΠΣ Ηπείρου', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_ipeirou_a', 'name': "Α' Κατηγορία Ηπείρου", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_ipeirou_b', 'name': "Β' Κατηγορία Ηπείρου", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_ipeirou_c', 'name': "Γ' Κατηγορία Ηπείρου", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_ipeirou_cup', 'name': 'Κύπελλο ΕΠΣ Ηπείρου', 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Κεντρικής Ελλάδας
   'eps_kentrikis_elladas': [
@@ -356,9 +358,9 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
   ],
   // ΕΠΣ Κέρκυρας
   'eps_kerkyras': [
-    {'id': 'eps_ker_a', 'name': "Α' Κατηγορία Κέρκυρας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_ker_b', 'name': "Β' Κατηγορία Κέρκυρας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_ker_cup', 'name': 'Κύπελλο ΕΠΣ Κέρκυρας', 'season': '2024-2025', 'gender': 'men'},
+    {'id': 'eps_kerkyras_a', 'name': "Α' Κατηγορία Κέρκυρας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_kerkyras_b', 'name': "Β' Κατηγορία Κέρκυρας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_kerkyras_cup', 'name': 'Κύπελλο ΕΠΣ Κέρκυρας', 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Λέσβου
   'eps_lesvou': [
