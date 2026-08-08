@@ -302,6 +302,8 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
   // ΕΠΣΑΝΑ
   'eps_ana': [
     {'id': 'eps_ana_a', 'name': "Α' Κατηγορία ΕΠΣΑΝΑ", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_ana_b', 'name': "Β' Κατηγορία ΕΠΣΑΝΑ", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_ana_c', 'name': "Γ' Κατηγορία ΕΠΣΑΝΑ", 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Θεσσαλονίκης
   'eps_thessalonikis': [
