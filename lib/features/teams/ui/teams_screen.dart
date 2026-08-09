@@ -1455,133 +1455,30 @@ const _kCountryToCode = {
   'Slovenia': 'SI', 'Bosnia': 'BA', 'Montenegro': 'ME',
 };
 
-const _kTeamFilters = ['All', 'Α΄ Ομάδα', 'Β΄ Ομάδα', 'Γυναικεία', 'Ακαδημίες'];
 
-class CountryClubsScreen extends StatefulWidget {
+class CountryClubsScreen extends StatelessWidget {
   final String country;
   final String flag;
   const CountryClubsScreen({super.key, required this.country, required this.flag});
 
   @override
-  State<CountryClubsScreen> createState() => _CountryClubsScreenState();
-}
-
-class _CountryClubsScreenState extends State<CountryClubsScreen> {
-  String _filter = 'All';
-
-  @override
   Widget build(BuildContext context) {
+    final countryCode = _kCountryToCode[country] ?? '';
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text('${widget.flag} ${widget.country}'),
+        title: Text('$flag $country'),
         backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        children: [
-          SizedBox(
-            height: 50,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: _kTeamFilters.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 6),
-              itemBuilder: (_, i) {
-                final f = _kTeamFilters[i];
-                final selected = _filter == f;
-                return ChoiceChip(
-                  label: Text(f),
-                  selected: selected,
-                  selectedColor: AppTheme.primaryLight,
-                  labelStyle: TextStyle(
-                    color: selected ? Colors.white : AppTheme.textSecondary,
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                  ),
-                  onSelected: (_) => setState(() => _filter = f),
-                );
-              },
+      body: countryCode.isEmpty
+          ? const Center(child: Text('Δεν βρέθηκαν ενώσεις.', style: TextStyle(color: AppTheme.textSecondary)))
+          : SingleChildScrollView(
+              child: _AssociationsSection(countryCode: countryCode, flag: flag),
             ),
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('clubs')
-                  .where('country', isEqualTo: widget.country)
-                  .snapshots(),
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final all = (snap.data?.docs ?? [])
-                    .map((d) => ClubModel.fromMap(d.data() as Map<String, dynamic>, d.id))
-                    .toList()
-                  ..sort((a, b) => b.votes.compareTo(a.votes));
-                final clubs = _filter == 'All'
-                    ? all
-                    : _filter == 'Ακαδημίες'
-                        ? all.where((c) => c.academiesCount > 0).toList()
-                        : all.where((c) => c.category == _filter).toList();
-                final countryCode = _kCountryToCode[widget.country] ?? '';
-                return CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    if (countryCode.isNotEmpty)
-                      SliverToBoxAdapter(
-                        child: _AssociationsSection(
-                          countryCode: countryCode,
-                          flag: widget.flag,
-                        ),
-                      ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                        child: Text(
-                          'ΣΥΛΛΟΓΟΙ',
-                          style: TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (clubs.isEmpty)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Column(
-                            children: [
-                              Text(widget.flag, style: const TextStyle(fontSize: 48)),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'No clubs in this category',
-                                style: TextStyle(color: AppTheme.textSecondary, fontSize: 15),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                        sliver: SliverList.separated(
-                          itemCount: clubs.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 10),
-                          itemBuilder: (ctx, i) => _ClubListTile(club: clubs[i], rank: i + 1),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
