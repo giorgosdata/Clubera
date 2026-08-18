@@ -53,6 +53,9 @@ const kDefaultAssociations = <String, List<Map<String, String>>>{
     {'id': 'eps_thessalias', 'name': 'ΕΠΣ Θεσσαλίας'},
     {'id': 'eps_achaias', 'name': 'ΕΠΣ Αχαΐας'},
     {'id': 'eps_ipeirou', 'name': 'ΕΠΣ Ηπείρου'},
+    {'id': 'eps_arkadias', 'name': 'ΕΠΣ Αρκαδίας'},
+    {'id': 'eps_pierias', 'name': 'ΕΠΣ Πιερίας'},
+    {'id': 'eps_fokidas', 'name': 'ΕΠΣ Φωκίδας'},
     {'id': 'eps_fthiotidas', 'name': 'ΕΠΣ Φθιώτιδας'},
     {'id': 'eps_voiotias', 'name': 'ΕΠΣ Βοιωτίας'},
     {'id': 'eps_aitoloakarnanias', 'name': 'ΕΠΣ Αιτωλοακαρνανίας'},
@@ -331,6 +334,22 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
     {'id': 'eps_ipeirou_b', 'name': "Β' Κατηγορία Ηπείρου", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_ipeirou_c', 'name': "Γ' Κατηγορία Ηπείρου", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_ipeirou_cup', 'name': 'Κύπελλο ΕΠΣ Ηπείρου', 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Αρκαδίας
+  'eps_arkadias': [
+    {'id': 'eps_arkadias_a', 'name': "Α' Κατηγορία Αρκαδίας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_arkadias_b', 'name': "Β' Κατηγορία Αρκαδίας", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Πιερίας
+  'eps_pierias': [
+    {'id': 'eps_pierias_a', 'name': "Α' Κατηγορία Πιερίας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_pierias_b', 'name': "Β' Κατηγορία Πιερίας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_pierias_c', 'name': "Γ' Κατηγορία Πιερίας", 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Φωκίδας
+  'eps_fokidas': [
+    {'id': 'eps_fokidas_a', 'name': "Α' Κατηγορία Φωκίδας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_fokidas_b', 'name': "Β' Κατηγορία Φωκίδας", 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Φθιώτιδας
   'eps_fthiotidas': [
