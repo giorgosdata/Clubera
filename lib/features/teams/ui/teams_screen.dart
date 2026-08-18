@@ -53,6 +53,7 @@ const kDefaultAssociations = <String, List<Map<String, String>>>{
     {'id': 'eps_thessalias', 'name': 'ΕΠΣ Θεσσαλίας'},
     {'id': 'eps_achaias', 'name': 'ΕΠΣ Αχαΐας'},
     {'id': 'eps_ipeirou', 'name': 'ΕΠΣ Ηπείρου'},
+    {'id': 'eps_fthiotidas', 'name': 'ΕΠΣ Φθιώτιδας'},
     {'id': 'eps_voiotias', 'name': 'ΕΠΣ Βοιωτίας'},
     {'id': 'eps_aitoloakarnanias', 'name': 'ΕΠΣ Αιτωλοακαρνανίας'},
     {'id': 'eps_kerkyras', 'name': 'ΕΠΣ Κέρκυρας'},
@@ -329,6 +330,13 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
     {'id': 'eps_ipeirou_b', 'name': "Β' Κατηγορία Ηπείρου", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_ipeirou_c', 'name': "Γ' Κατηγορία Ηπείρου", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_ipeirou_cup', 'name': 'Κύπελλο ΕΠΣ Ηπείρου', 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Φθιώτιδας
+  'eps_fthiotidas': [
+    {'id': 'eps_fthiotidas_a', 'name': "Α' Κατηγορία Φθιώτιδας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_fthiotidas_b1', 'name': "Β' Κατηγορία Φθιώτιδας (1ος Όμιλος)", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_fthiotidas_b2', 'name': "Β' Κατηγορία Φθιώτιδας (2ος Όμιλος)", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_fthiotidas_cup', 'name': 'Κύπελλο ΕΠΣ Φθιώτιδας', 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Βοιωτίας
   'eps_voiotias': [
