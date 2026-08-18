@@ -53,6 +53,7 @@ const kDefaultAssociations = <String, List<Map<String, String>>>{
     {'id': 'eps_thessalias', 'name': 'ΕΠΣ Θεσσαλίας'},
     {'id': 'eps_achaias', 'name': 'ΕΠΣ Αχαΐας'},
     {'id': 'eps_ipeirou', 'name': 'ΕΠΣ Ηπείρου'},
+    {'id': 'eps_artas', 'name': 'ΕΠΣ Άρτας'},
     {'id': 'eps_arkadias', 'name': 'ΕΠΣ Αρκαδίας'},
     {'id': 'eps_pierias', 'name': 'ΕΠΣ Πιερίας'},
     {'id': 'eps_fokidas', 'name': 'ΕΠΣ Φωκίδας'},
@@ -334,6 +335,11 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
     {'id': 'eps_ipeirou_b', 'name': "Β' Κατηγορία Ηπείρου", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_ipeirou_c', 'name': "Γ' Κατηγορία Ηπείρου", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_ipeirou_cup', 'name': 'Κύπελλο ΕΠΣ Ηπείρου', 'season': '2025-2026', 'gender': 'men'},
+  ],
+  // ΕΠΣ Άρτας
+  'eps_artas': [
+    {'id': 'eps_artas_a', 'name': "Α' Κατηγορία Άρτας", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_artas_b', 'name': "Β' Κατηγορία Άρτας", 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Αρκαδίας
   'eps_arkadias': [
