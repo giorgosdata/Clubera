@@ -68,6 +68,7 @@ const kDefaultAssociations = <String, List<Map<String, String>>>{
     {'id': 'eps_evrou', 'name': 'ΕΠΣ Έβρου'},
     {'id': 'eps_irakliou', 'name': 'ΕΠΣ Ηρακλείου'},
     {'id': 'eps_hanion', 'name': 'ΕΠΣ Χανίων'},
+    {'id': 'eps_lasithiou', 'name': 'ΕΠΣ Λασιθίου'},
     {'id': 'eps_kykladon', 'name': 'ΕΠΣ Κυκλάδων'},
     {'id': 'eps_lesvou', 'name': 'ΕΠΣ Λέσβου'},
     {'id': 'eps_rodou', 'name': 'ΕΠΣ Ρόδου'},
@@ -409,6 +410,11 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
   'eps_hanion': [
     {'id': 'eps_hanion_a', 'name': "Α' Κατηγορία Χανίων", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_hanion_w', 'name': "Α' Κατηγορία Γυναικών Χανίων", 'season': '2025-2026', 'gender': 'women'},
+  ],
+  // ΕΠΣ Λασιθίου
+  'eps_lasithiou': [
+    {'id': 'eps_lasithiou_a', 'name': "Α' Κατηγορία Λασιθίου", 'season': '2025-2026', 'gender': 'men'},
+    {'id': 'eps_lasithiou_b', 'name': "Β' Κατηγορία Λασιθίου", 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Κυκλάδων
   'eps_kykladon': [
