@@ -9,6 +9,7 @@ import '../../../models/player_model.dart';
 import '../../clubs/ui/club_profile_screen.dart';
 import '../../clubs/ui/create_club_screen.dart' show kCountryList;
 import '../../tournaments/ui/tournaments_screen.dart';
+import '../../games/ui/spin_wheel_screen.dart';
 
 const kCountries = [
   {'flag': '🇩🇪', 'name': 'Germany'},
@@ -659,6 +660,8 @@ class _BrowseTabState extends State<_BrowseTab> {
                   _MyClubCard(clubId: myClubId),
                   const SizedBox(height: 16),
                 ],
+                _SpinBanner(),
+                const SizedBox(height: 16),
                 ...filtered.map(
                   (c) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
@@ -670,6 +673,57 @@ class _BrowseTabState extends State<_BrowseTab> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SpinBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SpinWheelScreen()),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1A3A8F), Color(0xFF5B1A8F)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF1A6FE8).withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            const Text('🎰', style: TextStyle(fontSize: 36)),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ποια ομάδα σου αναλογεί;',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Γύρισε τον τροχό και μάθε!',
+                    style: TextStyle(color: Color(0xFFAABBFF), fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.white60),
+          ],
+        ),
+      ),
     );
   }
 }
