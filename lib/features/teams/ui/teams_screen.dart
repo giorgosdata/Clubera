@@ -49,17 +49,12 @@ const kDefaultAssociations = <String, List<Map<String, String>>>{
     {'id': 'eps_athinon', 'name': 'ΕΠΣ Αθηνών'},
     {'id': 'eps_peiraios', 'name': 'ΕΠΣ Πειραιά'},
     {'id': 'eps_ana', 'name': 'ΕΠΣΑΝΑ'},
-    {'id': 'eps_thessalonikis', 'name': 'ΕΠΣ Θεσσαλονίκης'},
     {'id': 'eps_makedonias', 'name': 'ΕΠΣ Μακεδονίας'},
-    {'id': 'eps_kritis', 'name': 'ΕΠΣ Κρήτης'},
     {'id': 'eps_thessalias', 'name': 'ΕΠΣ Θεσσαλίας'},
     {'id': 'eps_achaias', 'name': 'ΕΠΣ Αχαΐας'},
     {'id': 'eps_ipeirou', 'name': 'ΕΠΣ Ηπείρου'},
-    {'id': 'eps_kentrikis_elladas', 'name': 'ΕΠΣ Κεντρικής Ελλάδας'},
     {'id': 'eps_voiotias', 'name': 'ΕΠΣ Βοιωτίας'},
     {'id': 'eps_aitoloakarnanias', 'name': 'ΕΠΣ Αιτωλοακαρνανίας'},
-    {'id': 'eps_dytikis_makedonias', 'name': 'ΕΠΣ Δυτικής Μακεδονίας'},
-    {'id': 'eps_anatolikis_makedonias', 'name': 'ΕΠΣ Ανατολικής Μακεδονίας & Θράκης'},
     {'id': 'eps_kerkyras', 'name': 'ΕΠΣ Κέρκυρας'},
     {'id': 'eps_larissas', 'name': 'ΕΠΣ Λάρισας'},
     {'id': 'eps_kozanis', 'name': 'ΕΠΣ Κοζάνης'},
@@ -75,7 +70,6 @@ const kDefaultAssociations = <String, List<Map<String, String>>>{
     {'id': 'eps_kykladon', 'name': 'ΕΠΣ Κυκλάδων'},
     {'id': 'eps_lesvou', 'name': 'ΕΠΣ Λέσβου'},
     {'id': 'eps_rodou', 'name': 'ΕΠΣ Ρόδου'},
-    {'id': 'eps_nison', 'name': 'ΕΠΣ Νήσων'},
   ],
   'CY': [
     {'id': 'cy_lefkosias', 'name': 'ΠΟΛ Λευκωσίας'},
@@ -307,13 +301,6 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
     {'id': 'eps_ana_c', 'name': "Γ' Κατηγορία ΕΠΣΑΝΑ", 'season': '2025-2026', 'gender': 'men'},
   ],
   // ΕΠΣ Θεσσαλονίκης
-  'eps_thessalonikis': [
-    {'id': 'eps_thes_a', 'name': "Α' Ερασιτεχνική Θεσσαλονίκης", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_thes_b1', 'name': "Β' Κατηγορία Θεσσαλονίκης (Α' Όμιλος)", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_thes_b2', 'name': "Β' Κατηγορία Θεσσαλονίκης (Β' Όμιλος)", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_thes_c', 'name': "Γ' Κατηγορία Θεσσαλονίκης", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_thes_cup', 'name': 'Κύπελλο ΕΠΣ Θεσσαλονίκης', 'season': '2024-2025', 'gender': 'men'},
-  ],
   // ΕΠΣ Μακεδονίας
   'eps_makedonias': [
     {'id': 'eps_makedonias_a1', 'name': "Α1' Κατηγορία Μακεδονίας", 'season': '2025-2026', 'gender': 'men'},
@@ -321,14 +308,6 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
     {'id': 'eps_makedonias_b', 'name': "Β' Κατηγορία Μακεδονίας", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_makedonias_c', 'name': "Γ' Κατηγορία Μακεδονίας", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_makedonias_cup', 'name': 'Κύπελλο ΕΠΣ Μακεδονίας', 'season': '2025-2026', 'gender': 'men'},
-  ],
-  // ΕΠΣ Κρήτης
-  'eps_kritis': [
-    {'id': 'eps_kri_a', 'name': "Α' Κατηγορία Κρήτης", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_kri_b1', 'name': "Β' Κατηγορία Κρήτης (Ανατολικά)", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_kri_b2', 'name': "Β' Κατηγορία Κρήτης (Δυτικά)", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_kri_c', 'name': "Γ' Κατηγορία Κρήτης", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_kri_cup', 'name': 'Κύπελλο ΕΠΣ Κρήτης', 'season': '2024-2025', 'gender': 'men'},
   ],
   // ΕΠΣ Θεσσαλίας
   'eps_thessalias': [
@@ -351,12 +330,6 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
     {'id': 'eps_ipeirou_c', 'name': "Γ' Κατηγορία Ηπείρου", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_ipeirou_cup', 'name': 'Κύπελλο ΕΠΣ Ηπείρου', 'season': '2025-2026', 'gender': 'men'},
   ],
-  // ΕΠΣ Κεντρικής Ελλάδας
-  'eps_kentrikis_elladas': [
-    {'id': 'eps_ken_a', 'name': "Α' Κατηγορία Κεντρικής Ελλάδας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_ken_b', 'name': "Β' Κατηγορία Κεντρικής Ελλάδας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_ken_cup', 'name': 'Κύπελλο ΕΠΣ Κεντρικής Ελλάδας', 'season': '2024-2025', 'gender': 'men'},
-  ],
   // ΕΠΣ Βοιωτίας
   'eps_voiotias': [
     {'id': 'eps_voiotias_a', 'name': "Α' Κατηγορία Βοιωτίας", 'season': '2024-2025', 'gender': 'men'},
@@ -366,18 +339,6 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
   'eps_aitoloakarnanias': [
     {'id': 'eps_aitoloakarnanias_a', 'name': "Α' Κατηγορία Αιτωλοακαρνανίας", 'season': '2025-2026', 'gender': 'men'},
     {'id': 'eps_aitoloakarnanias_b', 'name': "Β' Κατηγορία Αιτωλοακαρνανίας", 'season': '2025-2026', 'gender': 'men'},
-  ],
-  // ΕΠΣ Δυτικής Μακεδονίας
-  'eps_dytikis_makedonias': [
-    {'id': 'eps_dym_a', 'name': "Α' Κατηγορία Δυτικής Μακεδονίας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_dym_b', 'name': "Β' Κατηγορία Δυτικής Μακεδονίας", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_dym_cup', 'name': 'Κύπελλο ΕΠΣ Δυτικής Μακεδονίας', 'season': '2024-2025', 'gender': 'men'},
-  ],
-  // ΕΠΣ Ανατολικής Μακεδονίας & Θράκης
-  'eps_anatolikis_makedonias': [
-    {'id': 'eps_anm_a', 'name': "Α' Κατηγορία Ανατολικής Μακεδονίας & Θράκης", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_anm_b', 'name': "Β' Κατηγορία Ανατολικής Μακεδονίας & Θράκης", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_anm_cup', 'name': 'Κύπελλο ΕΠΣ Ανατολικής Μακεδονίας', 'season': '2024-2025', 'gender': 'men'},
   ],
   // ΕΠΣ Κέρκυρας
   'eps_kerkyras': [
@@ -460,12 +421,6 @@ const kDefaultCompetitions = <String, List<Map<String, String>>>{
     {'id': 'eps_rod_a', 'name': "Α' Κατηγορία Ρόδου", 'season': '2024-2025', 'gender': 'men'},
     {'id': 'eps_rod_b', 'name': "Β' Κατηγορία Ρόδου", 'season': '2024-2025', 'gender': 'men'},
     {'id': 'eps_rod_cup', 'name': 'Κύπελλο ΕΠΣ Ρόδου', 'season': '2024-2025', 'gender': 'men'},
-  ],
-  // ΕΠΣ Νήσων
-  'eps_nison': [
-    {'id': 'eps_nis_a', 'name': "Α' Κατηγορία Νήσων", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_nis_b', 'name': "Β' Κατηγορία Νήσων", 'season': '2024-2025', 'gender': 'men'},
-    {'id': 'eps_nis_cup', 'name': 'Κύπελλο ΕΠΣ Νήσων', 'season': '2024-2025', 'gender': 'men'},
   ],
   // Κύπρος
   'cy_lefkosias': [
