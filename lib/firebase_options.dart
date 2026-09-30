@@ -59,10 +59,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyB7_SnEYLLbg6Yx0zz3hG3XHg2Xr8GB38Q',
-    appId: '1:539400130045:ios:6d99505ef1f7234cc51d94',
+    appId: '1:539400130045:ios:e311bf2b4111f0f6c51d94',
     messagingSenderId: '539400130045',
     projectId: 'clubera-app',
     storageBucket: 'clubera-app.firebasestorage.app',
-    iosBundleId: 'com.clubera.clubera',
+    iosBundleId: 'com.clubera.app',
   );
 }

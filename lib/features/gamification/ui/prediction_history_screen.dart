@@ -85,6 +85,7 @@ class _ScorePredictionsTabState extends State<_ScorePredictionsTab>
           return const Center(child: CircularProgressIndicator());
         }
         final items = snap.data ?? [];
+        final pending = items.where((p) => p.isPending).toList();
         final resolved = items.where((p) => !p.isPending).toList();
         final correct = resolved.where((p) => (p.pointsEarned ?? 0) > 0).length;
         final exact = resolved.where((p) => (p.pointsEarned ?? 0) >= kPredictExactPoints).length;
@@ -119,13 +120,26 @@ class _ScorePredictionsTabState extends State<_ScorePredictionsTab>
                     ),
                   ),
                 )
-              else
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) => _ScorePredictionTile(prediction: items[i]),
-                    childCount: items.length,
+              else ...[
+                if (pending.isNotEmpty) ...[
+                  const SliverToBoxAdapter(child: _SectionHeader(title: 'Active', icon: Icons.hourglass_empty)),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _ScorePredictionTile(prediction: pending[i]),
+                      childCount: pending.length,
+                    ),
                   ),
-                ),
+                ],
+                if (resolved.isNotEmpty) ...[
+                  const SliverToBoxAdapter(child: _SectionHeader(title: 'History', icon: Icons.history)),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _ScorePredictionTile(prediction: resolved[i]),
+                      childCount: resolved.length,
+                    ),
+                  ),
+                ],
+              ],
             ],
           ),
         );
@@ -183,6 +197,7 @@ class _CouponPicksTabState extends State<_CouponPicksTab>
           return const Center(child: CircularProgressIndicator());
         }
         final items = snap.data ?? [];
+        final pending = items.where((p) => p.isPending).toList();
         final resolved = items.where((p) => p.resolved == true).toList();
         final correct = resolved.where((p) => (p.pointsEarned ?? 0) > 0).length;
         final exact = resolved.where((p) => (p.pointsEarned ?? 0) >= kPredictExactPoints).length;
@@ -219,13 +234,26 @@ class _CouponPicksTabState extends State<_CouponPicksTab>
                     ),
                   ),
                 )
-              else
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) => _CouponPickTile(pick: items[i]),
-                    childCount: items.length,
+              else ...[
+                if (pending.isNotEmpty) ...[
+                  const SliverToBoxAdapter(child: _SectionHeader(title: 'Active', icon: Icons.hourglass_empty)),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _CouponPickTile(pick: pending[i]),
+                      childCount: pending.length,
+                    ),
                   ),
-                ),
+                ],
+                if (resolved.isNotEmpty) ...[
+                  const SliverToBoxAdapter(child: _SectionHeader(title: 'History', icon: Icons.history)),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _CouponPickTile(pick: resolved[i]),
+                      childCount: resolved.length,
+                    ),
+                  ),
+                ],
+              ],
             ],
           ),
         );
@@ -405,6 +433,34 @@ class _CouponPickTile extends StatelessWidget {
 }
 
 // ─── Shared widgets ───────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  const _SectionHeader({required this.title, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Row(
+        children: [
+          Icon(icon, color: AppTheme.textSecondary, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _StatsHeader extends StatelessWidget {
   final List<Widget> children;

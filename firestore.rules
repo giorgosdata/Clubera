@@ -120,6 +120,12 @@ service cloud.firestore {
       }
     }
 
+    // ── ASSOCIATIONS (regional federations, e.g. ΕΠΣ) ─────────────────────────
+    match /associations/{associationId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // ── MATCHES ──────────────────────────────────────────────────────────────
     match /matches/{matchId} {
       allow read: if true;

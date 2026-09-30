@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/providers/theme_provider.dart';
@@ -12,7 +13,7 @@ import '../../../models/donation_model.dart';
 import '../../../models/prediction_model.dart';
 import '../../../models/reward_model.dart';
 import '../../clubs/ui/club_profile_screen.dart';
-import '../../clubs/ui/create_club_screen.dart' show CreateClubScreen, kLeagues;
+import '../../clubs/ui/create_club_screen.dart' show CreateClubScreen, leaguesForCountry;
 import '../../admin/ui/admin_screen.dart';
 import '../../club_admin/ui/club_admin_screen.dart';
 import '../../help/ui/gazette_screen.dart';
@@ -399,27 +400,25 @@ class _DepositSheetState extends State<_DepositSheet> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
-      final batch = FirebaseFirestore.instance.batch();
-      batch.update(
-        FirebaseFirestore.instance.collection('users').doc(widget.user.uid),
-        {'balance': FieldValue.increment(amount)},
-      );
-      batch.set(
-        FirebaseFirestore.instance.collection('payments').doc(),
-        {
-          'userId': widget.user.uid,
-          'userName': widget.user.name,
-          'type': 'deposit',
-          'amount': amount,
-          'createdAt': FieldValue.serverTimestamp(),
-        },
-      );
-      await batch.commit();
+      await FirebaseFunctions.instance
+          .httpsCallable('walletTransaction')
+          .call({'type': 'deposit', 'amount': amount});
+      // AppProvider's live Firestore listener on users/{uid} already picks up
+      // the balance change the Cloud Function just wrote — no local math here,
+      // or we'd double-apply the delta on top of what the listener just set.
       if (mounted) navigator.pop();
       messenger.showSnackBar(
         SnackBar(
           content: Text('€${amount.toStringAsFixed(2)} added to wallet!'),
           backgroundColor: AppTheme.supportGreen,
+        ),
+      );
+    } on FirebaseFunctionsException catch (e) {
+      if (mounted) setState(() => _loading = false);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to add funds: ${e.message}'),
+          backgroundColor: AppTheme.red,
         ),
       );
     } catch (e) {
@@ -630,28 +629,23 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
-      final batch = FirebaseFirestore.instance.batch();
-      batch.update(
-        FirebaseFirestore.instance.collection('users').doc(widget.user.uid),
-        {'balance': FieldValue.increment(-amount)},
-      );
-      batch.set(
-        FirebaseFirestore.instance.collection('payments').doc(),
-        {
-          'userId': widget.user.uid,
-          'userName': widget.user.name,
-          'type': 'withdrawal',
-          'amount': amount,
-          'createdAt': FieldValue.serverTimestamp(),
-        },
-      );
-      await batch.commit();
+      await FirebaseFunctions.instance
+          .httpsCallable('walletTransaction')
+          .call({'type': 'withdrawal', 'amount': amount});
+      // AppProvider's live Firestore listener on users/{uid} already picks up
+      // the balance change the Cloud Function just wrote — no local math here,
+      // or we'd double-apply the delta on top of what the listener just set.
       if (mounted) navigator.pop();
       messenger.showSnackBar(
         SnackBar(
           content: Text('€${amount.toStringAsFixed(2)} withdrawn successfully'),
           backgroundColor: AppTheme.supportGreen,
         ),
+      );
+    } on FirebaseFunctionsException catch (e) {
+      if (mounted) setState(() => _loading = false);
+      messenger.showSnackBar(
+        SnackBar(content: Text('Withdrawal failed: ${e.message}'), backgroundColor: AppTheme.red),
       );
     } catch (e) {
       if (mounted) setState(() => _loading = false);
@@ -839,20 +833,25 @@ class _PaymentHistorySheet extends StatelessWidget {
                   final type = d['type'] ?? 'deposit';
                   final amount = (d['amount'] as num?)?.toDouble() ?? 0;
                   final date = (d['createdAt'] as Timestamp?)?.toDate();
-                  final isDonate = type == 'donate' || type == 'support';
+                  final isDebit = type == 'donate' || type == 'support' || type == 'withdrawal';
+                  final icon = type == 'withdrawal'
+                      ? Icons.remove_circle
+                      : type == 'donate' || type == 'support'
+                      ? Icons.favorite
+                      : Icons.add_circle;
                   return ListTile(
                     leading: Container(
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: isDonate
+                        color: isDebit
                             ? AppTheme.liveRed.withOpacity(0.2)
                             : AppTheme.supportGreen.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        isDonate ? Icons.favorite : Icons.add_circle,
-                        color: isDonate
+                        icon,
+                        color: isDebit
                             ? AppTheme.liveRed
                             : AppTheme.supportGreen,
                         size: 20,
@@ -861,6 +860,8 @@ class _PaymentHistorySheet extends StatelessWidget {
                     title: Text(
                       type == 'deposit'
                           ? 'Deposit'
+                          : type == 'withdrawal'
+                          ? 'Withdrawal'
                           : type == 'donate'
                           ? 'Donation to ${d['clubName'] ?? ''}'
                           : 'Support ${d['clubName'] ?? ''}',
@@ -876,9 +877,9 @@ class _PaymentHistorySheet extends StatelessWidget {
                           )
                         : null,
                     trailing: Text(
-                      '${isDonate ? '-' : '+'}€${amount.toStringAsFixed(2)}',
+                      '${isDebit ? '-' : '+'}€${amount.toStringAsFixed(2)}',
                       style: TextStyle(
-                        color: isDonate
+                        color: isDebit
                             ? AppTheme.liveRed
                             : AppTheme.supportGreen,
                         fontWeight: FontWeight.w900,
@@ -2404,7 +2405,7 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
   final _nameCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
-  String _league = kLeagues.first;
+  String _league = leaguesForCountry('Greece').first;
   String _category = kCategories.first;
   bool _loading = false;
   String? _error;
@@ -2518,7 +2519,7 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
                 dropdownColor: AppTheme.cardBg,
                 style: const TextStyle(color: Colors.white),
                 underline: const SizedBox(),
-                items: kLeagues.map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(),
+                items: leaguesForCountry('Greece').map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(),
                 onChanged: (v) => setState(() => _league = v!),
               ),
             ),

@@ -3,7 +3,7 @@
 
 const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { onRequest } = require("firebase-functions/v2/https");
+const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 // Heavier runtime config for functions that may fan-out to many docs.
@@ -394,6 +394,31 @@ async function runInChunks(items, size, fn) {
 
 module.exports._runInChunks = runInChunks;
 
+// Resolves a prediction/pick immediately if its match was already finished
+// before the doc was created. onMatchUpdated only fires once, at the moment
+// status flips to "finished" — a prediction created afterwards (e.g. on
+// stale/test data, or a race with the status write) would otherwise be
+// permanently stuck as pending.
+async function resolveIfMatchAlreadyFinished(matchId) {
+  if (!matchId) return;
+  try {
+    const matchSnap = await db.collection("matches").doc(matchId).get();
+    const m = matchSnap.data();
+    if (!m || m.status !== "finished" || m.homeScore == null || m.awayScore == null) return;
+    await resolvePredictionsForMatch(
+      matchId,
+      m.homeScore || 0,
+      m.awayScore || 0,
+      m.homeClubName || "",
+      m.awayClubName || "",
+      m.homeClubId || "",
+      m.awayClubId || ""
+    );
+  } catch (e) {
+    console.error(`resolveIfMatchAlreadyFinished(${matchId}) failed:`, e);
+  }
+}
+
 // ─── MATCH SCORE / STATUS UPDATE ─────────────────────────────────────────────
 exports.onMatchUpdated = onDocumentUpdated({ document: "matches/{matchId}", ...HEAVY }, async (event) => {
   const before = event.data?.before.data();
@@ -695,13 +720,25 @@ async function awardBadge(userId, badgeCode, clubId = null, clubName = null) {
   }
 }
 
-// Trigger: first score prediction → firstPrediction badge
+// Trigger: first score prediction → firstPrediction badge, and resolve
+// immediately if the referenced match had already finished.
 exports.onScorePredictionCreated = onDocumentCreated(
   "score_predictions/{predId}",
   async (event) => {
     const p = event.data?.data();
     if (!p?.userId) return;
     await awardBadge(p.userId, "firstPrediction");
+    await resolveIfMatchAlreadyFinished(p.matchId);
+  }
+);
+
+// Trigger: resolve a coupon pick immediately if the referenced match had
+// already finished before the pick was created.
+exports.onCouponPickCreated = onDocumentCreated(
+  "coupon_picks/{pickId}",
+  async (event) => {
+    const p = event.data?.data();
+    await resolveIfMatchAlreadyFinished(p?.matchId);
   }
 );
 
@@ -1264,3 +1301,49 @@ exports.sendPasswordReset = onRequest(
     }
   }
 );
+
+// ─── WALLET (deposit / withdrawal) ──────────────────────────────────────────
+// Server-side balance mutation. Firestore rules block clients from writing
+// their own `users/{uid}.balance` directly (same as role/points/streak), so
+// this is the only legitimate way to move money in or out of a wallet.
+exports.walletTransaction = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "Sign in required.");
+  }
+
+  const type = request.data?.type;
+  const amount = Number(request.data?.amount);
+
+  if (type !== "deposit" && type !== "withdrawal") {
+    throw new HttpsError("invalid-argument", "type must be 'deposit' or 'withdrawal'.");
+  }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new HttpsError("invalid-argument", "amount must be a positive number.");
+  }
+
+  const userRef = db.collection("users").doc(uid);
+  const paymentRef = db.collection("payments").doc();
+  const delta = type === "deposit" ? amount : -amount;
+
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists) {
+      throw new HttpsError("not-found", "User not found.");
+    }
+    const balance = snap.data().balance ?? 0;
+    if (type === "withdrawal" && balance < amount) {
+      throw new HttpsError("failed-precondition", "Insufficient balance.");
+    }
+    tx.update(userRef, { balance: admin.firestore.FieldValue.increment(delta) });
+    tx.set(paymentRef, {
+      userId: uid,
+      userName: snap.data().name ?? "",
+      type,
+      amount,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+
+  return { success: true };
+});
