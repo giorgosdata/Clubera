@@ -611,11 +611,15 @@ class _BrowseTab extends StatefulWidget {
   State<_BrowseTab> createState() => _BrowseTabState();
 }
 
-class _BrowseTabState extends State<_BrowseTab> {
+class _BrowseTabState extends State<_BrowseTab> with AutomaticKeepAliveClientMixin {
   String _search = '';
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final user = context.watch<AppProvider>().user;
     final myClubId = user?.clubId;
 
@@ -847,12 +851,16 @@ class _SearchTab extends StatefulWidget {
   State<_SearchTab> createState() => _SearchTabState();
 }
 
-class _SearchTabState extends State<_SearchTab> {
+class _SearchTabState extends State<_SearchTab> with AutomaticKeepAliveClientMixin {
   String _query = '';
   bool _searchClubs = true;
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Column(
       children: [
         Padding(
@@ -1112,13 +1120,17 @@ class _StandingsTab extends StatefulWidget {
   State<_StandingsTab> createState() => _StandingsTabState();
 }
 
-class _StandingsTabState extends State<_StandingsTab> {
+class _StandingsTabState extends State<_StandingsTab> with AutomaticKeepAliveClientMixin {
   String _country = kCountryList.first;
   String _category = kCategories.first;
   String? _assocId;
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final countryCode = _kCountryToCode[_country] ?? '';
 
     return Column(
@@ -1425,13 +1437,32 @@ class _StandingRow extends StatelessWidget {
 
 // ─── REUSED WIDGETS ───────────────────────────────────────────────────────────
 
-class _CountryTile extends StatelessWidget {
+class _CountryTile extends StatefulWidget {
   final String flag;
   final String country;
   const _CountryTile({required this.flag, required this.country});
 
   @override
+  State<_CountryTile> createState() => _CountryTileState();
+}
+
+class _CountryTileState extends State<_CountryTile> {
+  late final Future<AggregateQuerySnapshot> _countFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _countFuture = FirebaseFirestore.instance
+        .collection('clubs')
+        .where('country', isEqualTo: widget.country)
+        .count()
+        .get();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final flag = widget.flag;
+    final country = widget.country;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1463,21 +1494,36 @@ class _CountryTile extends StatelessWidget {
                   ),
                 ),
               ),
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('clubs')
-                    .where('country', isEqualTo: country)
-                    .snapshots(),
+              FutureBuilder<AggregateQuerySnapshot>(
+                future: _countFuture,
                 builder: (_, snap) {
-                  final count = snap.data?.docs.length ?? 0;
-                  if (count == 0) {
-                    return const Icon(Icons.chevron_right, color: AppTheme.textSecondary);
-                  }
+                  final loading = snap.connectionState == ConnectionState.waiting;
+                  final count = snap.data?.count ?? 0;
                   return Row(
                     children: [
-                      Text('$count', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
-                      const SizedBox(width: 2),
-                      const Text('clubs', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                      if (loading)
+                        const SizedBox(
+                          width: 12, height: 12,
+                          child: CircularProgressIndicator(strokeWidth: 1.5, color: AppTheme.textSecondary),
+                        )
+                      else ...[
+                        Text(
+                          '$count',
+                          style: TextStyle(
+                            color: count > 0 ? AppTheme.primaryLight : AppTheme.textSecondary,
+                            fontSize: 13,
+                            fontWeight: count > 0 ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          'clubs',
+                          style: TextStyle(
+                            color: count > 0 ? AppTheme.textSecondary : AppTheme.textSecondary.withValues(alpha: 0.5),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
                       const SizedBox(width: 6),
                       const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
                     ],

@@ -175,6 +175,13 @@ class AuthRepo {
   }
 
   Future<UserModel?> loginWithBiometric() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString(_savedEmailKey);
+    final pass = prefs.getString(_savedPassKey);
+    if (email == null || pass == null) {
+      await setBiometricEnabled(enabled: false);
+      throw Exception('no_credentials');
+    }
     try {
       final authenticated = await _localAuth.authenticate(
         localizedReason: 'Χρησιμοποιήστε δακτυλικό αποτύπωμα για σύνδεση',
@@ -184,13 +191,9 @@ class AuthRepo {
         ),
       );
       if (!authenticated) return null;
-      final prefs = await SharedPreferences.getInstance();
-      final email = prefs.getString(_savedEmailKey);
-      final pass = prefs.getString(_savedPassKey);
-      if (email == null || pass == null) return null;
       return await login(email, pass);
-    } catch (_) {
-      return null;
+    } catch (e) {
+      rethrow;
     }
   }
 }

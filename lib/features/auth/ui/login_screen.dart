@@ -34,16 +34,25 @@ class _LoginScreenState extends State<LoginScreen> {
     final available = await _authRepo.isBiometricAvailable();
     final enabled = await _authRepo.isBiometricEnabled();
     if (mounted) setState(() { _biometricAvailable = available; _biometricEnabled = enabled; });
-    if (available && enabled) _loginWithBiometric();
   }
 
   Future<void> _loginWithBiometric() async {
     setState(() { _loading = true; _error = null; });
     try {
       final user = await _authRepo.loginWithBiometric();
-      if (user == null && mounted) setState(() => _error = 'Biometric failed. Use password.');
+      if (user == null && mounted) setState(() => _error = 'Η αναγνώριση ακυρώθηκε. Δοκίμασε ξανά.');
     } catch (e) {
-      if (mounted) setState(() => _error = _friendlyAuthError(e));
+      if (mounted) {
+        final msg = e.toString();
+        if (msg.contains('no_credentials')) {
+          setState(() {
+            _biometricEnabled = false;
+            _error = 'Συνδέσου με κωδικό για να ενεργοποιήσεις ξανά το biometric.';
+          });
+        } else {
+          setState(() => _error = 'Biometric απέτυχε. Χρησιμοποίησε κωδικό.');
+        }
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }

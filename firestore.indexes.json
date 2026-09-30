@@ -125,7 +125,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "awardedAt", "order": "DESCENDING" }
+        { "fieldPath": "awardedAt", "order": "ASCENDING" }
       ]
     },
     {
@@ -142,6 +142,15 @@
       "fields": [
         { "fieldPath": "gameId", "order": "ASCENDING" },
         { "fieldPath": "pointsWon", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "game_plays",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "gameId", "order": "ASCENDING" },
+        { "fieldPath": "playedAt", "order": "ASCENDING" }
       ]
     },
     {

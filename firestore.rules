@@ -72,9 +72,8 @@ service cloud.firestore {
     // ── CLUBS ────────────────────────────────────────────────────────────────
     match /clubs/{clubId} {
       allow read: if true;
-      // Only admin can create club docs directly — regular users must go
-      // through the club_requests approval flow (CF creates the doc).
-      allow create: if isAdmin();
+      allow create: if isAdmin() ||
+        (isSignedIn() && userDoc().role == 'club' && request.resource.data.adminUid == uid());
       // Staff/admin can update any field. Any signed-in user can change only
       // the followers/votes counters (used by follow/vote flows).
       allow update: if isClubStaff(clubId) || isAdmin() ||
@@ -214,6 +213,22 @@ service cloud.firestore {
       );
       allow update, delete: if isAdmin() ||
         (resource.data.clubId != null && isClubStaff(resource.data.clubId));
+    }
+
+    // ── APP CONFIG (admin PIN — only signed-in users can read) ───────────────
+    match /app_config/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── ASSOCIATIONS & COMPETITIONS (read-only for all signed-in users) ──────
+    match /associations/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /competitions/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // ── NEWS ─────────────────────────────────────────────────────────────────

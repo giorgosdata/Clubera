@@ -934,7 +934,7 @@ class _MenuSection extends StatelessWidget {
                   ),
                 ),
               )
-            else
+            else if (user.role == 'club' || user.role == 'admin')
               _MenuItem(
                 icon: Icons.add_circle_outline,
                 label: 'Create My Club',
@@ -1055,6 +1055,7 @@ class _MenuSection extends StatelessWidget {
     final pinCtrl = TextEditingController();
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.cardBg,
         title: const Row(
@@ -1093,48 +1094,76 @@ class _MenuSection extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (ctx.mounted) Navigator.pop(ctx);
+              });
+            },
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accent),
             onPressed: () async {
-              const adminPin = String.fromEnvironment('CLUBERA_ADMIN_PIN');
-              if (adminPin.isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Admin PIN not configured. Set role via Firebase Console.',
-                    ),
-                    backgroundColor: AppTheme.red,
-                  ),
-                );
-                return;
-              }
-              if (pinCtrl.text == adminPin) {
-                await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(user.uid)
-                    .update({'role': 'admin'});
+              final entered = pinCtrl.text.trim();
+              if (entered.isEmpty) return;
+              FocusManager.instance.primaryFocus?.unfocus();
+              try {
+                final doc = await FirebaseFirestore.instance
+                    .collection('app_config')
+                    .doc('admin')
+                    .get();
+                final storedPin = doc.data()?['pin']?.toString() ?? '';
+                if (storedPin.isEmpty) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(
+                        content: Text('Admin PIN not set. Contact the app owner.'),
+                        backgroundColor: AppTheme.red,
+                      ),
+                    );
+                  }
+                  return;
+                }
+                if (entered == storedPin) {
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .update({'role': 'admin'});
+                  if (ctx.mounted) {
+                    ctx.read<AppProvider>().updateUser(
+                      user.copyWith(role: 'admin'),
+                    );
+                    Navigator.pop(ctx);
+                  }
+                  // Use outer context for snackbar — ctx is unmounted after pop
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Admin access granted!'),
+                        backgroundColor: AppTheme.supportGreen,
+                      ),
+                    );
+                  }
+                } else {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(
+                        content: Text('Λάθος PIN'),
+                        backgroundColor: AppTheme.red,
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
                 if (ctx.mounted) {
-                  ctx.read<AppProvider>().updateUser(
-                    user.copyWith(role: 'admin'),
-                  );
-                  Navigator.pop(ctx);
                   ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(
-                      content: Text('Admin access granted!'),
-                      backgroundColor: AppTheme.accent,
+                    SnackBar(
+                      content: Text('Σφάλμα: $e'),
+                      backgroundColor: AppTheme.red,
                     ),
                   );
                 }
-              } else {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(
-                    content: Text('Wrong PIN'),
-                    backgroundColor: AppTheme.red,
-                  ),
-                );
               }
             },
             child: const Text('Unlock', style: TextStyle(color: Colors.black)),
@@ -1281,17 +1310,6 @@ class _MenuSection extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => _JoinWithCodeSheet(user: user),
-    );
-  }
-
-  void _showNotifications(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.cardBg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => const _NotificationsSheet(),
     );
   }
 
