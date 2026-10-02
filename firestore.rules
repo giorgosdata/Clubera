@@ -118,6 +118,26 @@ service cloud.firestore {
         allow read: if true;
         allow write: if isClubStaff(clubId) || isAdmin();
       }
+      // Gallery (photos & videos)
+      match /gallery/{galleryId} {
+        allow read: if true;
+        allow write: if isClubStaff(clubId) || isAdmin();
+      }
+      // Women's team players
+      match /women_players/{playerId} {
+        allow read: if true;
+        allow write: if isClubStaff(clubId) || isAdmin();
+      }
+      // Stadium photos
+      match /stadium_photos/{photoId} {
+        allow read: if true;
+        allow write: if isClubStaff(clubId) || isAdmin();
+      }
+      // Announcements
+      match /announcements/{announcementId} {
+        allow read: if true;
+        allow write: if isClubStaff(clubId) || isAdmin();
+      }
     }
 
     // ── ASSOCIATIONS (regional federations, e.g. ΕΠΣ) ─────────────────────────

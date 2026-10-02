@@ -23,11 +23,26 @@ service firebase.storage {
     function isClubStaff(clubId) {
       return isSignedIn() && (
         isClubAdmin(clubId) ||
+        firestore.get(/databases/(default)/documents/users/$(uid())).data.get('clubId', '') == clubId ||
         (uid() in firestore.get(/databases/(default)/documents/clubs/$(clubId)).data.get('staffUids', []))
       );
     }
 
-    // ── Club logos / covers / player photos ────────────────────────────────
+    function isVideoOrImage() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('video/.*');
+    }
+
+    // ── Club gallery (photos + videos, up to 100 MB) ────────────────────────
+    match /clubs/{clubId}/gallery/{allPaths=**} {
+      allow read: if true;
+      allow write: if (isClubStaff(clubId) || isAdmin())
+        && isVideoOrImage()
+        && request.resource.size < 100 * 1024 * 1024;
+      allow delete: if isClubStaff(clubId) || isAdmin();
+    }
+
+    // ── Club logos / covers / player photos / stadium photos ───────────────
     // Write restricted to club staff or admin only.
     match /clubs/{clubId}/{allPaths=**} {
       allow read: if true;
