@@ -34,6 +34,13 @@ class ClubModel {
   final String? assocName;
   final String? competitionId;
   final String? competitionName;
+  // Club identity extras
+  final int? yearFounded;
+  final String? primaryColor;
+  final String? secondaryColor;
+  final String? contactEmail;
+  final String? contactPhone;
+  final String? website;
 
   const ClubModel({
     required this.id,
@@ -61,6 +68,12 @@ class ClubModel {
     this.assocName,
     this.competitionId,
     this.competitionName,
+    this.yearFounded,
+    this.primaryColor,
+    this.secondaryColor,
+    this.contactEmail,
+    this.contactPhone,
+    this.website,
   });
 
   int get played => wins + draws + losses;
@@ -93,6 +106,12 @@ class ClubModel {
     assocName: m['assocName'],
     competitionId: m['competitionId'],
     competitionName: m['competitionName'],
+    yearFounded: (m['yearFounded'] as num?)?.toInt(),
+    primaryColor: m['primaryColor'],
+    secondaryColor: m['secondaryColor'],
+    contactEmail: m['contactEmail'],
+    contactPhone: m['contactPhone'],
+    website: m['website'],
   );
 
   Map<String, dynamic> toMap() => {
@@ -116,6 +135,12 @@ class ClubModel {
     'inviteCode': inviteCode,
     'staffUids': staffUids,
     'academiesCount': academiesCount,
+    if (yearFounded != null) 'yearFounded': yearFounded,
+    if (primaryColor != null) 'primaryColor': primaryColor,
+    if (secondaryColor != null) 'secondaryColor': secondaryColor,
+    if (contactEmail != null) 'contactEmail': contactEmail,
+    if (contactPhone != null) 'contactPhone': contactPhone,
+    if (website != null) 'website': website,
   };
 }
 

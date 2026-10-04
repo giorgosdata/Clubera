@@ -19,7 +19,7 @@ import '../../../models/donation_model.dart';
 import '../../../models/player_model.dart';
 import '../../matches/ui/create_match_screen.dart';
 import '../../clubs/ui/club_profile_screen.dart';
-import '../../clubs/ui/create_club_screen.dart' show kCountryList, CreateClubScreen;
+import '../../clubs/ui/create_club_screen.dart' show kCountryList, leaguesForCountry, CreateClubScreen;
 import '../../admin/ui/sponsors_management.dart';
 import '../../admin/ui/trivia_admin_screen.dart';
 import '../../clubs/ui/announcements_tab.dart';
@@ -541,15 +541,26 @@ class _OverviewTab extends StatelessWidget {
   void _showEditClubDialog(BuildContext context, ClubModel club) {
     final nameCtrl = TextEditingController(text: club.name);
     final cityCtrl = TextEditingController(text: club.city);
-    final leagueCtrl = TextEditingController(text: club.league);
     final descCtrl = TextEditingController(text: club.description);
+    final yearCtrl = TextEditingController(text: club.yearFounded?.toString() ?? '');
+    final emailCtrl = TextEditingController(text: club.contactEmail ?? '');
+    final phoneCtrl = TextEditingController(text: club.contactPhone ?? '');
+    final websiteCtrl = TextEditingController(text: club.website ?? '');
     File? newLogoFile;
-    String selCategory = kCategories.contains(club.category)
-        ? club.category
-        : kCategories.first;
-    String selCountry = kCountryList.contains(club.country)
-        ? club.country
-        : kCountryList.first;
+    String selCategory = kCategories.contains(club.category) ? club.category : kCategories.first;
+    String selCountry = kCountryList.contains(club.country) ? club.country : kCountryList.first;
+    String selPrimaryColor = club.primaryColor ?? '#003366';
+    String selSecondaryColor = club.secondaryColor ?? '#FFFFFF';
+
+    // Leagues are always a dropdown — derived from country selection
+    List<String> _leagues() => leaguesForCountry(selCountry);
+    String selLeague = _leagues().contains(club.league) ? club.league : _leagues().first;
+
+    const presetColors = [
+      '#003366', '#CC0000', '#00AA00', '#FFD700',
+      '#FF6600', '#800080', '#000000', '#FFFFFF',
+      '#003399', '#CC3300', '#006600', '#FF9900',
+    ];
 
     showDialog(
       context: context,
@@ -569,25 +580,27 @@ class _OverviewTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
+                // ── Basic info
                 TextField(
                   controller: nameCtrl,
                   style: const TextStyle(color: Colors.white),
                   maxLength: 60,
-                  decoration: const InputDecoration(labelText: 'Club Name'),
+                  decoration: const InputDecoration(labelText: 'Club Name *'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: cityCtrl,
                   style: const TextStyle(color: Colors.white),
                   maxLength: 40,
-                  decoration: const InputDecoration(labelText: 'City'),
+                  decoration: const InputDecoration(labelText: 'City *'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
-                  controller: leagueCtrl,
+                  controller: yearCtrl,
                   style: const TextStyle(color: Colors.white),
-                  maxLength: 40,
-                  decoration: const InputDecoration(labelText: 'League'),
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  decoration: const InputDecoration(labelText: 'Year Founded'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
@@ -598,55 +611,90 @@ class _OverviewTab extends StatelessWidget {
                   decoration: const InputDecoration(labelText: 'Description'),
                 ),
                 const SizedBox(height: 14),
-                const Text(
-                  'Category',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                // ── Contact info
+                const Text('Contact', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: emailCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined, size: 18)),
                 ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: phoneCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone_outlined, size: 18)),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: websiteCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(labelText: 'Website', prefixIcon: Icon(Icons.language_outlined, size: 18)),
+                ),
+                const SizedBox(height: 14),
+                // ── Club colors
+                const Text('Club Colors', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(child: _ColorPickerField(
+                      label: 'Primary',
+                      value: selPrimaryColor,
+                      presets: presetColors,
+                      onChanged: (v) => setDlg(() => selPrimaryColor = v),
+                    )),
+                    const SizedBox(width: 10),
+                    Expanded(child: _ColorPickerField(
+                      label: 'Secondary',
+                      value: selSecondaryColor,
+                      presets: presetColors,
+                      onChanged: (v) => setDlg(() => selSecondaryColor = v),
+                    )),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                // ── Category
+                const Text('Category', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
-                  children: kCategories
-                      .map(
-                        (cat) => ChoiceChip(
-                          label: Text(cat),
-                          selected: selCategory == cat,
-                          selectedColor: AppTheme.primaryLight,
-                          labelStyle: TextStyle(
-                            color: selCategory == cat
-                                ? Colors.white
-                                : AppTheme.textSecondary,
-                            fontWeight: selCategory == cat
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                          onSelected: (_) => setDlg(() => selCategory = cat),
-                        ),
-                      )
-                      .toList(),
+                  children: kCategories.map((cat) => ChoiceChip(
+                    label: Text(cat),
+                    selected: selCategory == cat,
+                    selectedColor: AppTheme.primaryLight,
+                    labelStyle: TextStyle(
+                      color: selCategory == cat ? Colors.white : AppTheme.textSecondary,
+                      fontWeight: selCategory == cat ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    onSelected: (_) => setDlg(() => selCategory = cat),
+                  )).toList(),
                 ),
                 const SizedBox(height: 14),
-                const Text(
-                  'Country',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                ),
+                // ── Country
+                const Text('Country', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.cardBg2,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: DropdownButton<String>(
-                    value: selCountry,
-                    isExpanded: true,
-                    dropdownColor: AppTheme.cardBg,
-                    style: const TextStyle(color: Colors.white),
-                    underline: const SizedBox(),
-                    items: kCountryList
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (v) => setDlg(() => selCountry = v!),
-                  ),
+                _StyledDropdown<String>(
+                  value: selCountry,
+                  items: kCountryList,
+                  itemLabel: (c) => c,
+                  onChanged: (v) => setDlg(() {
+                    selCountry = v!;
+                    final leagues = leaguesForCountry(v);
+                    selLeague = leagues.first;
+                  }),
+                ),
+                const SizedBox(height: 14),
+                // ── League (controlled dropdown)
+                const Text('League', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                const SizedBox(height: 6),
+                _StyledDropdown<String>(
+                  value: selLeague,
+                  items: _leagues(),
+                  itemLabel: (l) => l,
+                  onChanged: (v) => setDlg(() => selLeague = v!),
                 ),
               ],
             ),
@@ -665,10 +713,7 @@ class _OverviewTab extends StatelessWidget {
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty || cityCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(
-                      content: Text('Name and city are required'),
-                      backgroundColor: AppTheme.red,
-                    ),
+                    const SnackBar(content: Text('Name and city are required'), backgroundColor: AppTheme.red),
                   );
                   return;
                 }
@@ -677,26 +722,27 @@ class _OverviewTab extends StatelessWidget {
                   if (newLogoFile != null) {
                     newLogoUrl = await StorageUtils.uploadClubLogo(newLogoFile!, club.id);
                   }
-                  await FirebaseFirestore.instance
-                      .collection('clubs')
-                      .doc(club.id)
-                      .update({
-                        'name': nameCtrl.text.trim(),
-                        'city': cityCtrl.text.trim(),
-                        'league': leagueCtrl.text.trim(),
-                        if (newLogoUrl != null) 'logoUrl': newLogoUrl,
-                        'description': descCtrl.text.trim(),
-                        'category': selCategory,
-                        'country': selCountry,
-                      });
+                  final year = int.tryParse(yearCtrl.text.trim());
+                  await FirebaseFirestore.instance.collection('clubs').doc(club.id).update({
+                    'name': nameCtrl.text.trim(),
+                    'city': cityCtrl.text.trim(),
+                    'league': selLeague,
+                    if (newLogoUrl != null) 'logoUrl': newLogoUrl,
+                    'description': descCtrl.text.trim(),
+                    'category': selCategory,
+                    'country': selCountry,
+                    'primaryColor': selPrimaryColor,
+                    'secondaryColor': selSecondaryColor,
+                    if (year != null) 'yearFounded': year,
+                    'contactEmail': emailCtrl.text.trim(),
+                    'contactPhone': phoneCtrl.text.trim(),
+                    'website': websiteCtrl.text.trim(),
+                  });
                   if (ctx.mounted) Navigator.pop(ctx);
                 } catch (e) {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to save: $e'),
-                        backgroundColor: AppTheme.red,
-                      ),
+                      SnackBar(content: Text('Failed to save: $e'), backgroundColor: AppTheme.red),
                     );
                   }
                 }
@@ -709,8 +755,11 @@ class _OverviewTab extends StatelessWidget {
     ).then((_) {
       nameCtrl.dispose();
       cityCtrl.dispose();
-      leagueCtrl.dispose();
       descCtrl.dispose();
+      yearCtrl.dispose();
+      emailCtrl.dispose();
+      phoneCtrl.dispose();
+      websiteCtrl.dispose();
     });
   }
 
@@ -1824,6 +1873,11 @@ class _PlayerRow extends StatelessWidget {
             ),
           ),
           IconButton(
+            icon: const Icon(Icons.edit_outlined, color: AppTheme.accent, size: 20),
+            tooltip: 'Edit player',
+            onPressed: () => _showEditPlayerDialog(context),
+          ),
+          IconButton(
             icon: Icon(
               Icons.medical_services,
               color: player.isInjured ? AppTheme.red : AppTheme.textSecondary,
@@ -1857,6 +1911,108 @@ class _PlayerRow extends StatelessWidget {
       default:
         return Colors.white;
     }
+  }
+
+  void _showEditPlayerDialog(BuildContext context) {
+    final nameCtrl = TextEditingController(text: player.name);
+    final numberCtrl = TextEditingController(text: player.number?.toString() ?? '');
+    final ageCtrl = TextEditingController(text: player.age?.toString() ?? '');
+    final nationalityCtrl = TextEditingController(text: player.nationality ?? '');
+    String position = player.position;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          backgroundColor: AppTheme.cardBg,
+          title: const Text('Edit Player', style: TextStyle(color: Colors.white)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Name *'),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  value: position,
+                  dropdownColor: AppTheme.cardBg2,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Position'),
+                  items: const [
+                    DropdownMenuItem(value: 'GK', child: Text('GK — Goalkeeper')),
+                    DropdownMenuItem(value: 'DEF', child: Text('DEF — Defender')),
+                    DropdownMenuItem(value: 'MID', child: Text('MID — Midfielder')),
+                    DropdownMenuItem(value: 'FWD', child: Text('FWD — Forward')),
+                  ],
+                  onChanged: (v) => setDlg(() => position = v ?? position),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: numberCtrl,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Jersey Number'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: ageCtrl,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Age'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: nationalityCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Nationality'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty) return;
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('clubs')
+                      .doc(clubId)
+                      .collection('players')
+                      .doc(player.id)
+                      .update({
+                    'name': nameCtrl.text.trim(),
+                    'position': position,
+                    'number': int.tryParse(numberCtrl.text.trim()),
+                    'age': int.tryParse(ageCtrl.text.trim()),
+                    'nationality': nationalityCtrl.text.trim().isEmpty ? null : nationalityCtrl.text.trim(),
+                  });
+                  if (ctx.mounted) Navigator.pop(ctx);
+                } catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(content: Text('Failed to save: $e'), backgroundColor: AppTheme.red),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    ).then((_) {
+      nameCtrl.dispose();
+      numberCtrl.dispose();
+      ageCtrl.dispose();
+      nationalityCtrl.dispose();
+    });
   }
 
   void _showInjuryDialog(BuildContext context) {
@@ -5891,6 +6047,139 @@ class _ClubRewardsTab extends StatelessWidget {
             child: const Text('Διαγραφή', style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── COLOR PICKER FIELD ───────────────────────────────────────────────────────
+
+class _ColorPickerField extends StatelessWidget {
+  final String label;
+  final String value;
+  final List<String> presets;
+  final ValueChanged<String> onChanged;
+  const _ColorPickerField({
+    required this.label,
+    required this.value,
+    required this.presets,
+    required this.onChanged,
+  });
+
+  Color _parse(String hex) {
+    try {
+      final h = hex.replaceAll('#', '');
+      return Color(int.parse('FF$h', radix: 16));
+    } catch (_) {
+      return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showPicker(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBg2,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppTheme.divider),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: _parse(value),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+              ),
+            ),
+            const Icon(Icons.expand_more, color: AppTheme.textSecondary, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPicker(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardBg,
+        title: Text(label, style: const TextStyle(color: Colors.white)),
+        content: Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: presets.map((hex) {
+            final selected = hex == value;
+            return GestureDetector(
+              onTap: () {
+                onChanged(hex);
+                Navigator.pop(ctx);
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _parse(hex),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: selected ? AppTheme.accent : Colors.white24,
+                    width: selected ? 3 : 1,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── STYLED DROPDOWN ──────────────────────────────────────────────────────────
+
+class _StyledDropdown<T> extends StatelessWidget {
+  final T value;
+  final List<T> items;
+  final String Function(T) itemLabel;
+  final ValueChanged<T?> onChanged;
+  const _StyledDropdown({
+    required this.value,
+    required this.items,
+    required this.itemLabel,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg2,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: DropdownButton<T>(
+        value: value,
+        isExpanded: true,
+        dropdownColor: AppTheme.cardBg,
+        style: const TextStyle(color: Colors.white),
+        underline: const SizedBox(),
+        items: items.map((i) => DropdownMenuItem(value: i, child: Text(itemLabel(i)))).toList(),
+        onChanged: onChanged,
       ),
     );
   }

@@ -90,6 +90,10 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
   final _cityCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _venueCtrl = TextEditingController();
+  final _yearCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _websiteCtrl = TextEditingController();
 
   String _country = kCountryList.first;
   String get _countryCode => kCountryToCode[_country] ?? '';
@@ -114,6 +118,10 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
     _cityCtrl.dispose();
     _descCtrl.dispose();
     _venueCtrl.dispose();
+    _yearCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
+    _websiteCtrl.dispose();
     super.dispose();
   }
 
@@ -140,6 +148,7 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
       final prov = context.read<AppProvider>();
       final user = prov.user!;
 
+      final year = int.tryParse(_yearCtrl.text.trim());
       final data = <String, dynamic>{
         'name': _nameCtrl.text.trim(),
         'city': _cityCtrl.text.trim(),
@@ -161,6 +170,10 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
         'createdAt': FieldValue.serverTimestamp(),
         'inviteCode': generateInviteCode(),
         'staffUids': [],
+        if (year != null) 'yearFounded': year,
+        if (_emailCtrl.text.trim().isNotEmpty) 'contactEmail': _emailCtrl.text.trim(),
+        if (_phoneCtrl.text.trim().isNotEmpty) 'contactPhone': _phoneCtrl.text.trim(),
+        if (_websiteCtrl.text.trim().isNotEmpty) 'website': _websiteCtrl.text.trim(),
         if (_selectedAssoc != null) ...{
           'assocId': _selectedAssoc!['id'],
           'assocName': _selectedAssoc!['name'],
@@ -344,6 +357,53 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
                     ),
                     onSelected: (_) => setState(() => _category = cat),
                   )).toList(),
+                ),
+                const SizedBox(height: 16),
+
+                // Year founded
+                TextFormField(
+                  controller: _yearCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Έτος Ίδρυσης (προαιρετικό)',
+                    prefixIcon: Icon(Icons.calendar_today_outlined, color: AppTheme.textSecondary),
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Contact info
+                _SectionLabel('Επικοινωνία (προαιρετικό)'),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _emailCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined, color: AppTheme.textSecondary),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _phoneCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Τηλέφωνο',
+                    prefixIcon: Icon(Icons.phone_outlined, color: AppTheme.textSecondary),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _websiteCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    labelText: 'Website',
+                    prefixIcon: Icon(Icons.language_outlined, color: AppTheme.textSecondary),
+                  ),
                 ),
                 const SizedBox(height: 16),
 
