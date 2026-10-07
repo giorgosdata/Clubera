@@ -52,8 +52,21 @@ class StorageUtils {
     required String path,
   }) async {
     final ref = FirebaseStorage.instance.ref().child(path);
-    final task = await ref.putFile(file);
+    // Set contentType explicitly: storage.rules require image/* and Android
+    // does not infer it from a file:// path, so uploads were rejected.
+    final task = await ref.putFile(
+      file,
+      SettableMetadata(contentType: _imageContentType(path)),
+    );
     return await task.ref.getDownloadURL();
+  }
+
+  static String _imageContentType(String path) {
+    final lower = path.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.gif')) return 'image/gif';
+    return 'image/jpeg';
   }
 
   static Future<String> uploadPdf({
