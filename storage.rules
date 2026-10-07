@@ -6,8 +6,20 @@ service firebase.storage {
     function isSignedIn() { return request.auth != null; }
     function uid() { return request.auth.uid; }
     function maxImageSize() { return 5 * 1024 * 1024; } // 5 MB
+    // Older app builds uploaded images without a contentType, so also accept
+    // a missing/generic type when the file name has an image extension.
+    function hasImageExtension() {
+      return request.resource.name.lower().matches('.*[.](jpg|jpeg|png|webp|gif|heic|heif)$');
+    }
+    function isUntyped() {
+      return request.resource.contentType == null ||
+             request.resource.contentType == '' ||
+             request.resource.contentType == 'application/octet-stream';
+    }
     function isImage() {
-      return request.resource.contentType.matches('image/.*');
+      return (request.resource.contentType != null &&
+              request.resource.contentType.matches('image/.*')) ||
+             (isUntyped() && hasImageExtension());
     }
 
     function isAdmin() {
@@ -29,8 +41,9 @@ service firebase.storage {
     }
 
     function isVideoOrImage() {
-      return request.resource.contentType.matches('image/.*') ||
-             request.resource.contentType.matches('video/.*');
+      return isImage() ||
+             (request.resource.contentType != null &&
+              request.resource.contentType.matches('video/.*'));
     }
 
     // ── Club gallery (photos + videos, up to 100 MB) ────────────────────────
