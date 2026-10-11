@@ -645,8 +645,6 @@ class _UserRow extends StatelessWidget {
 
 // ─── CLUBS ────────────────────────────────────────────────────────────────────
 
-const _kClubFilters = ['All', 'Α΄ Ομάδα', 'Β΄ Ομάδα', 'Γυναικεία'];
-
 class _ClubsTab extends StatefulWidget {
   const _ClubsTab();
 
@@ -655,7 +653,7 @@ class _ClubsTab extends StatefulWidget {
 }
 
 class _ClubsTabState extends State<_ClubsTab> {
-  String _filter = 'All';
+  String _search = '';
 
   @override
   Widget build(BuildContext context) {
@@ -669,61 +667,109 @@ class _ClubsTabState extends State<_ClubsTab> {
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: 50,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: _kClubFilters.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 6),
-              itemBuilder: (_, i) {
-                final f = _kClubFilters[i];
-                final selected = _filter == f;
-                return ChoiceChip(
-                  label: Text(f),
-                  selected: selected,
-                  selectedColor: AppTheme.accent,
-                  labelStyle: TextStyle(
-                    color: selected ? Colors.white : AppTheme.textSecondary,
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                  ),
-                  onSelected: (_) => setState(() => _filter = f),
-                );
-              },
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: TextField(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Αναζήτηση ομάδας...',
+                prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
+                filled: true,
+                fillColor: AppTheme.cardBg,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onChanged: (v) => setState(() => _search = v.trim().toLowerCase()),
             ),
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('clubs')
-                  .orderBy('createdAt', descending: true)
-                  .snapshots(),
+              stream: FirebaseFirestore.instance.collection('clubs').snapshots(),
               builder: (context, snap) {
                 final allClubs = (snap.data?.docs ?? [])
-                    .map(
-                      (d) => ClubModel.fromMap(d.data() as Map<String, dynamic>, d.id),
-                    )
+                    .map((d) => ClubModel.fromMap(d.data() as Map<String, dynamic>, d.id))
                     .toList();
-                final clubs = _filter == 'All'
+
+                final filtered = _search.isEmpty
                     ? allClubs
-                    : allClubs.where((c) => c.category == _filter).toList();
-                if (clubs.isEmpty) {
+                    : allClubs.where((c) =>
+                        c.name.toLowerCase().contains(_search) ||
+                        c.city.toLowerCase().contains(_search) ||
+                        (c.assocName ?? '').toLowerCase().contains(_search)).toList();
+
+                // Group by assocName, sort alphabetically
+                final Map<String, List<ClubModel>> groups = {};
+                for (final c in filtered) {
+                  final key = c.assocName?.isNotEmpty == true ? c.assocName! : 'Χωρίς Ένωση';
+                  groups.putIfAbsent(key, () => []).add(c);
+                }
+                for (final list in groups.values) {
+                  list.sort((a, b) => a.name.compareTo(b.name));
+                }
+                final groupKeys = groups.keys.toList()..sort();
+
+                if (filtered.isEmpty) {
                   return const Center(
-                    child: Text(
-                      'No clubs in this category',
-                      style: TextStyle(color: AppTheme.textSecondary),
-                    ),
+                    child: Text('Δεν βρέθηκαν ομάδες', style: TextStyle(color: AppTheme.textSecondary)),
                   );
                 }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-                  itemCount: clubs.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (ctx, i) => _ClubRow(club: clubs[i]),
+
+                // Build flat item list: [header, club, club, ..., header, club, ...]
+                final List<dynamic> items = [];
+                for (final key in groupKeys) {
+                  items.add({'_header': true, 'title': key, 'count': groups[key]!.length});
+                  items.addAll(groups[key]!);
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
+                  itemCount: items.length,
+                  itemBuilder: (ctx, i) {
+                    final item = items[i];
+                    if (item is Map && item['_header'] == true) {
+                      return _AssocHeader(title: item['title'] as String, count: item['count'] as int);
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _ClubRow(club: item as ClubModel),
+                    );
+                  },
                 );
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AssocHeader extends StatelessWidget {
+  final String title;
+  final int count;
+  const _AssocHeader({required this.title, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
+      child: Row(
+        children: [
+          Container(
+            width: 3, height: 14,
+            decoration: BoxDecoration(color: AppTheme.primaryLight, borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+            ),
+          ),
+          Text('$count', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
         ],
       ),
     );
@@ -820,10 +866,16 @@ class _ClubRow extends StatelessWidget {
   void _editClub(BuildContext context, ClubModel club) {
     final nameCtrl = TextEditingController(text: club.name);
     final cityCtrl = TextEditingController(text: club.city);
-    final leagueCtrl = TextEditingController(text: club.league);
-    final logoCtrl = TextEditingController(text: club.logoUrl ?? '');
+    final descCtrl = TextEditingController(text: club.description);
+    final yearCtrl = TextEditingController(text: club.yearFounded?.toString() ?? '');
+    final emailCtrl = TextEditingController(text: club.contactEmail ?? '');
+    final phoneCtrl = TextEditingController(text: club.contactPhone ?? '');
+    final websiteCtrl = TextEditingController(text: club.website ?? '');
     String selCategory = kCategories.contains(club.category) ? club.category : kCategories.first;
     String selCountry = kCountryList.contains(club.country) ? club.country : kCountryList.first;
+    String? logoUrl = club.logoUrl;
+    File? pickedLogo;
+    bool uploading = false;
 
     showDialog(
       context: context,
@@ -836,13 +888,62 @@ class _ClubRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Logo picker
+                Center(
+                  child: GestureDetector(
+                    onTap: () async {
+                      try {
+                        final file = await StorageUtils.pickImage();
+                        if (file != null) setDlg(() => pickedLogo = file);
+                      } catch (e) {
+                        if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(content: Text('$e'), backgroundColor: AppTheme.red),
+                        );
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 80, height: 80,
+                          decoration: BoxDecoration(
+                            color: AppTheme.cardBg2,
+                            shape: BoxShape.circle,
+                            image: pickedLogo != null
+                                ? DecorationImage(image: FileImage(pickedLogo!), fit: BoxFit.cover)
+                                : (logoUrl != null && logoUrl.isNotEmpty
+                                    ? DecorationImage(image: NetworkImage(logoUrl), fit: BoxFit.cover)
+                                    : null),
+                          ),
+                          child: (pickedLogo == null && (logoUrl == null || logoUrl.isEmpty))
+                              ? const Icon(Icons.sports_soccer, color: AppTheme.primaryLight, size: 36)
+                              : null,
+                        ),
+                        Positioned(
+                          right: 0, bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(color: AppTheme.primaryLight, shape: BoxShape.circle),
+                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 TextField(controller: nameCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Club Name')),
                 const SizedBox(height: 10),
                 TextField(controller: cityCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'City')),
                 const SizedBox(height: 10),
-                TextField(controller: leagueCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'League')),
+                TextField(controller: descCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Περιγραφή'), maxLines: 3),
                 const SizedBox(height: 10),
-                TextField(controller: logoCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Logo URL')),
+                TextField(controller: yearCtrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Έτος Ίδρυσης')),
+                const SizedBox(height: 10),
+                TextField(controller: emailCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Email Επικοινωνίας')),
+                const SizedBox(height: 10),
+                TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Τηλέφωνο')),
+                const SizedBox(height: 10),
+                TextField(controller: websiteCtrl, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Website')),
                 const SizedBox(height: 14),
                 const Text('Category', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 const SizedBox(height: 6),
@@ -864,10 +965,7 @@ class _ClubRow extends StatelessWidget {
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.cardBg2,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  decoration: BoxDecoration(color: AppTheme.cardBg2, borderRadius: BorderRadius.circular(10)),
                   child: DropdownButton<String>(
                     value: selCountry,
                     isExpanded: true,
@@ -883,28 +981,55 @@ class _ClubRow extends StatelessWidget {
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () async {
-                await FirebaseFirestore.instance.collection('clubs').doc(club.id).update({
-                  'name': nameCtrl.text.trim(),
-                  'city': cityCtrl.text.trim(),
-                  'league': leagueCtrl.text.trim(),
-                  'logoUrl': logoCtrl.text.trim().isEmpty ? null : logoCtrl.text.trim(),
-                  'category': selCategory,
-                  'country': selCountry,
-                });
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: const Text('Save'),
-            ),
+            if (uploading)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+              )
+            else
+              ElevatedButton(
+                onPressed: () async {
+                  setDlg(() => uploading = true);
+                  try {
+                    String? finalLogoUrl = logoUrl;
+                    if (pickedLogo != null) {
+                      finalLogoUrl = await StorageUtils.uploadClubLogo(pickedLogo!, club.id);
+                    }
+                    final data = <String, dynamic>{
+                      'name': nameCtrl.text.trim(),
+                      'city': cityCtrl.text.trim(),
+                      'description': descCtrl.text.trim(),
+                      'logoUrl': finalLogoUrl,
+                      'category': selCategory,
+                      'country': selCountry,
+                    };
+                    final yr = int.tryParse(yearCtrl.text.trim());
+                    if (yr != null) data['yearFounded'] = yr;
+                    if (emailCtrl.text.trim().isNotEmpty) data['contactEmail'] = emailCtrl.text.trim();
+                    if (phoneCtrl.text.trim().isNotEmpty) data['contactPhone'] = phoneCtrl.text.trim();
+                    if (websiteCtrl.text.trim().isNotEmpty) data['website'] = websiteCtrl.text.trim();
+                    await FirebaseFirestore.instance.collection('clubs').doc(club.id).update(data);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  } catch (e) {
+                    setDlg(() => uploading = false);
+                    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.red),
+                    );
+                  }
+                },
+                child: const Text('Save'),
+              ),
           ],
         ),
       ),
     ).then((_) {
       nameCtrl.dispose();
       cityCtrl.dispose();
-      leagueCtrl.dispose();
-      logoCtrl.dispose();
+      descCtrl.dispose();
+      yearCtrl.dispose();
+      emailCtrl.dispose();
+      phoneCtrl.dispose();
+      websiteCtrl.dispose();
     });
   }
 
