@@ -99,7 +99,7 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
               controller: _tab,
               children: [
                 _InfoTab(club: club, rawData: snap.data!.data() as Map<String, dynamic>),
-                _PlayersPublicTab(clubId: widget.clubId, clubName: club.name),
+                _PlayersPublicTab(clubId: widget.clubId, clubName: club.name, adminUid: club.adminUid, staffUids: club.staffUids),
                 _StatsTab(clubId: widget.clubId),
                 _MatchesTab(clubId: widget.clubId),
                 _TransfersTab(clubId: widget.clubId),
@@ -1009,11 +1009,23 @@ class _ClaimClubButtonState extends State<_ClaimClubButton> {
 
 // ─── PLAYERS PUBLIC TAB ───────────────────────────────────────────────────────
 
-class _PlayersPublicTab extends StatelessWidget {
+class _PlayersPublicTab extends StatefulWidget {
   final String clubId;
   final String clubName;
-  const _PlayersPublicTab({required this.clubId, required this.clubName});
+  final String adminUid;
+  final List<String> staffUids;
+  const _PlayersPublicTab({
+    required this.clubId,
+    required this.clubName,
+    required this.adminUid,
+    required this.staffUids,
+  });
 
+  @override
+  State<_PlayersPublicTab> createState() => _PlayersPublicTabState();
+}
+
+class _PlayersPublicTabState extends State<_PlayersPublicTab> {
   static const _positions = ['GK', 'DEF', 'MID', 'FWD'];
   static const _posLabels = {
     'GK': 'ΤΕΡΜΑΤΟΦΥΛΑΚΕΣ',
@@ -1022,12 +1034,97 @@ class _PlayersPublicTab extends StatelessWidget {
     'FWD': 'ΕΠΙΘΕΤΙΚΟΙ',
   };
 
+  void _showAddPlayerDialog() {
+    final nameCtrl = TextEditingController();
+    String position = 'MID';
+    final numberCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          backgroundColor: AppTheme.cardBg,
+          title: const Text('Add Player', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Player Name'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: position,
+                dropdownColor: AppTheme.cardBg2,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Position'),
+                items: ['GK', 'DEF', 'MID', 'FWD']
+                    .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                    .toList(),
+                onChanged: (v) => setS(() => position = v ?? 'MID'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: numberCtrl,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Jersey Number (optional)'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty) return;
+                final player = PlayerModel(
+                  id: '',
+                  name: nameCtrl.text.trim(),
+                  position: position,
+                  number: int.tryParse(numberCtrl.text),
+                );
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('clubs')
+                      .doc(widget.clubId)
+                      .collection('players')
+                      .add(player.toMap());
+                  if (ctx.mounted) Navigator.pop(ctx);
+                } catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.red),
+                    );
+                  }
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        ),
+      ),
+    ).then((_) {
+      nameCtrl.dispose();
+      numberCtrl.dispose();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
+    final uid = context.read<AppProvider>().user?.uid;
+    final isStaff = uid != null &&
+        (uid == widget.adminUid || widget.staffUids.contains(uid));
+
+    return Stack(
+      children: [
+        StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('clubs')
-          .doc(clubId)
+          .doc(widget.clubId)
           .collection('players')
           .snapshots(),
       builder: (ctx, snap) {
@@ -1115,8 +1212,8 @@ class _PlayersPublicTab extends StatelessWidget {
                       children: group
                           .map((p) => _PlayerGridTile(
                                 player: p,
-                                clubId: clubId,
-                                clubName: clubName,
+                                clubId: widget.clubId,
+                                clubName: widget.clubName,
                               ))
                           .toList(),
                     ),
@@ -1128,6 +1225,19 @@ class _PlayersPublicTab extends StatelessWidget {
           ],
         );
       },
+        ),
+        if (isStaff)
+          Positioned(
+            right: 16,
+            bottom: 24,
+            child: FloatingActionButton(
+              heroTag: 'addPlayerProfile',
+              backgroundColor: AppTheme.primaryLight,
+              onPressed: _showAddPlayerDialog,
+              child: const Icon(Icons.person_add, color: Colors.white),
+            ),
+          ),
+      ],
     );
   }
 
