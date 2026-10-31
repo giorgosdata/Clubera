@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -30,7 +30,14 @@ jobs:
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/core/utils/feature_flags.dart lib/features/home lib/features/matches lib/features/teams lib/features/clubs lib/features/profile
 
       - name: Build debug APK in iOS preview mode
-        run: flutter build apk --debug --dart-define=PREVIEW_IOS_MODE=true
+        run: |
+          set -o pipefail
+          if ! flutter build apk --debug --dart-define=PREVIEW_IOS_MODE=true 2>&1 | tee build.log; then
+            grep -nE "error|Error|FAILURE|What went wrong|Exception|> " build.log | tail -40 | while IFS= read -r l; do
+              echo "::error::${l//%/%25}"
+            done
+            exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
