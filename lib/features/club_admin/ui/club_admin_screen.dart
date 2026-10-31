@@ -26,6 +26,7 @@ import '../../clubs/ui/announcements_tab.dart';
 import '../../../models/game_model.dart';
 import '../../../models/prize_model.dart';
 import '../../../models/reward_model.dart';
+import '../roster/roster_upload_screen.dart';
 
 class ClubAdminScreen extends StatefulWidget {
   const ClubAdminScreen({super.key});
@@ -1648,6 +1649,19 @@ class _PlayersTabState extends State<_PlayersTab> {
                       : const Icon(Icons.download_outlined, size: 18),
                 ),
               const SizedBox(height: 8),
+              FloatingActionButton.extended(
+                heroTag: 'rosterExcel',
+                backgroundColor: AppTheme.primaryLight,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RosterUploadScreen(clubId: widget.clubId),
+                  ),
+                ),
+                icon: const Icon(Icons.upload_file, size: 18),
+                label: const Text('Excel'),
+              ),
+              const SizedBox(height: 8),
               FloatingActionButton(
                 heroTag: 'addPlayer',
                 backgroundColor: AppTheme.supportGreen,
@@ -1673,7 +1687,7 @@ class _PlayersTabState extends State<_PlayersTab> {
                       ),
                       SizedBox(height: 6),
                       Text(
-                        'Tap + to add players',
+                        'Tap + to add players, or Excel to upload the roster',
                         style: TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 13,

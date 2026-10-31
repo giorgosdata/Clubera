@@ -1024,7 +1024,7 @@ class _PlayerResults extends StatelessWidget {
         }
         final players = (snap.data?.docs ?? [])
             .map((d) => PlayerModel.fromMap(d.data() as Map<String, dynamic>, d.id))
-            .where((p) => p.isActive && p.name.toLowerCase().contains(queryLower))
+            .where((p) => p.isActive && p.isPublic && p.name.toLowerCase().contains(queryLower))
             .take(50)
             .toList();
         if (players.isEmpty) {

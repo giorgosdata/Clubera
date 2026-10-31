@@ -18,6 +18,12 @@ class PlayerModel {
   final bool isInjured;
   final String? injuryNote;
   final DateTime? expectedReturn;
+  // Roster upload: 'pending' until the Super Admin approves it. Not written by
+  // toMap(), so editing a player never changes it.
+  final String? approvalStatus;
+
+  /// Fans only see approved (or older, never-uploaded) players.
+  bool get isPublic => approvalStatus != 'pending' && approvalStatus != 'rejected';
 
   const PlayerModel({
     required this.id,
@@ -35,6 +41,7 @@ class PlayerModel {
     this.isInjured = false,
     this.injuryNote,
     this.expectedReturn,
+    this.approvalStatus,
   });
 
   String get positionLabel {
@@ -65,6 +72,7 @@ class PlayerModel {
     expectedReturn: m['expectedReturn'] is Timestamp
         ? (m['expectedReturn'] as Timestamp).toDate()
         : null,
+    approvalStatus: m['approvalStatus'] as String?,
   );
 
   Map<String, dynamic> toMap() => {
@@ -121,6 +129,7 @@ class PlayerModel {
       expectedReturn: identical(expectedReturn, _sentinel)
           ? this.expectedReturn
           : expectedReturn as DateTime?,
+      approvalStatus: approvalStatus,
     );
   }
 }

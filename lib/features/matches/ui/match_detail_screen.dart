@@ -1058,7 +1058,8 @@ class _MvpSectionState extends State<_MvpSection> {
           .limit(40)
           .get();
       for (final d in snap.docs) {
-        results.add(PlayerModel.fromMap(d.data(), d.id));
+        final p = PlayerModel.fromMap(d.data(), d.id);
+        if (p.isPublic) results.add(p);
       }
     }
     results.sort((a, b) => a.name.compareTo(b.name));

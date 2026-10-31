@@ -1145,7 +1145,7 @@ class _PlayersPublicTabState extends State<_PlayersPublicTab> {
         }
         final players = (snap.data?.docs ?? [])
             .map((d) => PlayerModel.fromMap(d.data() as Map<String, dynamic>, d.id))
-            .where((p) => p.isActive)
+            .where((p) => p.isActive && p.isPublic)
             .toList();
         if (players.isEmpty) {
           return const Center(
@@ -2630,7 +2630,7 @@ class _WomenTab extends StatelessWidget {
         }
         final players = (snap.data?.docs ?? [])
             .map((d) => PlayerModel.fromMap(d.data() as Map<String, dynamic>, d.id))
-            .where((p) => p.isActive)
+            .where((p) => p.isActive && p.isPublic)
             .toList();
         if (players.isEmpty) {
           return const Center(

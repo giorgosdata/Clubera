@@ -37,7 +37,7 @@ class _PlayerCompareScreenState extends State<PlayerCompareScreen> {
         .get();
     final players = snap.docs
         .map((d) => PlayerModel.fromMap(d.data(), d.id))
-        .where((p) => p.id != widget.playerA.id)
+        .where((p) => p.id != widget.playerA.id && p.isPublic)
         .toList()
       ..sort((a, b) => a.name.compareTo(b.name));
     if (mounted) setState(() { _others = players; _loading = false; });
