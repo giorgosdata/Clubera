@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../models/match_model.dart';
 import '../../../models/prediction_model.dart';
 import '../../../core/providers/app_provider.dart';
+import '../../../core/utils/feature_flags.dart';
 import 'match_card.dart';
 import 'match_detail_screen.dart';
 import 'create_match_screen.dart';
@@ -24,7 +25,8 @@ class _MatchesScreenState extends State<MatchesScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 4, vsync: this);
+    _tab = TabController(
+        length: FeatureFlags.chanceGamesEnabled ? 4 : 3, vsync: this);
   }
 
   @override
@@ -48,11 +50,11 @@ class _MatchesScreenState extends State<MatchesScreen>
           labelColor: AppTheme.accent,
           unselectedLabelColor: AppTheme.textSecondary,
           isScrollable: false,
-          tabs: const [
-            Tab(text: 'Live'),
-            Tab(text: 'Upcoming'),
-            Tab(text: 'Coupon'),
-            Tab(text: 'Results'),
+          tabs: [
+            const Tab(text: 'Live'),
+            const Tab(text: 'Upcoming'),
+            if (FeatureFlags.chanceGamesEnabled) const Tab(text: 'Coupon'),
+            const Tab(text: 'Results'),
           ],
         ),
         actions: [
@@ -71,7 +73,8 @@ class _MatchesScreenState extends State<MatchesScreen>
         children: [
           const _MatchList(filter: 'live'),
           const _MatchListWithDatePicker(filter: 'upcoming'),
-          _CouponTab(userId: user?.uid ?? ''),
+          if (FeatureFlags.chanceGamesEnabled)
+            _CouponTab(userId: user?.uid ?? ''),
           const _MatchListWithDatePicker(filter: 'finished'),
         ],
       ),

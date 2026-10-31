@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/notifications/notifications_service.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/feature_flags.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../models/club_model.dart';
 import '../../../models/match_model.dart';
@@ -34,7 +35,8 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 13, vsync: this);
+    _tab = TabController(
+        length: FeatureFlags.chanceGamesEnabled ? 13 : 12, vsync: this);
   }
 
   @override
@@ -76,20 +78,21 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
                   TabBar(
                     controller: _tab,
                     isScrollable: true,
-                    tabs: const [
-                      Tab(text: 'Info'),
-                      Tab(text: 'Players'),
-                      Tab(text: 'Stats'),
-                      Tab(text: 'Matches'),
-                      Tab(text: 'Transfers'),
-                      Tab(text: 'Feed'),
-                      Tab(text: 'Games'),
-                      Tab(text: 'Sponsors'),
-                      Tab(text: 'Top Fans'),
-                      Tab(text: 'Ανακοινώσεις'),
-                      Tab(text: 'Ακαδημίες'),
-                      Tab(text: 'Γκαλερί'),
-                      Tab(text: 'Γυναίκες'),
+                    tabs: [
+                      const Tab(text: 'Info'),
+                      const Tab(text: 'Players'),
+                      const Tab(text: 'Stats'),
+                      const Tab(text: 'Matches'),
+                      const Tab(text: 'Transfers'),
+                      const Tab(text: 'Feed'),
+                      if (FeatureFlags.chanceGamesEnabled)
+                        const Tab(text: 'Games'),
+                      const Tab(text: 'Sponsors'),
+                      const Tab(text: 'Top Fans'),
+                      const Tab(text: 'Ανακοινώσεις'),
+                      const Tab(text: 'Ακαδημίες'),
+                      const Tab(text: 'Γκαλερί'),
+                      const Tab(text: 'Γυναίκες'),
                     ],
                   ),
                 ),
@@ -104,7 +107,8 @@ class _ClubProfileScreenState extends State<ClubProfileScreen>
                 _MatchesTab(clubId: widget.clubId),
                 _TransfersTab(clubId: widget.clubId),
                 _FeedTab(clubId: widget.clubId),
-                _RewardsPublicTab(clubId: widget.clubId),
+                if (FeatureFlags.chanceGamesEnabled)
+                  _RewardsPublicTab(clubId: widget.clubId),
                 _SponsorsTab(clubId: widget.clubId),
                 _TopFansTab(clubId: widget.clubId),
                 AnnouncementsTab(clubId: widget.clubId),
@@ -327,8 +331,10 @@ class _VoteDonatBar extends StatelessWidget {
           Expanded(
             child: _VoteButton(club: club, clubId: clubId, userId: user?.uid),
           ),
-          const SizedBox(width: 10),
-          Expanded(child: _DonateButton(club: club)),
+          if (FeatureFlags.chanceGamesEnabled) ...[
+            const SizedBox(width: 10),
+            Expanded(child: _DonateButton(club: club)),
+          ],
         ],
       ),
     );

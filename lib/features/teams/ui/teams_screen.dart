@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/image_utils.dart';
+import '../../../core/utils/feature_flags.dart';
 import '../../../models/club_model.dart';
 import '../../../models/player_model.dart';
 import '../../clubs/ui/club_profile_screen.dart';
@@ -658,7 +659,7 @@ class _BrowseTabState extends State<_BrowseTab> with AutomaticKeepAliveClientMix
                   _MyClubCard(clubId: myClubId),
                   const SizedBox(height: 16),
                 ],
-                _SpinBanner(),
+                if (FeatureFlags.chanceGamesEnabled) _SpinBanner(),
                 const SizedBox(height: 16),
                 ...filtered.map(
                   (c) => Padding(

@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/feature_flags.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../models/match_model.dart';
 import '../../../models/club_model.dart';
@@ -37,7 +38,8 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 4, vsync: this);
+    _tab = TabController(
+        length: FeatureFlags.chanceGamesEnabled ? 4 : 2, vsync: this);
   }
 
   @override
@@ -74,11 +76,13 @@ class _HomeScreenState extends State<HomeScreen>
               labelColor: AppTheme.accent,
               unselectedLabelColor: AppTheme.textSecondary,
               indicatorSize: TabBarIndicatorSize.label,
-              tabs: const [
-                Tab(text: 'Latest'),
-                Tab(text: 'Play'),
-                Tab(text: 'Rewards'),
-                Tab(text: 'News'),
+              tabs: [
+                const Tab(text: 'Latest'),
+                if (FeatureFlags.chanceGamesEnabled) ...const [
+                  Tab(text: 'Play'),
+                  Tab(text: 'Rewards'),
+                ],
+                const Tab(text: 'News'),
               ],
             ),
           ),
@@ -87,8 +91,10 @@ class _HomeScreenState extends State<HomeScreen>
           controller: _tab,
           children: [
             _LatestTab(user: user),
-            const _GamesTab(),
-            _RewardsTab(user: user),
+            if (FeatureFlags.chanceGamesEnabled) ...[
+              const _GamesTab(),
+              _RewardsTab(user: user),
+            ],
             const _NewsTab(),
           ],
         ),
@@ -113,7 +119,7 @@ class _LatestTab extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           _HeroMatchCard(),
-          _PredictGameBanner(),
+          if (FeatureFlags.chanceGamesEnabled) _PredictGameBanner(),
           _LiveSection(),
           _UpcomingSection(),
           _TopClubsSection(),
