@@ -224,11 +224,11 @@ class _DatePickerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 70,
+      height: 84,
       color: AppTheme.cardBg,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         itemCount: dates.length,
         itemBuilder: (ctx, i) {
           final date = dates[i];

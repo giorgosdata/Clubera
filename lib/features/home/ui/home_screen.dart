@@ -1314,7 +1314,7 @@ class _TopClubsSection extends StatelessWidget {
               ),
             ),
             SizedBox(
-              height: 120,
+              height: 150,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20),

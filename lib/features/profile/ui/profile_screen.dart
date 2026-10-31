@@ -54,9 +54,10 @@ class ProfileScreen extends StatelessWidget {
             if (FeatureFlags.chanceGamesEnabled)
               SliverToBoxAdapter(child: _GamesSection(user: user)),
             SliverToBoxAdapter(child: _MenuSection(user: user)),
-            SliverToBoxAdapter(child: _ActivitiesSection(userId: user.uid)),
-            if (FeatureFlags.chanceGamesEnabled)
+            if (FeatureFlags.chanceGamesEnabled) ...[
+              SliverToBoxAdapter(child: _ActivitiesSection(userId: user.uid)),
               SliverToBoxAdapter(child: _CouponHistorySection(userId: user.uid)),
+            ],
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
