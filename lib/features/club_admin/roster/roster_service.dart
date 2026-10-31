@@ -11,8 +11,15 @@
 //     rosterRejectReason: string
 //     rosterHistory: [{uploadId, result, at, by, newCount, updateCount}]
 //   clubs/{clubId}/players/{id} and clubs/{clubId}/women_players/{id}
-//     new player:      approvalStatus 'pending', uploadId, dupKey, squad
+//     new player:      approvalStatus 'pending', uploadId, squad
 //     existing player: pendingUpdate {...}, pendingUploadId
+//   clubs/{clubId}/roster_keys/{playerId}   (club staff + admins only)
+//     dupKey, pendingDupKey, pendingUploadId, collection
+//
+// The duplicate key is a hash of name + birth date. Player documents are
+// public, and with a known name the birth date could be recovered from the
+// hash by trying every date, so the key lives in roster_keys, never on the
+// player document.
 //
 // Players with approvalStatus 'pending' are hidden from fans
 // (see isPublicPlayer).
@@ -59,14 +66,24 @@ class RosterService {
   DocumentReference<Map<String, dynamic>> _club(String clubId) =>
       _db.collection('clubs').doc(clubId);
 
+  CollectionReference<Map<String, dynamic>> _keys(String clubId) =>
+      _club(clubId).collection('roster_keys');
+
   /// Compares the valid rows with the players already in the club.
   Future<RosterPlan> plan(String clubId, List<RosterRow> rows, {DateTime? today}) async {
+    final keys = <String, String>{};
+    for (final d in (await _keys(clubId).get()).docs) {
+      final k = d.data()['dupKey'];
+      if (k is String) keys[d.id] = k;
+    }
     final existing = <_Existing>[];
     for (final col in const ['players', 'women_players']) {
       final snap = await _club(clubId).collection(col).get();
       for (final d in snap.docs) {
-        final m = d.data();
+        final m = Map<String, dynamic>.from(d.data());
         if (m['isActive'] == false) continue;
+        // Older test uploads kept the key on the player document.
+        m['dupKey'] = keys[d.id] ?? m['dupKey'];
         existing.add(_Existing(d.id, col, m));
       }
     }
@@ -158,12 +175,16 @@ class RosterService {
                 'appearances': 0,
                 'isInjured': false,
                 'squad': r.squad.code,
-                'dupKey': r.dupKey,
                 'isMinor': r.isMinorOn(now),
                 'approvalStatus': 'pending',
                 'uploadId': uploadId,
                 'source': 'roster_upload',
                 'createdAt': FieldValue.serverTimestamp(),
+              }));
+          ops.add((b) => b.set(_keys(clubId).doc(ref.id), {
+                'dupKey': r.dupKey,
+                'collection': r.squad.collection,
+                'uploadId': uploadId,
               }));
           break;
         case RosterAction.update:
@@ -173,12 +194,21 @@ class RosterService {
                   'position': r.position,
                   'number': r.number,
                   'squad': r.squad.code,
-                  'dupKey': r.dupKey,
                   'age': adultAge,
                   'isMinor': r.isMinorOn(now),
                 },
                 'pendingUploadId': uploadId,
+                'dupKey': FieldValue.delete(),
               }));
+          ops.add((b) => b.set(
+                _keys(clubId).doc(item.existingId),
+                {
+                  'pendingDupKey': r.dupKey,
+                  'pendingUploadId': uploadId,
+                  'collection': item.existingCollection,
+                },
+                SetOptions(merge: true),
+              ));
           break;
       }
     }
@@ -218,12 +248,21 @@ class RosterService {
         final updated = await _club(clubId).collection(col).where('pendingUploadId', isEqualTo: uploadId).get();
         for (final d in updated.docs) {
           final pu = Map<String, dynamic>.from((d.data()['pendingUpdate'] as Map?) ?? {});
+          pu.remove('dupKey');
           ops.add((b) => b.update(d.reference, {
                 ...pu,
                 'pendingUpdate': FieldValue.delete(),
                 'pendingUploadId': FieldValue.delete(),
               }));
         }
+      }
+      final keys = await _keys(clubId).where('pendingUploadId', isEqualTo: uploadId).get();
+      for (final k in keys.docs) {
+        ops.add((b) => b.update(k.reference, {
+              'dupKey': k.data()['pendingDupKey'],
+              'pendingDupKey': FieldValue.delete(),
+              'pendingUploadId': FieldValue.delete(),
+            }));
       }
     }
     await _commit(ops);
@@ -262,6 +301,7 @@ class RosterService {
         for (final d in created.docs) {
           if (d.data()['approvalStatus'] == 'pending') {
             ops.add((b) => b.delete(d.reference));
+            ops.add((b) => b.delete(_keys(clubId).doc(d.id)));
           }
         }
         final updated = await _club(clubId).collection(col).where('pendingUploadId', isEqualTo: uploadId).get();
@@ -271,6 +311,13 @@ class RosterService {
                 'pendingUploadId': FieldValue.delete(),
               }));
         }
+      }
+      final keys = await _keys(clubId).where('pendingUploadId', isEqualTo: uploadId).get();
+      for (final k in keys.docs) {
+        ops.add((b) => b.update(k.reference, {
+              'pendingDupKey': FieldValue.delete(),
+              'pendingUploadId': FieldValue.delete(),
+            }));
       }
     }
     await _commit(ops);

@@ -91,6 +91,11 @@ service cloud.firestore {
         allow read: if true;
         allow write: if isClubStaff(clubId) || isAdmin();
       }
+      // Roster duplicate keys (hash of name + birth date). Private: with a
+      // public player name the birth date could be recovered from the hash.
+      match /roster_keys/{playerId} {
+        allow read, write: if isClubStaff(clubId) || isAdmin();
+      }
       match /academies/{academyId} {
         allow read: if true;
         allow write: if isClubStaff(clubId) || isAdmin();
