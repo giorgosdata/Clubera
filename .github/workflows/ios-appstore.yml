@@ -1,0 +1,135 @@
+# Builds the iOS app on a GitHub macOS runner, signs it with
+# Apple's cloud-managed signing (App Store Connect API key) and uploads it
+# to App Store Connect / TestFlight. No Mac needed.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   ASC_KEY_ID      App Store Connect API key ID
+#   ASC_ISSUER_ID   App Store Connect issuer ID
+#   ASC_KEY_P8      full text of the downloaded AuthKey_XXXX.p8 file
+# Optional:
+#   APPLE_TEAM_ID         (defaults to the team in the Xcode project)
+#   OPENWEATHER_API_KEY   (weather on match pages)
+#
+# Run it by pushing a tag like  ios-v1.0-23  or from the Actions tab.
+name: iOS App Store build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_name:
+        description: 'Version shown in the App Store (must match the App Store Connect version)'
+        default: '1.0'
+      build_number:
+        description: 'Build number (must be higher than any build already uploaded)'
+        required: false
+  push:
+    tags: ['ios-v*']
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID || 'KHU5ZUL5QX' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check secrets
+        run: |
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            if [ -z "${!v}" ]; then echo "::error::Missing repository secret $v"; exit 1; fi
+          done
+
+      - name: Version and build number
+        id: ver
+        run: |
+          NAME="${{ inputs.build_name }}"; NUM="${{ inputs.build_number }}"
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$TAG" =~ ^ios-v([0-9.]+)-([0-9]+)$ ]]; then
+            NAME="${BASH_REMATCH[1]}"; NUM="${BASH_REMATCH[2]}"
+          fi
+          NAME="${NAME:-1.0}"; NUM="${NUM:-$((GITHUB_RUN_NUMBER + 30))}"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "number=$NUM" >> "$GITHUB_OUTPUT"
+          echo "Building version $NAME ($NUM)"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Create app_config.dart
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+        run: |
+          mkdir -p lib/core/config
+          cat > lib/core/config/app_config.dart <<EOF
+          class AppConfig {
+            static const String openWeatherApiKey = '${OPENWEATHER_API_KEY}';
+          }
+          EOF
+
+      - name: Write API key
+        run: |
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey.p8"
+          echo "KEY_PATH=$RUNNER_TEMP/asc/AuthKey.p8" >> "$GITHUB_ENV"
+
+      - run: flutter pub get
+
+      - name: Prepare Xcode project
+        run: |
+          flutter build ios --release --config-only \
+            --build-name=${{ steps.ver.outputs.name }} \
+            --build-number=${{ steps.ver.outputs.number }}
+          cd ios && pod install
+
+      - name: Archive
+        run: |
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" archive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            | tee "$RUNNER_TEMP/archive.log" | grep -E "error:|warning: .*sign|ARCHIVE (SUCCEEDED|FAILED)" || true
+          if ! grep -q "ARCHIVE SUCCEEDED" "$RUNNER_TEMP/archive.log"; then
+            grep -E "error:|No profiles|No Account|signing" "$RUNNER_TEMP/archive.log" | tail -30 | while IFS= read -r l; do echo "::error::${l//%/%25}"; done
+            exit 1
+          fi
+
+      - name: Export and upload to App Store Connect
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | tee "$RUNNER_TEMP/export.log" | tail -20
+          if ! grep -qE "EXPORT SUCCEEDED|Upload succeeded|Uploaded" "$RUNNER_TEMP/export.log"; then
+            grep -iE "error|fail" "$RUNNER_TEMP/export.log" | tail -30 | while IFS= read -r l; do echo "::error::${l//%/%25}"; done
+            exit 1
+          fi
+          echo "::notice::Uploaded version ${{ steps.ver.outputs.name }} (${{ steps.ver.outputs.number }}) to App Store Connect"
+
+      - name: Remove API key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/asc"
