@@ -1,0 +1,66 @@
+# Checks the roster-upload branch: analyze, unit tests, Android test APK.
+name: Roster upload check
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [roster-upload]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # lib/core/config/app_config.dart is gitignored (API keys).
+      - name: Create app_config.dart
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+        run: |
+          mkdir -p lib/core/config
+          cat > lib/core/config/app_config.dart <<EOT
+          class AppConfig {
+            static const String openWeatherApiKey = '${OPENWEATHER_API_KEY}';
+          }
+          EOT
+
+      - run: flutter pub get
+
+      - name: Analyze (errors only)
+        run: |
+          set -o pipefail
+          if ! flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze.log; then
+            grep -E "error •" analyze.log | head -40 | while IFS= read -r l; do echo "::error::${l//%/%25}"; done
+            exit 1
+          fi
+
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          if ! flutter test test/roster_parser_test.dart test/roster_file_test.dart 2>&1 | tee test.log; then
+            grep -E "Expected|Actual|Error|error:|FAILED|\[E\]|Which:" test.log | head -40 | while IFS= read -r l; do echo "::error::${l//%/%25}"; done
+            exit 1
+          fi
+
+      - name: Build debug APK
+        run: |
+          set -o pipefail
+          if ! flutter build apk --debug 2>&1 | tee build.log; then
+            grep -nE "error|Error|FAILURE|What went wrong" build.log | tail -40 | while IFS= read -r l; do echo "::error::${l//%/%25}"; done
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clubera-roster-test-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14
