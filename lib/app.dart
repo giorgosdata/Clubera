@@ -49,7 +49,17 @@ class CluperaApp extends StatelessWidget {
               ),
             ),
           ),
-          Positioned.fill(child: OfflineBanner(child: child!)),
+          // Cap the phone's font-size setting so large system fonts don't
+          // overflow fixed-size cards (Top Clubs, date chips, etc.).
+          Positioned.fill(
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: MediaQuery.textScalerOf(context)
+                    .clamp(minScaleFactor: 0.9, maxScaleFactor: 1.15),
+              ),
+              child: OfflineBanner(child: child!),
+            ),
+          ),
         ],
       ),
       home: const _Root(),
