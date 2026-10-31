@@ -15,8 +15,13 @@ class FeatureFlags {
 
   static const bool _allowChanceGamesOnIOS = false;
 
+  /// Build with `--dart-define=PREVIEW_IOS_MODE=true` to get an Android test
+  /// APK that looks exactly like the iOS version (features hidden).
+  static const bool _previewIOSMode = bool.fromEnvironment('PREVIEW_IOS_MODE');
+
   static bool get _isIOS =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+      _previewIOSMode ||
+      (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS);
 
   /// Predictions, coupon, spin wheel, Play & Earn games, prizes/rewards.
   static bool get chanceGamesEnabled => !_isIOS || _allowChanceGamesOnIOS;

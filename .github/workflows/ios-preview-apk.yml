@@ -1,0 +1,39 @@
+# Builds an Android test APK that looks like the iOS version
+# (simulated-gambling features hidden), so it can be checked on an
+# Android phone before the iOS build is sent to Apple.
+name: iOS preview APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ios-hide-chance-games]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter --version
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/core/utils/feature_flags.dart lib/features/home lib/features/matches lib/features/teams lib/features/clubs lib/features/profile
+
+      - name: Build debug APK in iOS preview mode
+        run: flutter build apk --debug --dart-define=PREVIEW_IOS_MODE=true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clubera-ios-preview-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14
