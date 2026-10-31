@@ -26,6 +26,20 @@ jobs:
           cache: true
 
       - run: flutter --version
+
+      # lib/core/config/app_config.dart is gitignored (holds API keys).
+      # Create it for CI; the weather feature is skipped when the key is empty.
+      - name: Create app_config.dart
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+        run: |
+          mkdir -p lib/core/config
+          cat > lib/core/config/app_config.dart <<EOF
+          class AppConfig {
+            static const String openWeatherApiKey = '${OPENWEATHER_API_KEY}';
+          }
+          EOF
+
       - run: flutter pub get
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/core/utils/feature_flags.dart lib/features/home lib/features/matches lib/features/teams lib/features/clubs lib/features/profile
 
