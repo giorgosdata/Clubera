@@ -1,4 +1,9 @@
-// Super Admin: rosters and logos uploaded by clubs, waiting for approval.
+// Super Admin: the latest roster and logo uploads by clubs.
+//
+// Club Admins are verified once, when the club is claimed, so their uploads
+// are published at once; this tab is the record of who uploaded what and
+// when. Uploads left "pending" by the earlier approval flow can still be
+// reviewed here.
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -18,7 +23,8 @@ class RosterApprovalsTab extends StatelessWidget {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
           .collection('clubs')
-          .where('rosterStatus', isEqualTo: 'pending')
+          .orderBy('rosterUpload.at', descending: true)
+          .limit(50)
           .snapshots(),
       builder: (ctx, snap) {
         if (snap.hasError) {
@@ -38,7 +44,7 @@ class RosterApprovalsTab extends StatelessWidget {
               children: [
                 Icon(Icons.task_alt, size: 56, color: AppTheme.cardBg2),
                 SizedBox(height: 10),
-                Text('Κανένα ρόστερ σε αναμονή', style: TextStyle(color: AppTheme.textSecondary)),
+                Text('Κανένα ανέβασμα ρόστερ ακόμα', style: TextStyle(color: AppTheme.textSecondary)),
               ],
             ),
           );
@@ -63,18 +69,22 @@ class _PendingClubCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final upload = (club['rosterUpload'] as Map?) ?? const {};
     final at = upload['at'] is Timestamp ? (upload['at'] as Timestamp).toDate() : null;
+    final pending = club['rosterStatus'] == 'pending';
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => RosterReviewScreen(clubId: clubId)),
-      ),
+      onTap: pending
+          ? () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => RosterReviewScreen(clubId: clubId)),
+              )
+          : null,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppTheme.cardBg,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.accent.withValues(alpha: 0.5)),
+          border: Border.all(
+              color: (pending ? AppTheme.accent : AppTheme.supportGreen).withValues(alpha: 0.5)),
         ),
         child: Row(
           children: [
@@ -96,10 +106,13 @@ class _PendingClubCard extends StatelessWidget {
                     'Από ${upload['byName'] ?? '—'}${at == null ? '' : ' · ${DateFormat('d/M HH:mm').format(at)}'}',
                     style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                   ),
+                  if (pending)
+                    const Text('Σε αναμονή (παλιά ροή) — πατήστε για έλεγχο',
+                        style: TextStyle(color: AppTheme.accent, fontSize: 12)),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+            if (pending) const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
           ],
         ),
       ),

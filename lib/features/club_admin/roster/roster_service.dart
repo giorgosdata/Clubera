@@ -231,8 +231,10 @@ class RosterService {
     return uploadId;
   }
 
-  /// Super Admin: publishes the pending players, changes and logo.
-  Future<void> approve(String clubId, {required String byName}) async {
+  /// Publishes the pending players, changes and logo. Club Admins call it
+  /// right after [submit] ([result] 'published'); the Super Admin can still
+  /// approve uploads left pending by the earlier approval flow.
+  Future<void> approve(String clubId, {required String byName, String result = 'approved'}) async {
     final club = (await _club(clubId).get()).data() ?? {};
     final upload = (club['rosterUpload'] as Map?) ?? {};
     final uploadId = upload['uploadId'] as String?;
@@ -276,7 +278,7 @@ class RosterService {
       'rosterHistory': FieldValue.arrayUnion([
         {
           'uploadId': uploadId,
-          'result': 'approved',
+          'result': result,
           'at': Timestamp.now(),
           'by': byName,
           'uploadedBy': upload['byName'],

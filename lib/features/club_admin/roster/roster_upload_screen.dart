@@ -1,5 +1,6 @@
 // Club Admin screen: upload the club's roster from Excel/CSV plus the logo.
-// Everything is saved as "pending" until the Super Admin approves it.
+// The Club Admin was verified when the club was claimed, so the upload is
+// published at once; the Super Admin sees it in Admin → Ρόστερ.
 
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -157,6 +158,7 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
         byName: user.name,
         pendingLogoUrl: logoUrl,
       );
+      await _service.approve(widget.clubId, byName: user.name, result: 'published');
       if (!mounted) return;
       setState(() {
         _parsed = null;
@@ -167,7 +169,7 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
         _logoWarning = null;
         _declared = false;
       });
-      _snack('Στάλθηκε για έγκριση. Θα εμφανιστεί στο Clubera μόλις εγκριθεί.');
+      _snack('Δημοσιεύτηκε. Το ρόστερ φαίνεται πλέον στο Clubera.');
     } catch (e) {
       _snack('Η αποστολή απέτυχε: $e', error: true);
     } finally {
@@ -182,7 +184,7 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
         backgroundColor: AppTheme.cardBg,
         title: const Text('Ακύρωση ανεβάσματος;'),
         content: const Text(
-            'Οι παίκτες και το λογότυπο που περιμένουν έγκριση θα διαγραφούν. Οι ήδη εγκεκριμένοι παίκτες δεν αλλάζουν.'),
+            'Οι παίκτες και το λογότυπο αυτού του ανεβάσματος θα διαγραφούν. Οι ήδη δημοσιευμένοι παίκτες δεν αλλάζουν.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Όχι')),
           TextButton(
@@ -199,6 +201,18 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
       _snack('Το ανέβασμα ακυρώθηκε.');
     } catch (e) {
       _snack('Η ακύρωση απέτυχε: $e', error: true);
+    }
+  }
+
+  /// Finishes an upload left pending (e.g. the connection dropped between
+  /// saving and publishing).
+  Future<void> _publishPending() async {
+    final user = context.read<AppProvider>().user;
+    try {
+      await _service.approve(widget.clubId, byName: user?.name ?? '', result: 'published');
+      _snack('Δημοσιεύτηκε. Το ρόστερ φαίνεται πλέον στο Clubera.');
+    } catch (e) {
+      _snack('Η δημοσίευση απέτυχε: $e', error: true);
     }
   }
 
@@ -231,7 +245,7 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
               Text('${club['name'] ?? ''}',
                   style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
               const SizedBox(height: 12),
-              _StatusCard(club: club, onCancel: _cancelPending),
+              _StatusCard(club: club, onCancel: _cancelPending, onPublish: _publishPending),
               if (!pending) ...[
                 _step(
                   1,
@@ -495,7 +509,7 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
         if (changes > 0) '$changes παίκτες',
         if (_logoBytes != null) 'λογότυπο',
       ];
-      label = 'Αποστολή για έγκριση (${parts.join(' + ')})';
+      label = 'Δημοσίευση (${parts.join(' + ')})';
     }
     return SizedBox(
       width: double.infinity,
@@ -514,7 +528,8 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
 class _StatusCard extends StatelessWidget {
   final Map<String, dynamic> club;
   final VoidCallback onCancel;
-  const _StatusCard({required this.club, required this.onCancel});
+  final VoidCallback onPublish;
+  const _StatusCard({required this.club, required this.onCancel, required this.onPublish});
 
   @override
   Widget build(BuildContext context) {
@@ -531,7 +546,7 @@ class _StatusCard extends StatelessWidget {
       case 'pending':
         color = AppTheme.accent;
         icon = Icons.hourglass_top;
-        title = 'Σε αναμονή έγκρισης';
+        title = 'Δεν έχει δημοσιευτεί ακόμα';
         body = '${upload['newCount'] ?? 0} νέοι παίκτες, ${upload['updateCount'] ?? 0} αλλαγές'
             '${club['pendingLogoUrl'] != null ? ', νέο λογότυπο' : ''}'
             '${when.isEmpty ? '' : ' · $when'}';
@@ -545,7 +560,7 @@ class _StatusCard extends StatelessWidget {
       default:
         color = AppTheme.supportGreen;
         icon = Icons.verified_outlined;
-        title = 'Το τελευταίο ρόστερ εγκρίθηκε';
+        title = 'Το τελευταίο ρόστερ δημοσιεύτηκε';
         body = when;
     }
     return Container(
@@ -571,15 +586,21 @@ class _StatusCard extends StatelessWidget {
           if (status == 'pending') ...[
             const SizedBox(height: 6),
             const Text(
-              'Μέχρι την έγκριση, οι νέοι παίκτες και το λογότυπο φαίνονται μόνο εδώ, όχι στους fans. Για νέο ανέβασμα, ακυρώστε πρώτα αυτό.',
+              'Μέχρι να δημοσιευτεί, οι νέοι παίκτες και το λογότυπο φαίνονται μόνο εδώ, όχι στους fans. Δημοσιεύστε το ή ακυρώστε το για νέο ανέβασμα.',
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: onCancel,
-                child: const Text('Ακύρωση ανεβάσματος', style: TextStyle(color: AppTheme.red)),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: onCancel,
+                  child: const Text('Ακύρωση ανεβάσματος', style: TextStyle(color: AppTheme.red)),
+                ),
+                TextButton(
+                  onPressed: onPublish,
+                  child: const Text('Δημοσίευση', style: TextStyle(color: AppTheme.supportGreen)),
+                ),
+              ],
             ),
           ],
         ],
