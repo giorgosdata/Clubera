@@ -96,6 +96,11 @@ service cloud.firestore {
       match /roster_keys/{playerId} {
         allow read, write: if isClubStaff(clubId) || isAdmin();
       }
+      // One record per published roster upload: what it changed, so the
+      // Super Admin can undo it.
+      match /roster_uploads/{uploadId} {
+        allow read, write: if isClubStaff(clubId) || isAdmin();
+      }
       match /academies/{academyId} {
         allow read: if true;
         allow write: if isClubStaff(clubId) || isAdmin();

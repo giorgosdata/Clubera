@@ -69,6 +69,70 @@ class RosterService {
   CollectionReference<Map<String, dynamic>> _keys(String clubId) =>
       _club(clubId).collection('roster_keys');
 
+  CollectionReference<Map<String, dynamic>> _uploads(String clubId) =>
+      _club(clubId).collection('roster_uploads');
+
+  /// Super Admin: reverses the club's latest published upload — new players
+  /// are removed, changed players and the logo go back to their earlier
+  /// values. Only the latest upload can be undone, so a later upload is never
+  /// overwritten by an older one.
+  Future<void> undo(String clubId, {required String byName}) async {
+    final club = (await _club(clubId).get()).data() ?? {};
+    final upload = (club['rosterUpload'] as Map?) ?? {};
+    final uploadId = upload['uploadId'] as String?;
+    if (uploadId == null) throw StateError('Δεν υπάρχει ανέβασμα για αναίρεση.');
+    final recSnap = await _uploads(clubId).doc(uploadId).get();
+    final rec = recSnap.data();
+    if (rec == null) {
+      throw StateError('Αυτό το ανέβασμα δεν έχει στοιχεία αναίρεσης (έγινε πριν προστεθεί η αναίρεση).');
+    }
+    if (rec['undone'] == true) throw StateError('Έχει ήδη αναιρεθεί.');
+
+    final ops = <void Function(WriteBatch)>[];
+    for (final c in (rec['created'] as List? ?? const [])) {
+      final m = Map<String, dynamic>.from(c as Map);
+      final ref = _club(clubId).collection(m['collection'] as String).doc(m['id'] as String);
+      ops.add((b) => b.delete(ref));
+      ops.add((b) => b.delete(_keys(clubId).doc(m['id'] as String)));
+    }
+    for (final p in (rec['previous'] as List? ?? const [])) {
+      final m = Map<String, dynamic>.from(p as Map);
+      final ref = _club(clubId).collection(m['collection'] as String).doc(m['id'] as String);
+      final restore = <String, dynamic>{
+        ...Map<String, dynamic>.from((m['values'] as Map?) ?? {}),
+        for (final k in (m['absent'] as List? ?? const [])) k as String: FieldValue.delete(),
+      };
+      if (restore.isNotEmpty) ops.add((b) => b.update(ref, restore));
+    }
+    final prevKeys = Map<String, dynamic>.from((rec['previousKeys'] as Map?) ?? {});
+    prevKeys.forEach((id, key) {
+      final ref = _keys(clubId).doc(id);
+      ops.add((b) => key == null ? b.delete(ref) : b.update(ref, {'dupKey': key}));
+    });
+    ops.add((b) => b.update(recSnap.reference, {
+          'undone': true,
+          'undoneAt': FieldValue.serverTimestamp(),
+          'undoneBy': byName,
+        }));
+    await _commit(ops);
+
+    final newLogo = rec['newLogoUrl'] as String?;
+    final prevLogo = rec['previousLogoUrl'] as String?;
+    await _club(clubId).update({
+      if (newLogo != null && club['logoUrl'] == newLogo) 'logoUrl': prevLogo ?? FieldValue.delete(),
+      'rosterStatus': 'undone',
+      'rosterHistory': FieldValue.arrayUnion([
+        {
+          'uploadId': uploadId,
+          'result': 'undone',
+          'at': Timestamp.now(),
+          'by': byName,
+          'uploadedBy': upload['byName'],
+        }
+      ]),
+    });
+  }
+
   /// Compares the valid rows with the players already in the club.
   Future<RosterPlan> plan(String clubId, List<RosterRow> rows, {DateTime? today}) async {
     final keys = <String, String>{};
@@ -239,18 +303,30 @@ class RosterService {
     final upload = (club['rosterUpload'] as Map?) ?? {};
     final uploadId = upload['uploadId'] as String?;
     final ops = <void Function(WriteBatch)>[];
+    final pendingLogo = club['pendingLogoUrl'] as String?;
     if (uploadId != null) {
+      // What [undo] needs to put everything back as it was.
+      final createdRefs = <Map<String, String>>[];
+      final previous = <Map<String, dynamic>>[];
       for (final col in const ['players', 'women_players']) {
         final created = await _club(clubId).collection(col).where('uploadId', isEqualTo: uploadId).get();
         for (final d in created.docs) {
           if (d.data()['approvalStatus'] == 'pending') {
+            createdRefs.add({'collection': col, 'id': d.id});
             ops.add((b) => b.update(d.reference, {'approvalStatus': 'approved'}));
           }
         }
         final updated = await _club(clubId).collection(col).where('pendingUploadId', isEqualTo: uploadId).get();
         for (final d in updated.docs) {
-          final pu = Map<String, dynamic>.from((d.data()['pendingUpdate'] as Map?) ?? {});
+          final data = d.data();
+          final pu = Map<String, dynamic>.from((data['pendingUpdate'] as Map?) ?? {});
           pu.remove('dupKey');
+          previous.add({
+            'collection': col,
+            'id': d.id,
+            'values': {for (final k in pu.keys) if (data.containsKey(k)) k: data[k]},
+            'absent': [for (final k in pu.keys) if (!data.containsKey(k)) k],
+          });
           ops.add((b) => b.update(d.reference, {
                 ...pu,
                 'pendingUpdate': FieldValue.delete(),
@@ -258,18 +334,31 @@ class RosterService {
               }));
         }
       }
+      final prevKeys = <String, dynamic>{};
       final keys = await _keys(clubId).where('pendingUploadId', isEqualTo: uploadId).get();
       for (final k in keys.docs) {
+        prevKeys[k.id] = k.data()['dupKey'];
         ops.add((b) => b.update(k.reference, {
               'dupKey': k.data()['pendingDupKey'],
               'pendingDupKey': FieldValue.delete(),
               'pendingUploadId': FieldValue.delete(),
             }));
       }
+      ops.add((b) => b.set(_uploads(clubId).doc(uploadId), {
+            'uploadId': uploadId,
+            'publishedAt': FieldValue.serverTimestamp(),
+            'publishedBy': byName,
+            'uploadedBy': upload['byName'],
+            'created': createdRefs,
+            'previous': previous,
+            'previousKeys': prevKeys,
+            'previousLogoUrl': pendingLogo != null ? club['logoUrl'] : null,
+            'newLogoUrl': pendingLogo,
+            'undone': false,
+          }));
     }
     await _commit(ops);
 
-    final pendingLogo = club['pendingLogoUrl'] as String?;
     await _club(clubId).update({
       if (pendingLogo != null) 'logoUrl': pendingLogo,
       'pendingLogoUrl': FieldValue.delete(),

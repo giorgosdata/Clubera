@@ -70,6 +70,7 @@ class _PendingClubCard extends StatelessWidget {
     final upload = (club['rosterUpload'] as Map?) ?? const {};
     final at = upload['at'] is Timestamp ? (upload['at'] as Timestamp).toDate() : null;
     final pending = club['rosterStatus'] == 'pending';
+    final undone = club['rosterStatus'] == 'undone';
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: pending
@@ -84,7 +85,12 @@ class _PendingClubCard extends StatelessWidget {
           color: AppTheme.cardBg,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-              color: (pending ? AppTheme.accent : AppTheme.supportGreen).withValues(alpha: 0.5)),
+              color: (pending
+                      ? AppTheme.accent
+                      : undone
+                          ? AppTheme.textSecondary
+                          : AppTheme.supportGreen)
+                  .withValues(alpha: 0.5)),
         ),
         child: Row(
           children: [
@@ -109,14 +115,56 @@ class _PendingClubCard extends StatelessWidget {
                   if (pending)
                     const Text('Σε αναμονή (παλιά ροή) — πατήστε για έλεγχο',
                         style: TextStyle(color: AppTheme.accent, fontSize: 12)),
+                  if (undone)
+                    const Text('Αναιρέθηκε', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 ],
               ),
             ),
             if (pending) const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+            if (!pending && !undone)
+              TextButton(
+                onPressed: () => _confirmUndo(context),
+                child: const Text('Αναίρεση', style: TextStyle(color: AppTheme.red)),
+              ),
           ],
         ),
       ),
     );
+  }
+}
+
+extension on _PendingClubCard {
+  Future<void> _confirmUndo(BuildContext context) async {
+    final upload = (club['rosterUpload'] as Map?) ?? const {};
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardBg,
+        title: Text('Αναίρεση ανεβάσματος — ${club['name'] ?? ''}'),
+        content: Text(
+          'Θα διαγραφούν οι ${upload['newCount'] ?? 0} νέοι παίκτες και οι '
+          '${upload['updateCount'] ?? 0} αλλαγές θα επιστρέψουν στις προηγούμενες τιμές. '
+          'Αν άλλαξε το λογότυπο, επανέρχεται το προηγούμενο. Ο σύλλογος θα το δει.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Άκυρο')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Αναίρεση', style: TextStyle(color: AppTheme.red)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final byName = context.read<AppProvider>().user?.name ?? 'Super Admin';
+    try {
+      await RosterService().undo(clubId, byName: byName);
+      messenger.showSnackBar(const SnackBar(content: Text('Το ανέβασμα αναιρέθηκε.')));
+    } catch (e) {
+      final msg = e is StateError ? e.message : '$e';
+      messenger.showSnackBar(SnackBar(content: Text('Η αναίρεση απέτυχε: $msg'), backgroundColor: AppTheme.red));
+    }
   }
 }
 

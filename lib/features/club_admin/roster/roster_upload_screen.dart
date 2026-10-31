@@ -557,6 +557,12 @@ class _StatusCard extends StatelessWidget {
         title = 'Το τελευταίο ανέβασμα απορρίφθηκε';
         body = (club['rosterRejectReason'] as String?) ?? 'Διορθώστε το αρχείο και ανεβάστε το ξανά.';
         break;
+      case 'undone':
+        color = AppTheme.red;
+        icon = Icons.undo;
+        title = 'Το τελευταίο ανέβασμα αναιρέθηκε από το Clubera';
+        body = 'Οι παίκτες και το λογότυπο επανήλθαν όπως ήταν πριν. Ελέγξτε το αρχείο και ανεβάστε το ξανά.';
+        break;
       default:
         color = AppTheme.supportGreen;
         icon = Icons.verified_outlined;
