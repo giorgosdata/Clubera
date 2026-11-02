@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/help_link.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../core/utils/logo_picker.dart';
 import '../../../core/utils/storage_utils.dart';
@@ -144,6 +145,7 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
           ],
         ),
         actions: [
+          const AdminGuideButton(),
           IconButton(
             icon: const Icon(Icons.visibility_outlined, color: AppTheme.accent),
             tooltip: 'Προβολή όπως οι fans',
@@ -333,6 +335,11 @@ class _SetupChecklist extends StatelessWidget {
                     icon: const Icon(Icons.group_outlined, size: 18),
                     label: const Text('Δείτε τους παίκτες σας'),
                   ),
+                TextButton.icon(
+                  onPressed: () => openAdminGuide(context),
+                  icon: const Icon(Icons.menu_book_outlined, size: 18),
+                  label: const Text('Αναλυτικές οδηγίες στο clubera-global.com'),
+                ),
               ],
             ),
           );
