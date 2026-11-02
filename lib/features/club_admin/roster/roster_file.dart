@@ -77,8 +77,10 @@ String _dmy(int d, int m, int y) =>
     '${d.toString().padLeft(2, '0')}/${m.toString().padLeft(2, '0')}/$y';
 
 /// The Excel template: a "Ρόστερ" sheet with the header row and an
-/// "Οδηγίες" sheet explaining each column.
-Uint8List buildRosterTemplate() {
+/// "Οδηγίες" sheet explaining each column. [players] (the club's current
+/// roster) are written in already, with their Clubera id, so the club only
+/// corrects and adds.
+Uint8List buildRosterTemplate({List<TemplatePlayer> players = const []}) {
   final excel = Excel.createExcel();
   final defaultName = excel.getDefaultSheet() ?? 'Sheet1';
   excel.rename(defaultName, rosterSheetName);
@@ -91,6 +93,20 @@ Uint8List buildRosterTemplate() {
     sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0)).cellStyle =
         CellStyle(bold: true);
   }
+  for (final p in players) {
+    sheet.appendRow([
+      TextCellValue(p.name),
+      p.position == null ? null : TextCellValue(p.position!),
+      p.number == null ? null : IntCellValue(p.number!),
+      null, // birth date: never stored, so never written back
+      TextCellValue(p.squadLabel),
+      p.consentOnFile ? TextCellValue('ΝΑΙ') : null,
+      null, // Αποχώρησε
+      TextCellValue(p.id),
+    ]);
+  }
+  final idCol = RosterColumns.templateHeaders.length - 1;
+  sheet.setColumnWidth(idCol, 24.0);
 
   final help = excel[rosterHelpSheetName];
   const lines = [
@@ -101,8 +117,11 @@ Uint8List buildRosterTemplate() {
     ['Ημερομηνία γέννησης', 'Ναι', 'ΗΗ/ΜΜ/ΕΕΕΕ. Δεν εμφανίζεται δημόσια· χρησιμοποιείται μόνο για να μη γράφεται ο ίδιος παίκτης δύο φορές.'],
     ['Τμήμα', 'Όχι', 'Α΄ Ομάδα (προεπιλογή) / Β΄ Ομάδα / Γυναικεία. Οι ακαδημίες δεν ανεβαίνουν ακόμα.'],
     ['Συγκατάθεση', 'Ναι', 'ΝΑΙ = ο παίκτης (ή ο γονέας, για ανήλικους) συμφωνεί να εμφανίζεται στο Clubera.'],
+    ['Αποχώρησε', 'Όχι', 'ΝΑΙ = ο παίκτης έφυγε από την ομάδα και αφαιρείται από το Clubera. Τα άλλα κελιά της γραμμής δεν χρειάζονται.'],
+    ['Κωδικός Clubera', 'Όχι', 'Συμπληρώνεται μόνο του για τους παίκτες που υπάρχουν ήδη. Μην τον αλλάζετε. Οι νέοι παίκτες τον αφήνουν κενό.'],
     ['', '', ''],
     ['Σημείωση', '', 'Συμπληρώστε τους παίκτες στο φύλλο «Ρόστερ», μία γραμμή ανά παίκτη, κάτω από την επικεφαλίδα. Μην αλλάζετε τα ονόματα των στηλών.'],
+    ['Παίκτες που υπάρχουν ήδη', '', 'Είναι ήδη γραμμένοι στο αρχείο. Η ημερομηνία γέννησης δεν χρειάζεται γι\' αυτούς· συμπληρώστε θέση και ό,τι άλλο λείπει.'],
   ];
   for (final l in lines) {
     help.appendRow([for (final s in l) TextCellValue(s)]);

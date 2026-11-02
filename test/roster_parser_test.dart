@@ -121,6 +121,35 @@ void main() {
     });
   });
 
+  group('Αποχώρησε / Κωδικός Clubera', () {
+    final header = [...RosterColumns.templateHeaders];
+    test('a player who left needs only the name', () {
+      final res = parseRoster([
+        header,
+        ['ΣΤΑΜΑΤΑΚΗΣ ΓΙΩΡΓΟΣ', '', '', '', '', '', 'ΝΑΙ', 'abc'],
+      ], today: DateTime.utc(2026, 11, 2));
+      final r = res.rows.single;
+      expect(r.isValid, isTrue, reason: r.errors.join(', '));
+      expect(r.leaving, isTrue);
+      expect(r.existingId, 'abc');
+    });
+    test('a new player without id still needs a birth date', () {
+      final res = parseRoster([
+        header,
+        ['ΝΕΟΣ ΠΑΙΚΤΗΣ', 'MID', '', '', '', 'ΝΑΙ', '', ''],
+      ], today: DateTime.utc(2026, 11, 2));
+      expect(res.rows.single.errors, contains('Λείπει η ημερομηνία γέννησης'));
+    });
+    test('the same id twice is a duplicate', () {
+      final res = parseRoster([
+        header,
+        ['ΑΛΦΑ ΒΗΤΑ', 'MID', '', '', '', 'ΝΑΙ', '', 'x1'],
+        ['ΑΛΦΑ ΒΗΤΑ', 'DEF', '', '', '', 'ΝΑΙ', '', 'x1'],
+      ], today: DateTime.utc(2026, 11, 2));
+      expect(res.rows.last.errors.single, startsWith('Ίδιος παίκτης'));
+    });
+  });
+
   group('parseCsv', () {
     test('comma, semicolon and quotes', () {
       expect(parseCsv('a,b\n1,"x, y"\n'), [

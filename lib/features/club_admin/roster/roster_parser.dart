@@ -52,6 +52,8 @@ class RosterColumns {
   static const birthDate = ['Ημερομηνία γέννησης', 'Ημερομηνια γεννησης', 'Ημ. γέννησης', 'Γέννηση', 'Birth date', 'Date of birth', 'DOB', 'Birthday'];
   static const squad = ['Τμήμα', 'Τμημα', 'Ομάδα', 'Ομαδα', 'Squad', 'Team'];
   static const consent = ['Συγκατάθεση', 'Συγκαταθεση', 'Consent'];
+  static const left = ['Αποχώρησε', 'Αποχωρησε', 'Έφυγε', 'Εφυγε', 'Left'];
+  static const id = ['Κωδικός Clubera', 'Κωδικος Clubera', 'Clubera ID', 'ID'];
 
   static List<String> get templateHeaders => [
         name.first,
@@ -60,8 +62,27 @@ class RosterColumns {
         birthDate.first,
         squad.first,
         consent.first,
+        left.first,
+        id.first,
       ];
 }
+
+/// A player already in Clubera, written into the pre-filled template.
+class TemplatePlayer {
+  final String id;
+  final String name;
+  final String? position;
+  final int? number;
+  final String squadLabel;
+  final bool consentOnFile;
+  const TemplatePlayer({
+    required this.id,
+    required this.name,
+    this.position,
+    this.number,
+    required this.squadLabel,
+    this.consentOnFile = false,
+  }
 
 /// One row of the file after validation.
 class RosterRow {
@@ -72,6 +93,14 @@ class RosterRow {
   final DateTime? birthDate;
   final RosterSquad squad;
   final bool consent;
+
+  /// Id of the player in Clubera, when the row came from a pre-filled
+  /// template ("Κωδικός Clubera"). Such rows need no birth date: the player
+  /// is already known.
+  final String? existingId;
+
+  /// «ΝΑΙ» in «Αποχώρησε»: the player left and is removed from the roster.
+  final bool leaving;
   final List<String> errors;
   final List<String> warnings;
 
@@ -83,6 +112,8 @@ class RosterRow {
     required this.birthDate,
     required this.squad,
     required this.consent,
+    this.existingId,
+    this.leaving = false,
     required this.errors,
     required this.warnings,
   });
@@ -252,6 +283,8 @@ RosterParseResult parseRoster(List<List<String>> table, {DateTime? today}) {
   final cBirth = _findColumn(header, RosterColumns.birthDate);
   final cSquad = _findColumn(header, RosterColumns.squad);
   final cConsent = _findColumn(header, RosterColumns.consent);
+  final cLeft = _findColumn(header, RosterColumns.left);
+  final cId = _findColumn(header, RosterColumns.id);
 
   final missing = <String>[
     if (cName == null) RosterColumns.name.first,
@@ -276,23 +309,30 @@ RosterParseResult parseRoster(List<List<String>> table, {DateTime? today}) {
     final warnings = <String>[];
 
     final name = cell(r, cName).replaceAll(RegExp(r'\s+'), ' ');
+    final idRaw = cell(r, cId);
+    final existingId = idRaw.isEmpty ? null : idRaw;
+    final leaving = _isYes(cell(r, cLeft));
+
     if (name.isEmpty) {
       errors.add('Λείπει το ονοματεπώνυμο');
-    } else if (name.length < 3 || !name.contains(' ')) {
+    } else if (!leaving && (name.length < 3 || !name.contains(' '))) {
       errors.add('Χρειάζεται επώνυμο και όνομα');
     }
 
+    // A player who left only needs to be identified; nothing else is checked.
     final posRaw = cell(r, cPos);
     final pos = parsePosition(posRaw);
-    if (posRaw.isEmpty) {
-      errors.add('Λείπει η θέση');
-    } else if (pos == null) {
-      errors.add('Άγνωστη θέση «$posRaw» (GK / DEF / MID / FWD)');
+    if (!leaving) {
+      if (posRaw.isEmpty) {
+        errors.add('Λείπει η θέση');
+      } else if (pos == null) {
+        errors.add('Άγνωστη θέση «$posRaw» (GK / DEF / MID / FWD)');
+      }
     }
 
     int? number;
     final numRaw = cell(r, cNum);
-    if (numRaw.isNotEmpty) {
+    if (numRaw.isNotEmpty && !leaving) {
       final d = double.tryParse(numRaw.replaceAll(',', '.'));
       if (d == null || d != d.roundToDouble() || d < 1 || d > 99) {
         errors.add('Ο αριθμός φανέλας πρέπει να είναι 1–99');
@@ -303,20 +343,25 @@ RosterParseResult parseRoster(List<List<String>> table, {DateTime? today}) {
 
     final birthRaw = cell(r, cBirth);
     final birth = parseBirthDate(birthRaw);
-    if (birthRaw.isEmpty) {
-      errors.add('Λείπει η ημερομηνία γέννησης');
-    } else if (birth == null) {
-      errors.add('Μη έγκυρη ημερομηνία «$birthRaw» (ΗΗ/ΜΜ/ΕΕΕΕ)');
-    } else if (birth.isAfter(now) || now.year - birth.year > 70) {
-      errors.add('Η ημερομηνία γέννησης δεν είναι λογική');
+    if (!leaving) {
+      if (birthRaw.isEmpty) {
+        // Players already in Clubera (pre-filled template) are known by id.
+        if (existingId == null) errors.add('Λείπει η ημερομηνία γέννησης');
+      } else if (birth == null) {
+        errors.add('Μη έγκυρη ημερομηνία «$birthRaw» (ΗΗ/ΜΜ/ΕΕΕΕ)');
+      } else if (birth.isAfter(now) || now.year - birth.year > 70) {
+        errors.add('Η ημερομηνία γέννησης δεν είναι λογική');
+      }
     }
 
     final squadRaw = cell(r, cSquad);
     final squad = parseSquad(squadRaw);
-    if (squad == null) {
-      errors.add('Άγνωστο τμήμα «$squadRaw»');
-    } else if (squad == RosterSquad.academy) {
-      errors.add('Οι ακαδημίες δεν ανεβαίνουν ακόμα από Excel');
+    if (!leaving) {
+      if (squad == null) {
+        errors.add('Άγνωστο τμήμα «$squadRaw»');
+      } else if (squad == RosterSquad.academy) {
+        errors.add('Οι ακαδημίες δεν ανεβαίνουν ακόμα από Excel');
+      }
     }
 
     final consent = _isYes(cell(r, cConsent));
@@ -328,10 +373,12 @@ RosterParseResult parseRoster(List<List<String>> table, {DateTime? today}) {
       birthDate: birth,
       squad: squad ?? RosterSquad.first,
       consent: consent,
+      existingId: existingId,
+      leaving: leaving,
       errors: errors,
       warnings: warnings,
     );
-    if (!consent) {
+    if (!consent && !leaving) {
       errors.add(row.isMinorOn(now)
           ? 'Ανήλικος: χρειάζεται «ΝΑΙ» στη συγκατάθεση του γονέα'
           : 'Χρειάζεται «ΝΑΙ» στη συγκατάθεση');
@@ -344,13 +391,13 @@ RosterParseResult parseRoster(List<List<String>> table, {DateTime? today}) {
   final seenNumbers = <String, int>{};
   for (final row in rows) {
     if (row.name.isEmpty) continue;
-    final k = row.dupKey;
+    final k = row.existingId != null ? 'id:${row.existingId}' : row.dupKey;
     if (seenKeys.containsKey(k)) {
       row.errors.add('Ίδιος παίκτης με τη γραμμή ${seenKeys[k]}');
     } else {
       seenKeys[k] = row.line;
     }
-    if (row.number != null) {
+    if (row.number != null && !row.leaving) {
       final nk = '${row.squad.code}#${row.number}';
       if (seenNumbers.containsKey(nk)) {
         row.errors.add('Ο αριθμός ${row.number} υπάρχει ήδη στη γραμμή ${seenNumbers[nk]}');

@@ -48,7 +48,10 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
 
   Future<void> _downloadTemplate() async {
     try {
-      final bytes = Uint8List.fromList(buildRosterTemplate());
+      // The club's current players are already in the file: the club only
+      // corrects, adds and marks who left.
+      final players = await _service.templatePlayers(widget.clubId);
+      final bytes = Uint8List.fromList(buildRosterTemplate(players: players));
       // Browser: downloads the file. Phones: share sheet (save, email, …).
       await saveBytesAsFile(
         bytes,
@@ -246,7 +249,7 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
                 _step(
                   1,
                   'Κατεβάστε το πρότυπο Excel',
-                  'Μία γραμμή ανά παίκτη στο φύλλο «Ρόστερ». Οι οδηγίες είναι στο φύλλο «Οδηγίες».',
+                  'Οι παίκτες που έχετε ήδη είναι μέσα. Διορθώστε, προσθέστε τους υπόλοιπους και γράψτε ΝΑΙ στο «Αποχώρησε» για όσους έφυγαν.',
                   OutlinedButton.icon(
                     onPressed: _downloadTemplate,
                     icon: const Icon(Icons.download_outlined),
@@ -403,6 +406,7 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
               _chip('Νέοι', plan?.newCount ?? 0, AppTheme.supportGreen),
               _chip('Αλλαγές', plan?.updateCount ?? 0, AppTheme.primaryLight),
               _chip('Χωρίς αλλαγή', plan?.unchangedCount ?? 0, AppTheme.textSecondary),
+              if ((plan?.removeCount ?? 0) > 0) _chip('Αποχωρούν', plan!.removeCount, AppTheme.accent),
               _chip('Με λάθη', invalid.length, AppTheme.red),
             ],
           ),
@@ -436,6 +440,8 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
         : switch (item?.action) {
             RosterAction.update => (Icons.edit_outlined, AppTheme.primaryLight, 'Αλλαγή'),
             RosterAction.unchanged => (Icons.check, AppTheme.textSecondary, 'Ίδιο'),
+            RosterAction.remove => (Icons.person_remove_outlined, AppTheme.accent, 'Αποχωρεί'),
+            RosterAction.notFound => (Icons.help_outline, AppTheme.textSecondary, 'Δεν βρέθηκε'),
             _ => (Icons.add_circle_outline, AppTheme.supportGreen, 'Νέος'),
           };
     final details = [
@@ -495,7 +501,7 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
 
   Widget _submitButton() {
     final plan = _plan;
-    final changes = (plan?.newCount ?? 0) + (plan?.updateCount ?? 0);
+    final changes = (plan?.newCount ?? 0) + (plan?.updateCount ?? 0) + (plan?.removeCount ?? 0);
     final hasSomething = changes > 0 || _logoBytes != null;
     final enabled = hasSomething && _declared && !_submitting && !_reading;
     String label;
@@ -547,6 +553,7 @@ class _StatusCard extends StatelessWidget {
         icon = Icons.hourglass_top;
         title = 'Δεν έχει δημοσιευτεί ακόμα';
         body = '${upload['newCount'] ?? 0} νέοι παίκτες, ${upload['updateCount'] ?? 0} αλλαγές'
+            '${(upload['removeCount'] ?? 0) > 0 ? ', ${upload['removeCount']} αποχωρήσεις' : ''}'
             '${club['pendingLogoUrl'] != null ? ', νέο λογότυπο' : ''}'
             '${when.isEmpty ? '' : ' · $when'}';
         break;
