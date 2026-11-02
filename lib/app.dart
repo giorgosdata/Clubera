@@ -49,10 +49,41 @@ class CluperaApp extends StatelessWidget {
               ),
             ),
           ),
-          Positioned.fill(child: OfflineBanner(child: child!)),
+          Positioned.fill(child: _PhoneWidth(child: OfflineBanner(child: child!))),
         ],
       ),
       home: const _Root(),
+    );
+  }
+}
+
+/// The screens are designed for a phone. On a wide screen (the web version
+/// on a computer) the app is shown as a centred column instead of stretching
+/// grids and cards across the whole window; the stadium background fills the
+/// rest. MediaQuery reports the column width, so code that sizes itself from
+/// the screen width sees the column, not the window.
+class _PhoneWidth extends StatelessWidget {
+  static const double maxWidth = 640;
+  final Widget child;
+  const _PhoneWidth({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    if (mq.size.width <= maxWidth) return child;
+    return Center(
+      child: SizedBox(
+        width: maxWidth,
+        child: MediaQuery(
+          data: mq.copyWith(size: Size(maxWidth, mq.size.height)),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              boxShadow: [BoxShadow(color: Color(0x66000000), blurRadius: 24)],
+            ),
+            child: child,
+          ),
+        ),
+      ),
     );
   }
 }
