@@ -1026,12 +1026,13 @@ class _PlayersPublicTab extends StatefulWidget {
 }
 
 class _PlayersPublicTabState extends State<_PlayersPublicTab> {
-  static const _positions = ['GK', 'DEF', 'MID', 'FWD'];
+  static const _positions = ['GK', 'DEF', 'MID', 'FWD', 'OTHER'];
   static const _posLabels = {
     'GK': 'ΤΕΡΜΑΤΟΦΥΛΑΚΕΣ',
     'DEF': 'ΑΜΥΝΤΙΚΟΙ',
     'MID': 'ΜΕΣΟΙ',
     'FWD': 'ΕΠΙΘΕΤΙΚΟΙ',
+    'OTHER': 'ΧΩΡΙΣ ΘΕΣΗ',
   };
 
   void _showAddPlayerDialog() {
@@ -1164,7 +1165,7 @@ class _PlayersPublicTabState extends State<_PlayersPublicTab> {
           children: [
             for (final pos in _positions) ...[
               Builder(builder: (_) {
-                final group = players.where((p) => p.position == pos).toList();
+                final group = players.where((p) => positionGroup(p.position) == pos).toList();
                 if (group.isEmpty) return const SizedBox.shrink();
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2646,10 +2647,10 @@ class _WomenTab extends StatelessWidget {
         }
         final groups = <String, List<PlayerModel>>{};
         for (final p in players) {
-          groups.putIfAbsent(p.position, () => []).add(p);
+          groups.putIfAbsent(positionGroup(p.position), () => []).add(p);
         }
-        const order = ['GK', 'DEF', 'MID', 'FWD'];
-        const labels = {'GK': 'ΤΕΡΜΑΤΟΦΥΛΑΚΕΣ', 'DEF': 'ΑΜΥΝΤΙΚΟΙ', 'MID': 'ΜΕΣΟΙ', 'FWD': 'ΕΠΙΘΕΤΙΚΟΙ'};
+        const order = ['GK', 'DEF', 'MID', 'FWD', 'OTHER'];
+        const labels = {'GK': 'ΤΕΡΜΑΤΟΦΥΛΑΚΕΣ', 'DEF': 'ΑΜΥΝΤΙΚΟΙ', 'MID': 'ΜΕΣΟΙ', 'FWD': 'ΕΠΙΘΕΤΙΚΟΙ', 'OTHER': 'ΧΩΡΙΣ ΘΕΣΗ'};
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
           children: [
@@ -2819,4 +2820,27 @@ class _AcademiesPublicTab extends StatelessWidget {
       },
     );
   }
+}
+
+
+/// Which group a player is listed under on the club page. Positions are
+/// stored as GK/DEF/MID/FWD, but older or hand-entered players may carry an
+/// empty value, lower case, or Greek/English words. Anything that cannot be
+/// recognised goes to 'OTHER' so the player is still shown.
+String positionGroup(String? raw) {
+  final v = (raw ?? '').trim().toUpperCase()
+      .replaceAll('Ά', 'Α').replaceAll('Έ', 'Ε').replaceAll('Ή', 'Η')
+      .replaceAll('Ί', 'Ι').replaceAll('Ό', 'Ο').replaceAll('Ύ', 'Υ')
+      .replaceAll('Ώ', 'Ω');
+  if (v.isEmpty) return 'OTHER';
+  const map = {
+    'GK': ['GK', 'G', 'GOALKEEPER', 'KEEPER', 'ΤΕΡΜΑΤΟΦΥΛΑΚΑΣ', 'ΤΕΡΜ', 'ΤΦ', 'ΤΕΡΜΑΤΟΦΥΛΑΚΕΣ'],
+    'DEF': ['DEF', 'D', 'DF', 'DEFENDER', 'CB', 'LB', 'RB', 'ΑΜΥΝΤΙΚΟΣ', 'ΑΜΥΝΑ', 'ΑΜ', 'ΑΜΥΝΤΙΚΟΙ'],
+    'MID': ['MID', 'M', 'MF', 'MIDFIELDER', 'CM', 'DM', 'AM', 'ΜΕΣΟΣ', 'ΜΕΣΑΙΟΣ', 'ΜΕΣΟΙ'],
+    'FWD': ['FWD', 'F', 'FW', 'FORWARD', 'ST', 'STRIKER', 'ATT', 'ΕΠΙΘΕΤΙΚΟΣ', 'ΕΠΙΘΕΣΗ', 'ΕΠ', 'ΕΠΙΘΕΤΙΚΟΙ'],
+  };
+  for (final e in map.entries) {
+    if (e.value.contains(v)) return e.key;
+  }
+  return 'OTHER';
 }
