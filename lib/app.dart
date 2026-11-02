@@ -9,6 +9,7 @@ import 'core/services/streak_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/offline_banner.dart';
 import 'features/auth/ui/login_screen.dart';
+import 'features/club_admin/invite/club_invite.dart';
 import 'features/clubs/ui/club_profile_screen.dart';
 import 'features/home/ui/home_screen.dart';
 import 'features/matches/ui/match_detail_screen.dart';
@@ -103,6 +104,8 @@ class _RootState extends State<_Root> {
   void initState() {
     super.initState();
     Future.microtask(() => context.read<AppProvider>().init());
+    // An invite link (?invite=…) is kept until the user has signed in.
+    captureInviteFromUrl();
     _checkOnboarding();
   }
 
@@ -162,7 +165,10 @@ class _MainShellState extends State<_MainShell> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkStreak());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _checkInvite();
+      await _checkStreak();
+    });
     _initDeepLinks();
   }
 
@@ -174,6 +180,11 @@ class _MainShellState extends State<_MainShell> {
   }
 
   void _handleDeepLink(Uri uri) {
+    final invite = uri.queryParameters['invite'];
+    if (invite != null && invite.isNotEmpty) {
+      rememberInvite(invite).then((_) => _checkInvite());
+      return;
+    }
     final segs = uri.pathSegments;
     if (segs.isEmpty) return;
     final nav = _navigatorKey.currentState;
@@ -189,6 +200,11 @@ class _MainShellState extends State<_MainShell> {
           nav.push(MaterialPageRoute(builder: (_) => ClubProfileScreen(clubId: segs[1])));
         }
         break;
+      case 'invite':
+        if (segs.length > 1) {
+          rememberInvite(segs[1]).then((_) => _checkInvite());
+        }
+        break;
       case 'tournament':
         if (segs.length > 1) {
           nav.push(MaterialPageRoute(builder: (_) => TournamentDetailScreen(tournamentId: segs[1])));
@@ -201,6 +217,12 @@ class _MainShellState extends State<_MainShell> {
   void dispose() {
     _linkSub?.cancel();
     super.dispose();
+  }
+
+  Future<void> _checkInvite() async {
+    final user = context.read<AppProvider>().user;
+    if (user == null || !mounted) return;
+    await checkPendingInvite(context, user);
   }
 
   Future<void> _checkStreak() async {

@@ -913,11 +913,11 @@ class _MenuSection extends StatelessWidget {
           if (user.role == 'fan' && user.clubId == null)
             _ClubApplicationTile(user: user),
           if (user.role == 'club') ...[
-            const _SectionLabel('Club Management'),
+            const _SectionLabel('Διαχείριση συλλόγου'),
             const SizedBox(height: 8),
             _MenuItem(
               icon: Icons.dashboard,
-              label: 'Club Panel',
+              label: 'Πίνακας συλλόγου',
               color: AppTheme.supportGreen,
               onTap: () => Navigator.push(
                 context,
@@ -927,7 +927,7 @@ class _MenuSection extends StatelessWidget {
             if (user.clubId != null)
               _MenuItem(
                 icon: Icons.shield_outlined,
-                label: 'My Club Profile',
+                label: 'Η σελίδα του συλλόγου μου',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -2353,7 +2353,7 @@ class _ApplicationStatusCard extends StatelessWidget {
     final subtitle = isPending
         ? 'Your application for "$clubName" is being reviewed by our team.'
         : isApproved
-            ? '"$clubName" has been approved. Check your Club Panel!'
+            ? 'Ο σύλλογος «$clubName» εγκρίθηκε. Δείτε τον Πίνακα συλλόγου!'
             : 'Your application for "$clubName" was not approved.';
 
     return Container(

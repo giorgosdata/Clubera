@@ -360,5 +360,42 @@ service cloud.firestore {
           request.resource.data.status == "redeemed");
       allow delete: if isAdmin();
     }
+
+    // ── CLUB ADMIN INVITES ───────────────────────────────────────────────────
+    // The Super Admin creates a single-use link (club_invites/{token}).
+    // Whoever opens it, signed in, can accept it once before it expires and
+    // becomes Club Admin of that club. The three writes of the acceptance
+    // (invite, user, club) are one batch and each is checked against the
+    // invite. These blocks only ADD permissions; the rules above are unchanged.
+    function inviteOf(token) {
+      return getAfter(/databases/$(database)/documents/club_invites/$(token)).data;
+    }
+    match /club_invites/{token} {
+      allow get: if isSignedIn();
+      allow list, create, delete: if isAdmin();
+      allow update: if isAdmin() ||
+        (isSignedIn() &&
+          resource.data.usedBy == null &&
+          request.time < resource.data.expiresAt &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedBy', 'usedAt']) &&
+          request.resource.data.usedBy == uid());
+    }
+    match /users/{userId} {
+      allow update: if isSignedIn() && uid() == userId &&
+        resource.data.get('role', '') != 'admin' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'clubId', 'inviteToken']) &&
+        request.resource.data.role == 'club' &&
+        inviteOf(request.resource.data.inviteToken).usedBy == uid() &&
+        inviteOf(request.resource.data.inviteToken).clubId == request.resource.data.clubId;
+    }
+    match /clubs/{clubId} {
+      allow update: if isSignedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['adminUid', 'staffUids']) &&
+        request.resource.data.adminUid == uid() &&
+        request.resource.data.get('staffUids', []).hasAll(resource.data.get('staffUids', [])) &&
+        getAfter(/databases/$(database)/documents/users/$(uid())).data.clubId == clubId &&
+        inviteOf(getAfter(/databases/$(database)/documents/users/$(uid())).data.inviteToken).usedBy == uid() &&
+        inviteOf(getAfter(/databases/$(database)/documents/users/$(uid())).data.inviteToken).clubId == clubId;
+    }
   }
 }

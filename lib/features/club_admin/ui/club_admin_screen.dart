@@ -67,7 +67,7 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
               Icon(Icons.lock_outline, size: 64, color: AppTheme.cardBg2),
               SizedBox(height: 16),
               Text(
-                'Access Denied',
+                'Χωρίς πρόσβαση',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -76,7 +76,7 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
               ),
               SizedBox(height: 8),
               Text(
-                'You do not have permission to view this page.',
+                'Δεν έχετε πρόσβαση σε αυτή τη σελίδα.',
                 style: TextStyle(color: AppTheme.textSecondary),
               ),
             ],
@@ -140,13 +140,13 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
           children: [
             Icon(Icons.dashboard, color: AppTheme.supportGreen, size: 20),
             SizedBox(width: 8),
-            Text('Club Panel'),
+            Text('Πίνακας συλλόγου'),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.visibility_outlined, color: AppTheme.accent),
-            tooltip: 'View as Fan',
+            tooltip: 'Προβολή όπως οι fans',
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -162,20 +162,20 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
           unselectedLabelColor: AppTheme.textSecondary,
           isScrollable: true,
           tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Players'),
-            Tab(text: 'Academies'),
-            Tab(text: 'Revenue'),
+            Tab(text: 'Επισκόπηση'),
+            Tab(text: 'Παίκτες'),
+            Tab(text: 'Ακαδημίες'),
+            Tab(text: 'Έσοδα'),
             Tab(text: 'Fans'),
-            Tab(text: 'Transfers'),
-            Tab(text: 'Staff'),
-            Tab(text: 'Sponsors'),
+            Tab(text: 'Μεταγραφές'),
+            Tab(text: 'Συνεργάτες'),
+            Tab(text: 'Χορηγοί'),
             Tab(text: 'Παιχνίδια'),
             Tab(text: 'Ανακοινώσεις'),
             Tab(text: 'Γκαλερί'),
             Tab(text: 'Γυναίκες'),
             Tab(text: 'Γήπεδο'),
-            Tab(text: 'Rewards'),
+            Tab(text: 'Επιβραβεύσεις'),
           ],
         ),
       ),
@@ -206,6 +206,150 @@ class _ClubAdminScreenState extends State<ClubAdminScreen>
   }
 }
 
+// ─── SETUP CHECKLIST ─────────────────────────────────────────────────────────
+// "Τι λείπει από τον σύλλογό σας": the first thing a new Club Admin sees, so
+// they know what to do without looking through every tab. Each missing item
+// opens the place where it is filled in.
+
+class _SetupChecklist extends StatelessWidget {
+  final ClubModel club;
+  final VoidCallback onEditClub;
+  final void Function(int tabIndex) onOpenTab;
+  const _SetupChecklist({required this.club, required this.onEditClub, required this.onOpenTab});
+
+  static const _positions = {'GK', 'DEF', 'MID', 'FWD'};
+  static const _playersTab = 1;
+  static const _stadiumTab = 12;
+
+  @override
+  Widget build(BuildContext context) {
+    final clubRef = FirebaseFirestore.instance.collection('clubs').doc(club.id);
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: clubRef.collection('players').snapshots(),
+      builder: (ctx, playersSnap) => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: clubRef.collection('stadium_photos').limit(1).snapshots(),
+        builder: (ctx, stadiumSnap) {
+          if (!playersSnap.hasData) return const SizedBox.shrink();
+          final players = playersSnap.data!.docs
+              .map((d) => d.data())
+              .where((m) => m['isActive'] != false && m['approvalStatus'] != 'pending' && m['approvalStatus'] != 'rejected')
+              .toList();
+          final noPosition = players.where((m) => !_positions.contains(m['position'])).length;
+          void openRoster() => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => RosterUploadScreen(clubId: club.id)),
+              );
+          final items = <_CheckItem>[
+            _CheckItem('Λογότυπο', 'Ανεβάστε το μαζί με το ρόστερ', (club.logoUrl ?? '').isNotEmpty, openRoster),
+            _CheckItem(
+              'Ρόστερ',
+              players.isEmpty ? 'Ανεβάστε τους παίκτες από Excel' : '${players.length} παίκτες · ανεβάστε όλους, και τους αναπληρωματικούς',
+              players.length >= 11,
+              openRoster,
+            ),
+            _CheckItem(
+              'Θέσεις παικτών',
+              noPosition == 0 ? '' : '$noPosition παίκτες χωρίς θέση · το Excel τους έχει ήδη μέσα',
+              players.isNotEmpty && noPosition == 0,
+              openRoster,
+            ),
+            _CheckItem(
+              'Στοιχεία συλλόγου',
+              'Έτος ίδρυσης, περιγραφή, χρώματα',
+              club.yearFounded != null && club.description.trim().isNotEmpty && (club.primaryColor ?? '').isNotEmpty,
+              onEditClub,
+            ),
+            _CheckItem(
+              'Επικοινωνία',
+              'Email ή τηλέφωνο του συλλόγου',
+              (club.contactEmail ?? '').trim().isNotEmpty || (club.contactPhone ?? '').trim().isNotEmpty,
+              onEditClub,
+            ),
+            _CheckItem(
+              'Φωτογραφίες γηπέδου',
+              'Από την καρτέλα «Γήπεδο»',
+              (stadiumSnap.data?.docs.isNotEmpty ?? false),
+              () => onOpenTab(_stadiumTab),
+            ),
+          ];
+          final done = items.where((i) => i.done).length;
+          if (done == items.length) return const SizedBox.shrink();
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            decoration: BoxDecoration(
+              color: AppTheme.cardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.accent.withValues(alpha: 0.5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.checklist, color: AppTheme.accent, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text('Τι λείπει από τον σύλλογό σας',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                    ),
+                    Text('$done / ${items.length}',
+                        style: const TextStyle(color: AppTheme.accent, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: done / items.length,
+                    minHeight: 6,
+                    backgroundColor: AppTheme.cardBg2,
+                    color: AppTheme.supportGreen,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                for (final i in items)
+                  ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    onTap: i.done ? null : i.onTap,
+                    leading: Icon(
+                      i.done ? Icons.check_circle : Icons.radio_button_unchecked,
+                      color: i.done ? AppTheme.supportGreen : AppTheme.textSecondary,
+                    ),
+                    title: Text(i.title,
+                        style: TextStyle(
+                          color: i.done ? AppTheme.textSecondary : Colors.white,
+                          decoration: i.done ? TextDecoration.lineThrough : null,
+                        )),
+                    subtitle: i.done || i.hint.isEmpty
+                        ? null
+                        : Text(i.hint, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                    trailing: i.done ? null : const Icon(Icons.chevron_right, color: AppTheme.accent),
+                  ),
+                if (players.length < 11)
+                  TextButton.icon(
+                    onPressed: () => onOpenTab(_playersTab),
+                    icon: const Icon(Icons.group_outlined, size: 18),
+                    label: const Text('Δείτε τους παίκτες σας'),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CheckItem {
+  final String title;
+  final String hint;
+  final bool done;
+  final VoidCallback onTap;
+  const _CheckItem(this.title, this.hint, this.done, this.onTap);
+}
+
 // ─── OVERVIEW TAB ─────────────────────────────────────────────────────────────
 
 class _OverviewTab extends StatelessWidget {
@@ -227,7 +371,7 @@ class _OverviewTab extends StatelessWidget {
         if (!snap.data!.exists) {
           return const Center(
             child: Text(
-              'Club not found',
+              'Ο σύλλογος δεν βρέθηκε',
               style: TextStyle(color: AppTheme.textSecondary),
             ),
           );
@@ -308,13 +452,18 @@ class _OverviewTab extends StatelessWidget {
                       color: AppTheme.accent,
                       size: 20,
                     ),
-                    tooltip: 'Edit Club',
+                    tooltip: 'Επεξεργασία συλλόγου',
                     onPressed: () => _showEditClubDialog(ctx, club),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
+            _SetupChecklist(
+              club: club,
+              onEditClub: () => _showEditClubDialog(ctx, club),
+              onOpenTab: (i) => tabController?.animateTo(i),
+            ),
             // Stats grid
             GridView.count(
               crossAxisCount: 2,
@@ -325,25 +474,25 @@ class _OverviewTab extends StatelessWidget {
               childAspectRatio: 1.5,
               children: [
                 _StatCard(
-                  label: 'Followers',
+                  label: 'Ακόλουθοι',
                   value: '${club.followers}',
                   icon: Icons.people,
                   color: AppTheme.primaryLight,
                 ),
                 _StatCard(
-                  label: 'Fan Votes',
+                  label: 'Ψήφοι fans',
                   value: '${club.votes}',
                   icon: Icons.how_to_vote,
                   color: AppTheme.accent,
                 ),
                 _StatCard(
-                  label: 'Wins',
+                  label: 'Νίκες',
                   value: '${club.wins}',
                   icon: Icons.emoji_events,
                   color: AppTheme.supportGreen,
                 ),
                 _StatCard(
-                  label: 'Played',
+                  label: 'Αγώνες',
                   value: '${club.played}',
                   icon: Icons.sports_soccer,
                   color: Colors.white,
@@ -363,7 +512,7 @@ class _OverviewTab extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Season Record',
+                    'Απολογισμός σεζόν',
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 12,
@@ -390,7 +539,7 @@ class _OverviewTab extends StatelessWidget {
                         color: AppTheme.red,
                       ),
                       _RecordChip(
-                        label: 'Pts',
+                        label: 'Βαθ.',
                         count: club.points,
                         color: AppTheme.primaryLight,
                       ),
@@ -428,7 +577,7 @@ class _OverviewTab extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Total Revenue',
+                            'Συνολικά έσοδα',
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: 13,
@@ -467,7 +616,7 @@ class _OverviewTab extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.add, color: Colors.white),
                 label: const Text(
-                  'Create Match',
+                  'Δημιουργία αγώνα',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -495,7 +644,7 @@ class _OverviewTab extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.handshake_outlined),
                 label: const Text(
-                  'Manage Sponsors',
+                  'Διαχείριση χορηγών',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 onPressed: () => tabController?.animateTo(7),
@@ -516,7 +665,7 @@ class _OverviewTab extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.photo_camera_outlined),
                 label: const Text(
-                  'Post to Feed',
+                  'Ανάρτηση',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 onPressed: () => _showPostFeedSheet(ctx, clubId),
@@ -569,7 +718,7 @@ class _OverviewTab extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
           backgroundColor: AppTheme.cardBg,
-          title: const Text('Edit Club', style: TextStyle(color: Colors.white)),
+          title: const Text('Επεξεργασία συλλόγου', style: TextStyle(color: Colors.white)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -587,14 +736,14 @@ class _OverviewTab extends StatelessWidget {
                   controller: nameCtrl,
                   style: const TextStyle(color: Colors.white),
                   maxLength: 60,
-                  decoration: const InputDecoration(labelText: 'Club Name *'),
+                  decoration: const InputDecoration(labelText: 'Όνομα συλλόγου *'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: cityCtrl,
                   style: const TextStyle(color: Colors.white),
                   maxLength: 40,
-                  decoration: const InputDecoration(labelText: 'City *'),
+                  decoration: const InputDecoration(labelText: 'Πόλη *'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
@@ -602,7 +751,7 @@ class _OverviewTab extends StatelessWidget {
                   style: const TextStyle(color: Colors.white),
                   keyboardType: TextInputType.number,
                   maxLength: 4,
-                  decoration: const InputDecoration(labelText: 'Year Founded'),
+                  decoration: const InputDecoration(labelText: 'Έτος ίδρυσης'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
@@ -610,11 +759,11 @@ class _OverviewTab extends StatelessWidget {
                   style: const TextStyle(color: Colors.white),
                   maxLines: 3,
                   maxLength: 500,
-                  decoration: const InputDecoration(labelText: 'Description'),
+                  decoration: const InputDecoration(labelText: 'Περιγραφή'),
                 ),
                 const SizedBox(height: 14),
                 // ── Contact info
-                const Text('Contact', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                const Text('Επικοινωνία', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: emailCtrl,
@@ -627,7 +776,7 @@ class _OverviewTab extends StatelessWidget {
                   controller: phoneCtrl,
                   style: const TextStyle(color: Colors.white),
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone_outlined, size: 18)),
+                  decoration: const InputDecoration(labelText: 'Τηλέφωνο', prefixIcon: Icon(Icons.phone_outlined, size: 18)),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -638,19 +787,19 @@ class _OverviewTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 // ── Club colors
-                const Text('Club Colors', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                const Text('Χρώματα συλλόγου', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(child: _ColorPickerField(
-                      label: 'Primary',
+                      label: 'Κύριο',
                       value: selPrimaryColor,
                       presets: presetColors,
                       onChanged: (v) => setDlg(() => selPrimaryColor = v),
                     )),
                     const SizedBox(width: 10),
                     Expanded(child: _ColorPickerField(
-                      label: 'Secondary',
+                      label: 'Δευτερεύον',
                       value: selSecondaryColor,
                       presets: presetColors,
                       onChanged: (v) => setDlg(() => selSecondaryColor = v),
@@ -659,7 +808,7 @@ class _OverviewTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 // ── Category
-                const Text('Category', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                const Text('Κατηγορία', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
@@ -676,7 +825,7 @@ class _OverviewTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 // ── Country
-                const Text('Country', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                const Text('Χώρα', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 const SizedBox(height: 6),
                 _StyledDropdown<String>(
                   value: selCountry,
@@ -690,7 +839,7 @@ class _OverviewTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 // ── League (controlled dropdown)
-                const Text('League', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                const Text('Πρωτάθλημα', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 const SizedBox(height: 6),
                 _StyledDropdown<String>(
                   value: selLeague,
@@ -704,18 +853,18 @@ class _OverviewTab extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: const Text('Άκυρο'),
             ),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: AppTheme.red),
               onPressed: () => _confirmDeleteClub(ctx, club),
-              child: const Text('Delete Club'),
+              child: const Text('Διαγραφή συλλόγου'),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty || cityCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Name and city are required'), backgroundColor: AppTheme.red),
+                    const SnackBar(content: Text('Χρειάζονται όνομα και πόλη'), backgroundColor: AppTheme.red),
                   );
                   return;
                 }
@@ -744,12 +893,12 @@ class _OverviewTab extends StatelessWidget {
                 } catch (e) {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(content: Text('Failed to save: $e'), backgroundColor: AppTheme.red),
+                      SnackBar(content: Text('Η αποθήκευση απέτυχε: $e'), backgroundColor: AppTheme.red),
                     );
                   }
                 }
               },
-              child: const Text('Save'),
+              child: const Text('Αποθήκευση'),
             ),
           ],
         ),
@@ -771,7 +920,7 @@ class _OverviewTab extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.cardBg,
         title: const Text(
-          'Delete Club?',
+          'Διαγραφή συλλόγου;',
           style: TextStyle(color: Colors.white),
         ),
         content: Text(
@@ -781,7 +930,7 @@ class _OverviewTab extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('Άκυρο'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.red),
@@ -793,12 +942,12 @@ class _OverviewTab extends StatelessWidget {
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Delete failed: $e'), backgroundColor: Colors.red),
+                    SnackBar(content: Text('Η διαγραφή απέτυχε: $e'), backgroundColor: Colors.red),
                   );
                 }
               }
             },
-            child: const Text('Delete'),
+            child: const Text('Διαγραφή'),
           ),
         ],
       ),
@@ -1237,7 +1386,7 @@ class _AcademiesTab extends StatelessWidget {
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppTheme.supportGreen,
-        tooltip: 'Add Academy',
+        tooltip: 'Νέα ακαδημία',
         onPressed: () => _showAddAcademyDialog(context),
         child: const Icon(Icons.add),
       ),
@@ -1442,7 +1591,7 @@ class _AcademiesTab extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: const Text('Άκυρο'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -1579,11 +1728,11 @@ class _PlayersTabState extends State<_PlayersTab> {
       }
       // UTF-8 with BOM so Excel shows Greek names correctly.
       final bytes = Uint8List.fromList([0xEF, 0xBB, 0xBF, ...utf8.encode(buf.toString())]);
-      await saveBytesAsFile(bytes, 'players_export.csv', 'text/csv', subject: 'Player stats export');
+      await saveBytesAsFile(bytes, 'players_export.csv', 'text/csv', subject: 'Εξαγωγή στατιστικών παικτών');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e'), backgroundColor: AppTheme.red),
+          SnackBar(content: Text('Η εξαγωγή απέτυχε: $e'), backgroundColor: AppTheme.red),
         );
       }
     } finally {
@@ -1612,7 +1761,7 @@ class _PlayersTabState extends State<_PlayersTab> {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Error loading players: ${snap.error}',
+                'Σφάλμα φόρτωσης παικτών: ${snap.error}',
                 style: const TextStyle(color: AppTheme.textSecondary),
                 textAlign: TextAlign.center,
               ),
@@ -1640,7 +1789,7 @@ class _PlayersTabState extends State<_PlayersTab> {
                   heroTag: 'exportCsv',
                   backgroundColor: AppTheme.primaryLight,
                   onPressed: _exporting ? null : () => _exportCsv(players),
-                  tooltip: 'Export CSV',
+                  tooltip: 'Εξαγωγή CSV',
                   child: _exporting
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Icon(Icons.download_outlined, size: 18),
@@ -1679,12 +1828,12 @@ class _PlayersTabState extends State<_PlayersTab> {
                       ),
                       SizedBox(height: 12),
                       Text(
-                        'No players added yet',
+                        'Δεν υπάρχουν παίκτες ακόμα',
                         style: TextStyle(color: AppTheme.textSecondary),
                       ),
                       SizedBox(height: 6),
                       Text(
-                        'Tap + to add players, or Excel to upload the roster',
+                        'Πατήστε + για έναν παίκτη ή Excel για όλο το ρόστερ',
                         style: TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 13,
@@ -1750,21 +1899,21 @@ class _PlayersTabState extends State<_PlayersTab> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           backgroundColor: AppTheme.cardBg,
-          title: const Text('Add Player', style: TextStyle(color: Colors.white)),
+          title: const Text('Νέος παίκτης', style: TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Player Name'),
+                decoration: const InputDecoration(labelText: 'Ονοματεπώνυμο παίκτη'),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: position,
                 dropdownColor: AppTheme.cardBg2,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Position'),
+                decoration: const InputDecoration(labelText: 'Θέση'),
                 items: ['GK', 'DEF', 'MID', 'FWD']
                     .map((p) => DropdownMenuItem(value: p, child: Text(p)))
                     .toList(),
@@ -1776,7 +1925,7 @@ class _PlayersTabState extends State<_PlayersTab> {
                 keyboardType: TextInputType.number,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
-                  labelText: 'Jersey Number (optional)',
+                  labelText: 'Αριθμός φανέλας (προαιρετικό)',
                 ),
               ),
             ],
@@ -1784,7 +1933,7 @@ class _PlayersTabState extends State<_PlayersTab> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: const Text('Άκυρο'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -1806,14 +1955,14 @@ class _PlayersTabState extends State<_PlayersTab> {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
                       SnackBar(
-                        content: Text('Failed to add player: $e'),
+                        content: Text('Η προσθήκη παίκτη απέτυχε: $e'),
                         backgroundColor: AppTheme.red,
                       ),
                     );
                   }
                 }
               },
-              child: const Text('Add'),
+              child: const Text('Προσθήκη'),
             ),
           ],
         ),
@@ -1885,7 +2034,7 @@ class _PlayerRow extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: AppTheme.accent, size: 20),
-            tooltip: 'Edit player',
+            tooltip: 'Επεξεργασία παίκτη',
             onPressed: () => _showEditPlayerDialog(context),
           ),
           IconButton(
@@ -1936,7 +2085,7 @@ class _PlayerRow extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
           backgroundColor: AppTheme.cardBg,
-          title: const Text('Edit Player', style: TextStyle(color: Colors.white)),
+          title: const Text('Επεξεργασία παίκτη', style: TextStyle(color: Colors.white)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1944,14 +2093,14 @@ class _PlayerRow extends StatelessWidget {
                 TextField(
                   controller: nameCtrl,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Name *'),
+                  decoration: const InputDecoration(labelText: 'Ονοματεπώνυμο *'),
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   value: position,
                   dropdownColor: AppTheme.cardBg2,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Position'),
+                  decoration: const InputDecoration(labelText: 'Θέση'),
                   items: const [
                     DropdownMenuItem(value: 'GK', child: Text('GK — Goalkeeper')),
                     DropdownMenuItem(value: 'DEF', child: Text('DEF — Defender')),
@@ -1965,20 +2114,20 @@ class _PlayerRow extends StatelessWidget {
                   controller: numberCtrl,
                   keyboardType: TextInputType.number,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Jersey Number'),
+                  decoration: const InputDecoration(labelText: 'Αριθμός φανέλας'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: ageCtrl,
                   keyboardType: TextInputType.number,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Age'),
+                  decoration: const InputDecoration(labelText: 'Ηλικία'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: nationalityCtrl,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Nationality'),
+                  decoration: const InputDecoration(labelText: 'Εθνικότητα'),
                 ),
               ],
             ),
@@ -1986,7 +2135,7 @@ class _PlayerRow extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: const Text('Άκυρο'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -2008,12 +2157,12 @@ class _PlayerRow extends StatelessWidget {
                 } catch (e) {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(content: Text('Failed to save: $e'), backgroundColor: AppTheme.red),
+                      SnackBar(content: Text('Η αποθήκευση απέτυχε: $e'), backgroundColor: AppTheme.red),
                     );
                   }
                 }
               },
-              child: const Text('Save'),
+              child: const Text('Αποθήκευση'),
             ),
           ],
         ),
@@ -2039,17 +2188,17 @@ class _PlayerRow extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.cardBg,
         title: const Text(
-          'Remove Player',
+          'Αφαίρεση παίκτη',
           style: TextStyle(color: Colors.white),
         ),
         content: Text(
-          'Remove ${player.name} from the squad?',
+          'Αφαίρεση του ${player.name} από το ρόστερ;',
           style: const TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('Άκυρο'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.red),
@@ -2062,7 +2211,7 @@ class _PlayerRow extends StatelessWidget {
                   .delete();
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Remove'),
+            child: const Text('Αφαίρεση'),
           ),
         ],
       ),
@@ -2261,7 +2410,7 @@ class _RevenueTab extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Total Revenue',
+                    'Συνολικά έσοδα',
                     style: TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                   Text(
@@ -2321,7 +2470,7 @@ class _RevenueTab extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.all(32),
                   child: Text(
-                    'No donations yet',
+                    'Δεν υπάρχουν δωρεές ακόμα',
                     style: TextStyle(color: AppTheme.textSecondary),
                   ),
                 ),
@@ -2422,7 +2571,7 @@ class _FansTab extends StatelessWidget {
               children: [
                 Expanded(
                   child: _BigStat(
-                    label: 'Followers',
+                    label: 'Ακόλουθοι',
                     value: '${club.followers}',
                     icon: Icons.people,
                     color: AppTheme.primaryLight,
@@ -2431,7 +2580,7 @@ class _FansTab extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _BigStat(
-                    label: 'Votes',
+                    label: 'Ψήφοι',
                     value: '${club.votes}',
                     icon: Icons.how_to_vote,
                     color: AppTheme.accent,
@@ -2465,7 +2614,7 @@ class _FansTab extends StatelessWidget {
                     child: Padding(
                       padding: EdgeInsets.all(24),
                       child: Text(
-                        'No votes yet',
+                        'Δεν υπάρχουν ψήφοι ακόμα',
                         style: TextStyle(color: AppTheme.textSecondary),
                       ),
                     ),
@@ -2563,7 +2712,7 @@ class _FansTab extends StatelessWidget {
                     padding: EdgeInsets.all(24),
                     child: Center(
                       child: Text(
-                        'No supporters yet',
+                        'Δεν υπάρχουν υποστηρικτές ακόμα',
                         style: TextStyle(color: AppTheme.textSecondary),
                       ),
                     ),
@@ -2686,12 +2835,12 @@ class _TransfersTab extends StatelessWidget {
                   Icon(Icons.swap_horiz, size: 64, color: AppTheme.cardBg2),
                   SizedBox(height: 12),
                   Text(
-                    'No transfers yet',
+                    'Δεν υπάρχουν μεταγραφές ακόμα',
                     style: TextStyle(color: AppTheme.textSecondary),
                   ),
                   SizedBox(height: 6),
                   Text(
-                    'Tap + to add a transfer',
+                    'Πατήστε + για νέα μεταγραφή',
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 13,
@@ -2797,7 +2946,7 @@ class _TransfersTab extends StatelessWidget {
         builder: (ctx, setS) => AlertDialog(
           backgroundColor: AppTheme.cardBg,
           title: const Text(
-            'Add Transfer',
+            'Νέα μεταγραφή',
             style: TextStyle(color: Colors.white),
           ),
           content: Column(
@@ -2806,17 +2955,17 @@ class _TransfersTab extends StatelessWidget {
               TextField(
                 controller: playerCtrl,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Player Name'),
+                decoration: const InputDecoration(labelText: 'Ονοματεπώνυμο παίκτη'),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: type,
                 dropdownColor: AppTheme.cardBg2,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Type'),
+                decoration: const InputDecoration(labelText: 'Τύπος'),
                 items: const [
-                  DropdownMenuItem(value: 'in', child: Text('Transfer IN')),
-                  DropdownMenuItem(value: 'out', child: Text('Transfer OUT')),
+                  DropdownMenuItem(value: 'in', child: Text('Απόκτηση')),
+                  DropdownMenuItem(value: 'out', child: Text('Αποχώρηση')),
                 ],
                 onChanged: (v) => setS(() => type = v ?? 'in'),
               ),
@@ -2825,7 +2974,7 @@ class _TransfersTab extends StatelessWidget {
                 controller: clubCtrl,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  labelText: type == 'in' ? 'From Club' : 'To Club',
+                  labelText: type == 'in' ? 'Από σύλλογο' : 'Προς σύλλογο',
                 ),
               ),
             ],
@@ -2833,7 +2982,7 @@ class _TransfersTab extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: const Text('Άκυρο'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -2855,14 +3004,14 @@ class _TransfersTab extends StatelessWidget {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
                       SnackBar(
-                        content: Text('Failed to add transfer: $e'),
+                        content: Text('Η προσθήκη μεταγραφής απέτυχε: $e'),
                         backgroundColor: AppTheme.red,
                       ),
                     );
                   }
                 }
               },
-              child: const Text('Add'),
+              child: const Text('Προσθήκη'),
             ),
           ],
         ),
@@ -2965,14 +3114,14 @@ class _StaffTab extends StatelessWidget {
                       const Icon(Icons.group_outlined, size: 48, color: AppTheme.cardBg2),
                       const SizedBox(height: 12),
                       const Text(
-                        'No staff members yet',
+                        'Δεν υπάρχουν συνεργάτες ακόμα',
                         style: TextStyle(color: AppTheme.textSecondary),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         isOwner
-                            ? 'Share the invite code to add staff'
-                            : 'The admin hasn\'t added staff yet',
+                            ? 'Δώστε τον κωδικό πρόσκλησης για να προσθέσετε συνεργάτες'
+                            : 'Ο διαχειριστής δεν έχει προσθέσει συνεργάτες ακόμα',
                         style: const TextStyle(color: AppTheme.cardBg2, fontSize: 12),
                       ),
                     ],
@@ -3014,7 +3163,7 @@ class _InviteCodeCard extends StatelessWidget {
               Icon(Icons.key, color: AppTheme.primaryLight, size: 16),
               SizedBox(width: 8),
               Text(
-                'Invite Code',
+                'Κωδικός πρόσκλησης',
                 style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
               ),
             ],
@@ -3035,12 +3184,12 @@ class _InviteCodeCard extends StatelessWidget {
               if (club.inviteCode != null)
                 IconButton(
                   icon: const Icon(Icons.copy, color: AppTheme.primaryLight),
-                  tooltip: 'Copy code',
+                  tooltip: 'Αντιγραφή κωδικού',
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: club.inviteCode!));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Code copied!'),
+                        content: Text('Ο κωδικός αντιγράφηκε'),
                         backgroundColor: AppTheme.supportGreen,
                       ),
                     );
@@ -3058,7 +3207,7 @@ class _InviteCodeCard extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.refresh, size: 16),
-              label: Text(club.inviteCode == null ? 'Generate Code' : 'Reset Code'),
+              label: Text(club.inviteCode == null ? 'Δημιουργία κωδικού' : 'Νέος κωδικός'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: club.inviteCode == null ? AppTheme.supportGreen : AppTheme.red,
                 side: BorderSide(
@@ -3082,15 +3231,15 @@ class _InviteCodeCard extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.cardBg,
-        title: const Text('Reset Invite Code?', style: TextStyle(color: Colors.white)),
+        title: const Text('Νέος κωδικός πρόσκλησης;', style: TextStyle(color: Colors.white)),
         content: const Text(
-          'The old code will stop working immediately. Anyone who hasn\'t joined yet will need the new code.',
+          'Ο παλιός κωδικός σταματά να ισχύει αμέσως. Όσοι δεν έχουν μπει ακόμα θα χρειαστούν τον νέο.',
           style: TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('Άκυρο'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.red),
@@ -3098,7 +3247,7 @@ class _InviteCodeCard extends StatelessWidget {
               Navigator.pop(ctx);
               _doGenerate(context);
             },
-            child: const Text('Reset'),
+            child: const Text('Επαναφορά'),
           ),
         ],
       ),
@@ -3115,7 +3264,7 @@ class _InviteCodeCard extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('New code: $newCode'),
+            content: Text('Νέος κωδικός: $newCode'),
             backgroundColor: AppTheme.supportGreen,
           ),
         );
@@ -3123,7 +3272,7 @@ class _InviteCodeCard extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e'), backgroundColor: AppTheme.red),
+          SnackBar(content: Text('Απέτυχε: $e'), backgroundColor: AppTheme.red),
         );
       }
     }
@@ -3217,7 +3366,7 @@ class _StaffMemberTileState extends State<_StaffMemberTile> {
                     color: AppTheme.red,
                     size: 20,
                   ),
-                  tooltip: 'Remove from staff',
+                  tooltip: 'Αφαίρεση από συνεργάτες',
                   onPressed: () => _confirmRemove(ctx, widget.uid, name),
                 ),
             ],
@@ -3233,17 +3382,17 @@ class _StaffMemberTileState extends State<_StaffMemberTile> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.cardBg,
         title: const Text(
-          'Remove Staff Member?',
+          'Αφαίρεση συνεργάτη;',
           style: TextStyle(color: Colors.white),
         ),
         content: Text(
-          'Remove $name from the club staff?',
+          'Αφαίρεση του $name από τους συνεργάτες;',
           style: const TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('Άκυρο'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.red),
@@ -3260,7 +3409,7 @@ class _StaffMemberTileState extends State<_StaffMemberTile> {
                     .update({'clubId': null, 'role': 'fan'});
               } catch (_) {}
             },
-            child: const Text('Remove'),
+            child: const Text('Αφαίρεση'),
           ),
         ],
       ),
@@ -3347,9 +3496,9 @@ class _AcademyDetailScreenState extends State<AcademyDetailScreen>
           labelColor: AppTheme.primaryLight,
           unselectedLabelColor: AppTheme.textSecondary,
           tabs: const [
-            Tab(text: 'Players'),
-            Tab(text: 'Transfers'),
-            Tab(text: 'Matches'),
+            Tab(text: 'Παίκτες'),
+            Tab(text: 'Μεταγραφές'),
+            Tab(text: 'Αγώνες'),
           ],
         ),
       ),
@@ -3399,7 +3548,7 @@ class _AcademyPlayersTab extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Error loading players: ${snap.error}',
+                'Σφάλμα φόρτωσης παικτών: ${snap.error}',
                 style: const TextStyle(color: AppTheme.textSecondary),
                 textAlign: TextAlign.center,
               ),
@@ -3428,9 +3577,9 @@ class _AcademyPlayersTab extends StatelessWidget {
                     children: [
                       Icon(Icons.group_outlined, size: 56, color: AppTheme.cardBg2),
                       SizedBox(height: 12),
-                      Text('No players yet', style: TextStyle(color: AppTheme.textSecondary)),
+                      Text('Δεν υπάρχουν παίκτες ακόμα', style: TextStyle(color: AppTheme.textSecondary)),
                       SizedBox(height: 6),
-                      Text('Tap + to add players', style: TextStyle(color: AppTheme.cardBg2, fontSize: 12)),
+                      Text('Πατήστε + για νέο παίκτη', style: TextStyle(color: AppTheme.cardBg2, fontSize: 12)),
                     ],
                   ),
                 )
@@ -3484,21 +3633,21 @@ class _AcademyPlayersTab extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           backgroundColor: AppTheme.cardBg,
-          title: const Text('Add Player', style: TextStyle(color: Colors.white)),
+          title: const Text('Νέος παίκτης', style: TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Player Name'),
+                decoration: const InputDecoration(labelText: 'Ονοματεπώνυμο παίκτη'),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: position,
                 dropdownColor: AppTheme.cardBg2,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Position'),
+                decoration: const InputDecoration(labelText: 'Θέση'),
                 items: ['GK', 'DEF', 'MID', 'FWD']
                     .map((p) => DropdownMenuItem(value: p, child: Text(p)))
                     .toList(),
@@ -3509,14 +3658,14 @@ class _AcademyPlayersTab extends StatelessWidget {
                 controller: numberCtrl,
                 keyboardType: TextInputType.number,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Jersey Number (optional)'),
+                decoration: const InputDecoration(labelText: 'Αριθμός φανέλας (προαιρετικό)'),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: const Text('Άκυρο'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -3535,14 +3684,14 @@ class _AcademyPlayersTab extends StatelessWidget {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
                       SnackBar(
-                        content: Text('Failed to add player: $e'),
+                        content: Text('Η προσθήκη παίκτη απέτυχε: $e'),
                         backgroundColor: AppTheme.red,
                       ),
                     );
                   }
                 }
               },
-              child: const Text('Add'),
+              child: const Text('Προσθήκη'),
             ),
           ],
         ),
@@ -3608,17 +3757,17 @@ class _AcademyPlayerRow extends StatelessWidget {
               context: context,
               builder: (ctx) => AlertDialog(
                 backgroundColor: AppTheme.cardBg,
-                title: const Text('Remove Player', style: TextStyle(color: Colors.white)),
-                content: Text('Remove ${player.name}?', style: const TextStyle(color: AppTheme.textSecondary)),
+                title: const Text('Αφαίρεση παίκτη', style: TextStyle(color: Colors.white)),
+                content: Text('Αφαίρεση του ${player.name};', style: const TextStyle(color: AppTheme.textSecondary)),
                 actions: [
-                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Άκυρο')),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: AppTheme.red),
                     onPressed: () async {
                       await col.doc(player.id).delete();
                       if (ctx.mounted) Navigator.pop(ctx);
                     },
-                    child: const Text('Remove'),
+                    child: const Text('Αφαίρεση'),
                   ),
                 ],
               ),
@@ -3692,9 +3841,9 @@ class _AcademyTransfersTab extends StatelessWidget {
                 children: [
                   Icon(Icons.swap_horiz, size: 56, color: AppTheme.cardBg2),
                   SizedBox(height: 12),
-                  Text('No transfers yet', style: TextStyle(color: AppTheme.textSecondary)),
+                  Text('Δεν υπάρχουν μεταγραφές ακόμα', style: TextStyle(color: AppTheme.textSecondary)),
                   SizedBox(height: 6),
-                  Text('Tap + to add a transfer', style: TextStyle(color: AppTheme.cardBg2, fontSize: 12)),
+                  Text('Πατήστε + για νέα μεταγραφή', style: TextStyle(color: AppTheme.cardBg2, fontSize: 12)),
                 ],
               ),
             );
@@ -3779,24 +3928,24 @@ class _AcademyTransfersTab extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           backgroundColor: AppTheme.cardBg,
-          title: const Text('Add Transfer', style: TextStyle(color: Colors.white)),
+          title: const Text('Νέα μεταγραφή', style: TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: playerCtrl,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Player Name'),
+                decoration: const InputDecoration(labelText: 'Ονοματεπώνυμο παίκτη'),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: type,
                 dropdownColor: AppTheme.cardBg2,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Type'),
+                decoration: const InputDecoration(labelText: 'Τύπος'),
                 items: const [
-                  DropdownMenuItem(value: 'in', child: Text('Transfer IN')),
-                  DropdownMenuItem(value: 'out', child: Text('Transfer OUT')),
+                  DropdownMenuItem(value: 'in', child: Text('Απόκτηση')),
+                  DropdownMenuItem(value: 'out', child: Text('Αποχώρηση')),
                 ],
                 onChanged: (v) => setS(() => type = v ?? 'in'),
               ),
@@ -3804,12 +3953,12 @@ class _AcademyTransfersTab extends StatelessWidget {
               TextField(
                 controller: clubCtrl,
                 style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(labelText: type == 'in' ? 'From Club' : 'To Club'),
+                decoration: InputDecoration(labelText: type == 'in' ? 'Από σύλλογο' : 'Προς σύλλογο'),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Άκυρο')),
             ElevatedButton(
               onPressed: () async {
                 if (playerCtrl.text.trim().isEmpty) return;
@@ -3826,14 +3975,14 @@ class _AcademyTransfersTab extends StatelessWidget {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
                       SnackBar(
-                        content: Text('Failed to add transfer: $e'),
+                        content: Text('Η προσθήκη μεταγραφής απέτυχε: $e'),
                         backgroundColor: AppTheme.red,
                       ),
                     );
                   }
                 }
               },
-              child: const Text('Add'),
+              child: const Text('Προσθήκη'),
             ),
           ],
         ),
@@ -3867,7 +4016,7 @@ class _AcademyMatchesTab extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppTheme.supportGreen,
         icon: const Icon(Icons.add),
-        label: const Text('New Match'),
+        label: const Text('Νέος αγώνας'),
         onPressed: () => _showAddDialog(context),
       ),
       body: StreamBuilder<QuerySnapshot>(
@@ -3901,9 +4050,9 @@ class _AcademyMatchesTab extends StatelessWidget {
                 children: [
                   Icon(Icons.sports_soccer, size: 56, color: AppTheme.cardBg2),
                   SizedBox(height: 12),
-                  Text('No matches yet', style: TextStyle(color: AppTheme.textSecondary)),
+                  Text('Δεν υπάρχουν αγώνες ακόμα', style: TextStyle(color: AppTheme.textSecondary)),
                   SizedBox(height: 6),
-                  Text('Tap + to schedule a match', style: TextStyle(color: AppTheme.cardBg2, fontSize: 12)),
+                  Text('Πατήστε + για νέο αγώνα', style: TextStyle(color: AppTheme.cardBg2, fontSize: 12)),
                 ],
               ),
             );
@@ -3950,7 +4099,7 @@ class _AcademyMatchesTab extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            status == 'finished' ? 'FT' : 'Upcoming',
+                            status == 'finished' ? 'FT' : 'Προσεχώς',
                             style: TextStyle(
                               color: status == 'finished' ? AppTheme.supportGreen : AppTheme.accent,
                               fontSize: 11,
@@ -4026,7 +4175,7 @@ class _AcademyMatchesTab extends StatelessWidget {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.edit_outlined, size: 14),
-                        label: Text(hasScore ? 'Update Score' : 'Add Score'),
+                        label: Text(hasScore ? 'Ενημέρωση σκορ' : 'Προσθήκη σκορ'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.accent,
                           side: const BorderSide(color: AppTheme.accent),
@@ -4057,7 +4206,7 @@ class _AcademyMatchesTab extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           backgroundColor: AppTheme.cardBg,
-          title: const Text('New Academy Match', style: TextStyle(color: Colors.white)),
+          title: const Text('Νέος αγώνας ακαδημίας', style: TextStyle(color: Colors.white)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -4066,10 +4215,10 @@ class _AcademyMatchesTab extends StatelessWidget {
                 TextField(
                   controller: opponentCtrl,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Opponent'),
+                  decoration: const InputDecoration(labelText: 'Αντίπαλος'),
                 ),
                 const SizedBox(height: 14),
-                const Text('Location', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                const Text('Έδρα', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 const SizedBox(height: 6),
                 Row(
                   children: [
@@ -4087,7 +4236,7 @@ class _AcademyMatchesTab extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              'Home',
+                              'Γηπεδούχος',
                               style: TextStyle(
                                 color: isHome ? AppTheme.primaryLight : AppTheme.textSecondary,
                                 fontWeight: FontWeight.bold,
@@ -4112,7 +4261,7 @@ class _AcademyMatchesTab extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              'Away',
+                              'Φιλοξενούμενος',
                               style: TextStyle(
                                 color: !isHome ? AppTheme.accent : AppTheme.textSecondary,
                                 fontWeight: FontWeight.bold,
@@ -4144,13 +4293,13 @@ class _AcademyMatchesTab extends StatelessWidget {
                 TextField(
                   controller: venueCtrl,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Venue (optional)'),
+                  decoration: const InputDecoration(labelText: 'Γήπεδο (προαιρετικό)'),
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Άκυρο')),
             ElevatedButton(
               onPressed: () async {
                 if (opponentCtrl.text.trim().isEmpty) return;
@@ -4170,14 +4319,14 @@ class _AcademyMatchesTab extends StatelessWidget {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
                       SnackBar(
-                        content: Text('Failed to create match: $e'),
+                        content: Text('Η δημιουργία αγώνα απέτυχε: $e'),
                         backgroundColor: AppTheme.red,
                       ),
                     );
                   }
                 }
               },
-              child: const Text('Create'),
+              child: const Text('Δημιουργία'),
             ),
           ],
         ),
@@ -4196,7 +4345,7 @@ class _AcademyMatchesTab extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.cardBg,
-        title: const Text('Update Score', style: TextStyle(color: Colors.white)),
+        title: const Text('Ενημέρωση σκορ', style: TextStyle(color: Colors.white)),
         content: Row(
           children: [
             Expanded(
@@ -4205,7 +4354,7 @@ class _AcademyMatchesTab extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
-                decoration: const InputDecoration(labelText: 'Home'),
+                decoration: const InputDecoration(labelText: 'Γηπεδούχος'),
               ),
             ),
             const Padding(
@@ -4218,13 +4367,13 @@ class _AcademyMatchesTab extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
-                decoration: const InputDecoration(labelText: 'Away'),
+                decoration: const InputDecoration(labelText: 'Φιλοξενούμενος'),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Άκυρο')),
           ElevatedButton(
             onPressed: () async {
               final h = int.tryParse(homeCtrl.text);
@@ -4240,12 +4389,12 @@ class _AcademyMatchesTab extends StatelessWidget {
               } catch (e) {
                 if (ctx.mounted) {
                   ScaffoldMessenger.of(ctx).showSnackBar(
-                    SnackBar(content: Text('Failed: $e'), backgroundColor: AppTheme.red),
+                    SnackBar(content: Text('Απέτυχε: $e'), backgroundColor: AppTheme.red),
                   );
                 }
               }
             },
-            child: const Text('Save'),
+            child: const Text('Αποθήκευση'),
           ),
         ],
       ),
@@ -4275,7 +4424,7 @@ class _ClubSponsorsTab extends StatelessWidget {
               children: [
                 const Expanded(
                   child: Text(
-                    'My Sponsors',
+                    'Οι χορηγοί μου',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -4285,7 +4434,7 @@ class _ClubSponsorsTab extends StatelessWidget {
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Add'),
+                  label: const Text('Προσθήκη'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.supportGreen,
                   ),
@@ -4298,7 +4447,7 @@ class _ClubSponsorsTab extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Text(
-              'Attach sponsors with logos/PDFs to your club.',
+              'Προσθέστε χορηγούς με λογότυπα ή PDF στον σύλλογό σας.',
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
             ),
           ),
@@ -4575,7 +4724,7 @@ class _ClubGamesTab extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+              child: const Text('Άκυρο', style: TextStyle(color: AppTheme.textSecondary)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accent),
@@ -4629,7 +4778,7 @@ class _ClubGamesTab extends StatelessWidget {
                   }
                 }
               },
-              child: const Text('Create', style: TextStyle(color: Colors.white)),
+              child: const Text('Δημιουργία', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -4840,7 +4989,7 @@ class _ClubGamesTab extends StatelessWidget {
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+              child: const Text('Άκυρο', style: TextStyle(color: AppTheme.textSecondary)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accent),
@@ -5056,7 +5205,7 @@ class _ClubGamesTab extends StatelessWidget {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Άκυρο')),
             ElevatedButton(
               onPressed: () async {
                 if (titleCtrl.text.trim().isEmpty) {
@@ -5176,7 +5325,7 @@ class _PostFeedSheetState extends State<_PostFeedSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Post to Club Feed',
+            'Ανάρτηση στον σύλλογο',
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -5189,7 +5338,7 @@ class _PostFeedSheetState extends State<_PostFeedSheet> {
             maxLines: 4,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              hintText: 'Write something for your fans...',
+              hintText: 'Γράψτε κάτι για τους fans σας...',
               hintStyle: const TextStyle(color: AppTheme.textSecondary),
               filled: true,
               fillColor: AppTheme.cardBg2,
@@ -5237,7 +5386,7 @@ class _PostFeedSheetState extends State<_PostFeedSheet> {
               ),
               onPressed: _pickImage,
               icon: const Icon(Icons.add_photo_alternate_outlined),
-              label: const Text('Add Photo'),
+              label: const Text('Προσθήκη φωτογραφίας'),
             ),
           if (_error != null) ...[
             const SizedBox(height: 8),
@@ -5265,7 +5414,7 @@ class _PostFeedSheetState extends State<_PostFeedSheet> {
                       ),
                     )
                   : const Text(
-                      'Publish',
+                      'Δημοσίευση',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -6154,7 +6303,7 @@ class _ColorPickerField extends StatelessWidget {
           }).toList(),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Άκυρο')),
         ],
       ),
     );

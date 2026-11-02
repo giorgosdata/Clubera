@@ -172,7 +172,7 @@ class _RewardsTab extends StatelessWidget {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Club admins can add rewards from their Club Panel',
+                  'Οι σύλλογοι προσθέτουν επιβραβεύσεις από τον Πίνακα συλλόγου',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                 ),
