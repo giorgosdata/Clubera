@@ -146,12 +146,12 @@ class RosterService {
         final m = d.data();
         if (m['isActive'] == false || !isPublicPlayer(m)) continue;
         final pos = m['position'];
-        final num = m['number'];
+        final jersey = m['number'];
         out.add(TemplatePlayer(
           id: d.id,
           name: '${m['name'] ?? ''}'.trim(),
           position: (pos is String && const {'GK', 'DEF', 'MID', 'FWD'}.contains(pos)) ? pos : null,
-          number: num is num ? num.toInt() : null,
+          number: jersey is num ? jersey.toInt() : null,
           squadLabel: col == 'women_players'
               ? RosterSquad.women.label
               : (m['squad'] == 'B' ? RosterSquad.second.label : RosterSquad.first.label),
