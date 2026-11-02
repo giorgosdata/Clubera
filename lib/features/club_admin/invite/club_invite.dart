@@ -24,6 +24,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/clean_url.dart';
 import '../../../models/user_model.dart';
 
 const _prefKey = 'pending_club_invite';
@@ -48,7 +49,11 @@ String? inviteTokenFromUri(Uri uri) {
 Future<void> captureInviteFromUrl() async {
   if (!kIsWeb) return;
   final token = inviteTokenFromUri(Uri.base);
-  if (token != null) await rememberInvite(token);
+  if (token != null) {
+    await rememberInvite(token);
+    // Kept in the app until accepted; a reload must not offer it again.
+    removeQueryParameter('invite');
+  }
 }
 
 Future<void> rememberInvite(String token) async {
