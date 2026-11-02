@@ -18,6 +18,7 @@ import '../../../models/prize_model.dart';
 import '../../../models/news_model.dart';
 import 'trivia_admin_screen.dart';
 import 'sponsors_management.dart';
+import 'roster_approvals_tab.dart';
 import '../../matches/ui/create_match_screen.dart';
 import '../../clubs/ui/create_club_screen.dart' show CreateClubScreen, kCountryList, generateInviteCode;
 
@@ -35,7 +36,7 @@ class _AdminScreenState extends State<AdminScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 12, vsync: this);
+    _tab = TabController(length: 13, vsync: this);
   }
 
   @override
@@ -84,6 +85,7 @@ class _AdminScreenState extends State<AdminScreen>
           isScrollable: true,
           tabs: const [
             Tab(text: 'Requests'),
+            Tab(text: 'Ρόστερ'),
             Tab(text: 'Dashboard'),
             Tab(text: 'Users'),
             Tab(text: 'Clubs'),
@@ -102,6 +104,7 @@ class _AdminScreenState extends State<AdminScreen>
         controller: _tab,
         children: [
           _ClubRequestsTab(),
+          const RosterApprovalsTab(),
           _DashboardTab(tabController: _tab),
           _UsersTab(),
           _ClubsTab(),
@@ -178,7 +181,7 @@ class _DashboardTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _SponsorsDashCard(onManage: () => tabController?.animateTo(11)),
+          _SponsorsDashCard(onManage: () => tabController?.animateTo(12)),
           const SizedBox(height: 24),
           const Text(
             'Recent Activity',
