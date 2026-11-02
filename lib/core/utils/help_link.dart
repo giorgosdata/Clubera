@@ -1,12 +1,12 @@
-// Link to the detailed guide for Club Admins on the Clubera website.
-// The page must exist at exactly this address on www.clubera-global.com.
+// Link to the «How it works» page on the Clubera website: detailed
+// instructions for everyone (fans, players, Club Admins).
 
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 
-const kAdminGuideUrl = 'https://www.clubera-global.com/odigos';
+const kAdminGuideUrl = 'https://clubera-global.com/#/how';
 
 Future<void> openAdminGuide(BuildContext context) async {
   final ok = await launchUrl(Uri.parse(kAdminGuideUrl), mode: LaunchMode.externalApplication);

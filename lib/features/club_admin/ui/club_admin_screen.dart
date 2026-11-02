@@ -338,7 +338,7 @@ class _SetupChecklist extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () => openAdminGuide(context),
                   icon: const Icon(Icons.menu_book_outlined, size: 18),
-                  label: const Text('Αναλυτικές οδηγίες στο clubera-global.com'),
+                  label: const Text('Αναλυτικές οδηγίες: πώς λειτουργεί το Clubera'),
                 ),
               ],
             ),
