@@ -1,10 +1,12 @@
-# Checks the roster-upload branch: analyze, unit tests, Android test APK.
+# Checks every pushed branch and pull request: analyze, unit tests,
+# Android test APK.
 name: Roster upload check
 
 on:
   workflow_dispatch:
   push:
-    branches: [roster-upload]
+    branches: ['**']
+  pull_request:
 
 jobs:
   check:
