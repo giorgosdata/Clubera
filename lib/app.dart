@@ -7,11 +7,13 @@ import 'core/providers/app_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/services/streak_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/clubera_icons.dart';
 import 'core/widgets/offline_banner.dart';
 import 'features/auth/ui/login_screen.dart';
 import 'features/club_admin/invite/club_invite.dart';
 import 'features/clubs/ui/club_profile_screen.dart';
 import 'features/home/ui/home_screen.dart';
+import 'features/intro/intro_splash.dart';
 import 'features/matches/ui/match_detail_screen.dart';
 import 'features/matches/ui/matches_screen.dart';
 import 'features/teams/ui/teams_screen.dart';
@@ -99,6 +101,7 @@ class _Root extends StatefulWidget {
 class _RootState extends State<_Root> {
   bool _onboardingChecked = false;
   bool _onboardingDone = false;
+  bool _introDone = false;
 
   @override
   void initState() {
@@ -122,6 +125,10 @@ class _RootState extends State<_Root> {
   @override
   Widget build(BuildContext context) {
     final prov = context.watch<AppProvider>();
+    // The opening animation plays while the app loads in the background.
+    if (!_introDone) {
+      return IntroSplash(onDone: () => setState(() => _introDone = true));
+    }
     if (!prov.initialized || !_onboardingChecked) {
       return const Scaffold(
         backgroundColor: Colors.transparent,
@@ -253,10 +260,10 @@ class _MainShellState extends State<_MainShell> {
         onTap: (i) => setState(() => _index = i),
         type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_soccer_outlined), activeIcon: Icon(Icons.sports_soccer), label: 'Matches'),
-          BottomNavigationBarItem(icon: Icon(Icons.shield_outlined), activeIcon: Icon(Icons.shield), label: 'Teams'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(icon: ClNavIcon(ClIcon.home), activeIcon: ClNavIcon(ClIcon.home, active: true), label: 'Αρχική'),
+          BottomNavigationBarItem(icon: ClNavIcon(ClIcon.matches), activeIcon: ClNavIcon(ClIcon.matches, active: true), label: 'Αγώνες'),
+          BottomNavigationBarItem(icon: ClNavIcon(ClIcon.clubs), activeIcon: ClNavIcon(ClIcon.clubs, active: true), label: 'Σύλλογοι'),
+          BottomNavigationBarItem(icon: ClNavIcon(ClIcon.profile), activeIcon: ClNavIcon(ClIcon.profile, active: true), label: 'Προφίλ'),
         ],
       ),
     );
