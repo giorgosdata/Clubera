@@ -160,8 +160,23 @@ Future<void> showCreateInviteDialog(
   );
 }
 
+// On the web the invite reaches the app twice at start-up (the address bar
+// and the initial deep link). Only one check may run at a time, otherwise the
+// second dialog tries to accept an invite the first one has just used.
+bool _checking = false;
+
 /// Signed-in user: if an invite is waiting, asks them to accept it.
 Future<void> checkPendingInvite(BuildContext context, UserModel user) async {
+  if (_checking) return;
+  _checking = true;
+  try {
+    await _checkPendingInvite(context, user);
+  } finally {
+    _checking = false;
+  }
+}
+
+Future<void> _checkPendingInvite(BuildContext context, UserModel user) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString(_prefKey);
   if (token == null) return;
