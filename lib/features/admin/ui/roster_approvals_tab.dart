@@ -105,6 +105,7 @@ class _PendingClubCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${upload['newCount'] ?? 0} νέοι · ${upload['updateCount'] ?? 0} αλλαγές'
+                    '${(upload['removeCount'] ?? 0) > 0 ? ' · ${upload['removeCount']} αποχωρήσεις' : ''}'
                     '${club['pendingLogoUrl'] != null ? ' · λογότυπο' : ''}',
                     style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                   ),
@@ -144,6 +145,7 @@ extension on _PendingClubCard {
         content: Text(
           'Θα διαγραφούν οι ${upload['newCount'] ?? 0} νέοι παίκτες και οι '
           '${upload['updateCount'] ?? 0} αλλαγές θα επιστρέψουν στις προηγούμενες τιμές. '
+          '${(upload['removeCount'] ?? 0) > 0 ? 'Οι ${upload['removeCount']} παίκτες που αποχώρησαν επιστρέφουν στο ρόστερ. ' : ''}'
           'Αν άλλαξε το λογότυπο, επανέρχεται το προηγούμενο. Ο σύλλογος θα το δει.',
         ),
         actions: [

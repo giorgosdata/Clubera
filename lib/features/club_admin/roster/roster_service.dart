@@ -37,7 +37,10 @@ bool isPublicPlayer(Map<String, dynamic> data) {
   return s != 'pending' && s != 'rejected';
 }
 
-enum RosterAction { create, update, unchanged }
+/// create: new player · update: changed · unchanged: same as in Clubera ·
+/// remove: marked «Αποχώρησε» · notFound: marked «Αποχώρησε» but not in the
+/// roster (nothing to do).
+enum RosterAction { create, update, unchanged, remove, notFound }
 
 class RosterPlanItem {
   final RosterRow row;
@@ -53,6 +56,7 @@ class RosterPlan {
   int get newCount => items.where((i) => i.action == RosterAction.create).length;
   int get updateCount => items.where((i) => i.action == RosterAction.update).length;
   int get unchangedCount => items.where((i) => i.action == RosterAction.unchanged).length;
+  int get removeCount => items.where((i) => i.action == RosterAction.remove).length;
 }
 
 class RosterService {
@@ -133,6 +137,39 @@ class RosterService {
     });
   }
 
+  /// The club's current public players, for the pre-filled template.
+  Future<List<TemplatePlayer>> templatePlayers(String clubId) async {
+    final out = <TemplatePlayer>[];
+    for (final col in const ['players', 'women_players']) {
+      final snap = await _club(clubId).collection(col).get();
+      for (final d in snap.docs) {
+        final m = d.data();
+        if (m['isActive'] == false || !isPublicPlayer(m)) continue;
+        final pos = m['position'];
+        final jersey = m['number'];
+        out.add(TemplatePlayer(
+          id: d.id,
+          name: '${m['name'] ?? ''}'.trim(),
+          position: (pos is String && const {'GK', 'DEF', 'MID', 'FWD'}.contains(pos)) ? pos : null,
+          number: jersey is num ? jersey.toInt() : null,
+          squadLabel: col == 'women_players'
+              ? RosterSquad.women.label
+              : (m['squad'] == 'B' ? RosterSquad.second.label : RosterSquad.first.label),
+          // Players uploaded from Excel came with the club's consent.
+          consentOnFile: m['source'] == 'roster_upload',
+        ));
+      }
+    }
+    const order = {'GK': 0, 'DEF': 1, 'MID': 2, 'FWD': 3};
+    out.sort((a, b) {
+      final s = a.squadLabel.compareTo(b.squadLabel);
+      if (s != 0) return s;
+      final p = (order[a.position] ?? 9).compareTo(order[b.position] ?? 9);
+      return p != 0 ? p : a.name.compareTo(b.name);
+    });
+    return out;
+  }
+
   /// Compares the valid rows with the players already in the club.
   Future<RosterPlan> plan(String clubId, List<RosterRow> rows, {DateTime? today}) async {
     final keys = <String, String>{};
@@ -158,8 +195,33 @@ class RosterService {
       final key = row.dupKey;
       final norm = normalizeName(row.name);
       _Existing? match;
+      // 0) the row came from the pre-filled template: its Clubera id
+      if (row.existingId != null) {
+        for (final e in existing) {
+          if (e.id == row.existingId && !used.contains(e.id)) {
+            match = e;
+            break;
+          }
+        }
+      }
+      if (row.leaving) {
+        // Without an id, a player who left is found by name.
+        match ??= existing.cast<_Existing?>().firstWhere(
+              (e) => !used.contains(e!.id) && normalizeName('${e.data['name'] ?? ''}') == norm,
+              orElse: () => null,
+            );
+        if (match == null) {
+          items.add(RosterPlanItem(row, RosterAction.notFound));
+        } else {
+          used.add(match.id);
+          items.add(RosterPlanItem(row, RosterAction.remove,
+              existingId: match.id, existingCollection: match.collection));
+        }
+        continue;
+      }
       // 1) same name + birth date (hash) — the reliable match
       for (final e in existing) {
+        if (match != null) break;
         if (e.collection == col && !used.contains(e.id) && e.data['dupKey'] == key) {
           match = e;
           break;
@@ -183,12 +245,13 @@ class RosterService {
       final same = m['position'] == row.position &&
           m['number'] == row.number &&
           (m['squad'] ?? 'A') == row.squad.code &&
-          m['dupKey'] == key;
+          // No birth date in the row = the key on file stays as it is.
+          (row.birthDate == null || m['dupKey'] == key);
       items.add(RosterPlanItem(
         row,
         same ? RosterAction.unchanged : RosterAction.update,
         existingId: match.id,
-        existingCollection: col,
+        existingCollection: match.collection,
       ));
     }
     return RosterPlan(items);
@@ -221,6 +284,16 @@ class RosterService {
       final adultAge = r.isMinorOn(now) ? null : r.ageOn(now);
       switch (item.action) {
         case RosterAction.unchanged:
+        case RosterAction.notFound:
+          break;
+        case RosterAction.remove:
+          // Applied on publish like any change, so «Αναίρεση» brings the
+          // player back.
+          final ref = _club(clubId).collection(item.existingCollection!).doc(item.existingId);
+          ops.add((b) => b.update(ref, {
+                'pendingUpdate': {'isActive': false},
+                'pendingUploadId': uploadId,
+              }));
           break;
         case RosterAction.create:
           final ref = _club(clubId).collection(r.squad.collection).doc();
@@ -253,18 +326,20 @@ class RosterService {
           break;
         case RosterAction.update:
           final ref = _club(clubId).collection(item.existingCollection!).doc(item.existingId);
+          final known = r.birthDate != null;
           ops.add((b) => b.update(ref, {
                 'pendingUpdate': {
                   'position': r.position,
                   'number': r.number,
                   'squad': r.squad.code,
-                  'age': adultAge,
-                  'isMinor': r.isMinorOn(now),
+                  // Without a birth date the age on file is kept.
+                  if (known) 'age': adultAge,
+                  if (known) 'isMinor': r.isMinorOn(now),
                 },
                 'pendingUploadId': uploadId,
                 'dupKey': FieldValue.delete(),
               }));
-          ops.add((b) => b.set(
+          if (known) ops.add((b) => b.set(
                 _keys(clubId).doc(item.existingId),
                 {
                   'pendingDupKey': r.dupKey,
@@ -287,6 +362,7 @@ class RosterService {
         'at': FieldValue.serverTimestamp(),
         'newCount': plan.newCount,
         'updateCount': plan.updateCount,
+        'removeCount': plan.removeCount,
         'consentDeclared': true,
       },
       'pendingLogoUrl': pendingLogoUrl ?? FieldValue.delete(),
@@ -373,6 +449,7 @@ class RosterService {
           'uploadedBy': upload['byName'],
           'newCount': upload['newCount'],
           'updateCount': upload['updateCount'],
+          'removeCount': upload['removeCount'],
           'logo': pendingLogo != null,
         }
       ]),

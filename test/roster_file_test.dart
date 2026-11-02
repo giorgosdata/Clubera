@@ -13,6 +13,24 @@ void main() {
     expect(table.first, RosterColumns.templateHeaders);
   });
 
+  test('pre-filled template: existing players come back valid without a birth date', () {
+    final bytes = buildRosterTemplate(players: const [
+      TemplatePlayer(id: 'p1', name: 'ΠΑΠΑΔΟΠΟΥΛΟΣ ΝΙΚΟΛΑΟΣ', position: 'DEF', number: 4,
+          squadLabel: 'Α΄ Ομάδα', consentOnFile: true),
+      TemplatePlayer(id: 'p2', name: 'ΣΤΑΜΑΤΑΚΗΣ ΓΙΩΡΓΟΣ', squadLabel: 'Α΄ Ομάδα'),
+    ]);
+    final table = readRosterFile(bytes, 'template.xlsx');
+    expect(table[1].last, 'p1');
+    final res = parseRoster(table, today: DateTime.utc(2026, 11, 2));
+    expect(res.fileErrors, isEmpty);
+    final p1 = res.rows.firstWhere((r) => r.existingId == 'p1');
+    expect(p1.isValid, isTrue, reason: p1.errors.join(', '));
+    expect(p1.birthDate, isNull);
+    // No position and no consent yet: the club has to fill them in.
+    final p2 = res.rows.firstWhere((r) => r.existingId == 'p2');
+    expect(p2.errors, contains('Λείπει η θέση'));
+  });
+
   test('filled Excel file with a real date cell is parsed', () {
     final excel = Excel.createExcel();
     final name = excel.getDefaultSheet()!;
