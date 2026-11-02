@@ -15,7 +15,8 @@ void main() async {
 
   // Route all Flutter framework errors and uncaught async errors to Crashlytics.
   // Disabled in debug mode so the red error screen still appears during dev.
-  if (!kDebugMode) {
+  // Crashlytics is phone-only.
+  if (!kDebugMode && !kIsWeb) {
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);

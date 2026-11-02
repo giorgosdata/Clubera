@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:local_auth/local_auth.dart';
@@ -57,6 +58,7 @@ class AuthRepo {
   }
 
   void _saveFcmToken(String uid) {
+    if (kIsWeb) return; // push is phone-only for now
     FirebaseMessaging.instance.getToken().then((token) {
       if (token != null) {
         _db.collection('users').doc(uid).update({'fcmToken': token});
@@ -145,6 +147,9 @@ class AuthRepo {
   // ─── Biometric ─────────────────────────────────────────────────────────────
 
   Future<bool> isBiometricAvailable() async {
+    // No fingerprint login in the browser (it would also keep the password
+    // in the browser's storage).
+    if (kIsWeb) return false;
     try {
       return await _localAuth.canCheckBiometrics ||
           await _localAuth.isDeviceSupported();

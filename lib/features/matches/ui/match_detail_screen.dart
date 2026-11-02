@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -1233,10 +1232,10 @@ class _PhotosSectionState extends State<_PhotosSection> with AutomaticKeepAliveC
     if (picked == null || !mounted) return;
     setState(() => _uploading = true);
     try {
-      final file = File(picked.path);
       final ref = FirebaseStorage.instance
           .ref('match_photos/${widget.matchId}/${DateTime.now().millisecondsSinceEpoch}.jpg');
-      await ref.putFile(file);
+      // Bytes, not a dart:io File: works on phones and in the browser.
+      await ref.putData(await picked.readAsBytes(), SettableMetadata(contentType: 'image/jpeg'));
       final url = await ref.getDownloadURL();
       await FirebaseFirestore.instance
           .collection('matches')

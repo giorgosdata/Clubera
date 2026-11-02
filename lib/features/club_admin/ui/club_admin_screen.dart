@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -6,13 +7,13 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../core/utils/logo_picker.dart';
 import '../../../core/utils/storage_utils.dart';
+import '../../../core/utils/picked_file.dart';
+import '../../../core/utils/save_file.dart';
 import '../../../models/club_model.dart';
 import '../../../models/academy_model.dart';
 import '../../../models/donation_model.dart';
@@ -547,7 +548,7 @@ class _OverviewTab extends StatelessWidget {
     final emailCtrl = TextEditingController(text: club.contactEmail ?? '');
     final phoneCtrl = TextEditingController(text: club.contactPhone ?? '');
     final websiteCtrl = TextEditingController(text: club.website ?? '');
-    File? newLogoFile;
+    XFile? newLogoFile;
     String selCategory = kCategories.contains(club.category) ? club.category : kCategories.first;
     String selCountry = kCountryList.contains(club.country) ? club.country : kCountryList.first;
     String selPrimaryColor = club.primaryColor ?? '#003366';
@@ -1576,13 +1577,9 @@ class _PlayersTabState extends State<_PlayersTab> {
         ];
         buf.writeln(row.join(','));
       }
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/players_export.csv');
-      await file.writeAsString(buf.toString());
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'text/csv')],
-        text: 'Player stats export',
-      );
+      // UTF-8 with BOM so Excel shows Greek names correctly.
+      final bytes = Uint8List.fromList([0xEF, 0xBB, 0xBF, ...utf8.encode(buf.toString())]);
+      await saveBytesAsFile(bytes, 'players_export.csv', 'text/csv', subject: 'Player stats export');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -4425,7 +4422,7 @@ class _ClubGamesTab extends StatelessWidget {
     String type = 'spin_wheel';
     final List<Map<String, dynamic>> prizes = [];
     DateTime? expiresAt;
-    File? puzzleImage;
+    XFile? puzzleImage;
 
     showDialog(
       context: outerCtx,
@@ -4491,7 +4488,7 @@ class _ClubGamesTab extends StatelessWidget {
                         color: AppTheme.cardBg2,
                         borderRadius: BorderRadius.circular(10),
                         image: puzzleImage != null
-                            ? DecorationImage(image: FileImage(puzzleImage!), fit: BoxFit.cover)
+                            ? DecorationImage(image: xFileImage(puzzleImage!), fit: BoxFit.cover)
                             : null,
                       ),
                       child: puzzleImage == null
@@ -4651,7 +4648,7 @@ class _ClubGamesTab extends StatelessWidget {
     String type = game.type;
     final List<Map<String, dynamic>> prizes = game.prizes.map((p) => p.toMap()).toList();
     DateTime? expiresAt = game.expiresAt;
-    File? puzzleImage;
+    XFile? puzzleImage;
 
     showDialog(
       context: outerCtx,
@@ -4717,7 +4714,7 @@ class _ClubGamesTab extends StatelessWidget {
                         color: AppTheme.cardBg2,
                         borderRadius: BorderRadius.circular(10),
                         image: puzzleImage != null
-                            ? DecorationImage(image: FileImage(puzzleImage!), fit: BoxFit.cover)
+                            ? DecorationImage(image: xFileImage(puzzleImage!), fit: BoxFit.cover)
                             : (game.puzzleImageUrl != null
                                 ? DecorationImage(
                                     image: NetworkImage(game.puzzleImageUrl!),
@@ -4908,7 +4905,7 @@ class _ClubGamesTab extends StatelessWidget {
     final digitalContentCtrl = TextEditingController();
     String prizeType = 'points';
     double weight = 1;
-    File? prizePhoto;
+    XFile? prizePhoto;
     DateTime? redeemByDate;
 
     showDialog(
@@ -4985,7 +4982,7 @@ class _ClubGamesTab extends StatelessWidget {
                       child: prizePhoto != null
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              child: Image.file(prizePhoto!, fit: BoxFit.cover, width: double.infinity),
+                              child: xFileImageWidget(prizePhoto!, fit: BoxFit.cover, width: double.infinity),
                             )
                           : const Center(
                               child: Icon(Icons.add_photo_alternate_outlined,
@@ -5120,7 +5117,7 @@ class _PostFeedSheet extends StatefulWidget {
 
 class _PostFeedSheetState extends State<_PostFeedSheet> {
   final _textCtrl = TextEditingController();
-  File? _imageFile;
+  XFile? _imageFile;
   bool _loading = false;
   String? _error;
 
@@ -5208,7 +5205,7 @@ class _PostFeedSheetState extends State<_PostFeedSheet> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.file(
+                  child: xFileImageWidget(
                     _imageFile!,
                     height: 160,
                     width: double.infinity,

@@ -20,6 +20,9 @@ class NotificationsService {
   );
 
   static Future<void> init() async {
+    // Push notifications are phone-only for now; the web version would need
+    // a service worker and a VAPID key.
+    if (kIsWeb) return;
     try {
       FirebaseMessaging.onBackgroundMessage(_backgroundHandler);
 
@@ -108,9 +111,15 @@ class NotificationsService {
   }
 
   /// Subscribe a user to a topic (e.g. "club_abc123" to follow a club).
-  static Future<void> subscribe(String topic) =>
-      FirebaseMessaging.instance.subscribeToTopic(topic);
+  // Topics are not supported in the browser; following a club still works,
+  // only the push part is skipped there.
+  static Future<void> subscribe(String topic) async {
+    if (kIsWeb) return;
+    await FirebaseMessaging.instance.subscribeToTopic(topic);
+  }
 
-  static Future<void> unsubscribe(String topic) =>
-      FirebaseMessaging.instance.unsubscribeFromTopic(topic);
+  static Future<void> unsubscribe(String topic) async {
+    if (kIsWeb) return;
+    await FirebaseMessaging.instance.unsubscribeFromTopic(topic);
+  }
 }

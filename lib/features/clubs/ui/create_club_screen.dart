@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,6 +6,7 @@ import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/logo_picker.dart';
 import '../../../core/utils/storage_utils.dart';
+import '../../../core/utils/picked_file.dart';
 import '../../../core/utils/validators.dart';
 import '../../../models/club_model.dart' show kCategories;
 import '../../teams/ui/teams_screen.dart' show kDefaultAssociations, kDefaultCompetitions;
@@ -110,7 +110,7 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
   late String _league = _defaultLeague;
   String _category = kCategories.first;
   bool _loading = false;
-  File? _logoFile;
+  XFile? _logoFile;
 
   @override
   void dispose() {
