@@ -150,6 +150,18 @@ void main() {
     });
   });
 
+  test('title rows above the header are skipped', () {
+    final res = parseRoster([
+      ['Clubera — Ρόστερ: Νίκη Προαστείου'],
+      ['Σύλλογος', 'Νίκη Προαστείου'],
+      [],
+      [...RosterColumns.templateHeaders],
+      ['ΚΩΣΤΗΣ ΑΚΗΣ', 'FWD', '9', '01/02/1988', 'Α΄ Ομάδα', 'ΝΑΙ'],
+    ], today: DateTime.utc(2026, 11, 2));
+    expect(res.fileErrors, isEmpty);
+    expect(res.validRows.single.name, 'ΚΩΣΤΗΣ ΑΚΗΣ');
+  });
+
   group('parseCsv', () {
     test('comma, semicolon and quotes', () {
       expect(parseCsv('a,b\n1,"x, y"\n'), [

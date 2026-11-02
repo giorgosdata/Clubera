@@ -277,6 +277,15 @@ RosterParseResult parseRoster(List<List<String>> table, {DateTime? today}) {
   if (start >= table.length) {
     return const RosterParseResult(rows: [], fileErrors: ['Το αρχείο είναι άδειο.']);
   }
+  // Files with a title or club details above the table: the header is the
+  // first row (of the first 20) that has the name and position columns.
+  for (var i = start; i < table.length && i < start + 20; i++) {
+    if (_findColumn(table[i], RosterColumns.name) != null &&
+        _findColumn(table[i], RosterColumns.position) != null) {
+      start = i;
+      break;
+    }
+  }
   final header = table[start];
   final cName = _findColumn(header, RosterColumns.name);
   final cPos = _findColumn(header, RosterColumns.position);
