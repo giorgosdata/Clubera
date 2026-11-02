@@ -460,6 +460,9 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
                 ),
                 Text('Γρ. ${r.line} · $details',
                     style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                if (r.isMinorOn(DateTime.now()))
+                  const Text('Ανήλικος · δημόσια μόνο όνομα και θέση',
+                      style: TextStyle(color: AppTheme.accent, fontSize: 11, fontWeight: FontWeight.w600)),
                 for (final e in r.errors)
                   Text('• $e', style: const TextStyle(color: AppTheme.red, fontSize: 11)),
               ],
