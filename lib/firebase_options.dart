@@ -49,12 +49,13 @@ class DefaultFirebaseOptions {
   // Web app "Clubera Web" (Firebase console → Project settings → Your apps).
   // These values are public by design; access is controlled by the rules.
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'WEB_API_KEY',
-    appId: 'WEB_APP_ID',
+    apiKey: 'AIzaSyBNHDW_V0qYalJmHlG5wa79zxCrJge-vCE',
+    appId: '1:539400130045:web:4d7b7443ea96e853c51d94',
     messagingSenderId: '539400130045',
     projectId: 'clubera-app',
     authDomain: 'clubera-app.firebaseapp.com',
     storageBucket: 'clubera-app.firebasestorage.app',
+    measurementId: 'G-HTR2WH4B5G',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
