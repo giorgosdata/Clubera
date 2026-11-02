@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/help_link.dart';
 import '../../../core/utils/save_file.dart';
 import 'roster_file.dart';
 import 'roster_parser.dart';
@@ -232,6 +233,7 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title: const Text('Ανέβασμα ρόστερ'),
+        actions: const [AdminGuideButton()],
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance.collection('clubs').doc(widget.clubId).snapshots(),

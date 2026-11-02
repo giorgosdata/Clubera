@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/providers/theme_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/help_link.dart';
 import '../../../models/user_model.dart';
 import '../../../models/club_model.dart';
 import '../../../models/donation_model.dart';
@@ -1006,6 +1007,12 @@ class _MenuSection extends StatelessWidget {
               context,
               MaterialPageRoute(builder: (_) => const NotificationPrefsScreen()),
             ),
+          ),
+          _MenuItem(
+            icon: Icons.help_outline,
+            label: 'Πώς λειτουργεί το Clubera',
+            color: AppTheme.accent,
+            onTap: () => openAdminGuide(context),
           ),
           _MenuItem(
             icon: Icons.auto_stories,
