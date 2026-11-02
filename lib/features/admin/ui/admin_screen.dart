@@ -19,6 +19,7 @@ import '../../../models/news_model.dart';
 import 'trivia_admin_screen.dart';
 import 'sponsors_management.dart';
 import 'roster_approvals_tab.dart';
+import 'club_admin_link.dart';
 import '../../matches/ui/create_match_screen.dart';
 import '../../clubs/ui/create_club_screen.dart' show CreateClubScreen, kCountryList, generateInviteCode;
 
@@ -854,9 +855,14 @@ class _ClubRow extends StatelessWidget {
             onSelected: (v) {
               if (v == 'delete') _deleteClub(context, club);
               if (v == 'edit') _editClub(context, club);
+              if (v == 'admin') showSetClubAdminDialog(context, club);
             },
             itemBuilder: (_) => [
               const PopupMenuItem(value: 'edit', child: Text('Edit Club', style: TextStyle(color: Colors.white))),
+              const PopupMenuItem(
+                value: 'admin',
+                child: Text('Ορισμός Club Admin', style: TextStyle(color: Colors.white)),
+              ),
               const PopupMenuDivider(),
               const PopupMenuItem(value: 'delete', child: Text('Delete Club', style: TextStyle(color: AppTheme.red))),
             ],
@@ -2831,7 +2837,7 @@ class _ClubRequestsTab extends StatelessWidget {
                             backgroundColor: AppTheme.supportGreen,
                             foregroundColor: Colors.white,
                           ),
-                          onPressed: () => _approve(ctx, r),
+                          onPressed: () => _chooseApproval(ctx, r),
                         ),
                       ),
                     ],
@@ -2843,6 +2849,57 @@ class _ClubRequestsTab extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// Approve: link the applicant to the club already mapped (usual case) or
+  /// create a new club when it is not mapped yet.
+  Future<void> _chooseApproval(BuildContext context, Map<String, dynamic> r) async {
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardBg,
+        title: Text('Έγκριση — ${r['clubName'] ?? ''}', style: const TextStyle(color: Colors.white)),
+        content: const Text(
+          'Υπάρχει ήδη ο σύλλογος στο Clubera (χαρτογραφημένος ανά ΕΠΣ και κατηγορία);\n\n'
+          'Αν ναι, συνδέστε τον αιτούντα με αυτόν, ώστε να μη δημιουργηθεί διπλότυπος σύλλογος.',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Άκυρο')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'new'),
+            child: const Text('Δημιουργία νέου'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'link'),
+            child: const Text('Σύνδεση με υπάρχοντα', style: TextStyle(color: AppTheme.supportGreen)),
+          ),
+        ],
+      ),
+    );
+    if (!context.mounted) return;
+    if (choice == 'new') return _approve(context, r);
+    if (choice != 'link') return;
+
+    final club = await pickExistingClub(context, initialQuery: '${r['clubName'] ?? ''}');
+    if (club == null || !context.mounted) return;
+    final who = '${r['userName'] ?? ''} (${r['userEmail'] ?? ''})';
+    if (!await confirmLink(context, club: club, userLabel: who)) return;
+    try {
+      await linkClubAdmin(clubId: club.id, userId: r['userId'] as String, requestId: r['id'] as String);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('✅ Συνδέθηκε με τον σύλλογο «${club.name}».'),
+          backgroundColor: AppTheme.supportGreen,
+        ));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Σφάλμα: $e'), backgroundColor: AppTheme.red),
+        );
+      }
+    }
   }
 
   Future<void> _approve(BuildContext context, Map<String, dynamic> r) async {
