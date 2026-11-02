@@ -20,6 +20,7 @@ import 'trivia_admin_screen.dart';
 import 'sponsors_management.dart';
 import 'roster_approvals_tab.dart';
 import 'club_admin_link.dart';
+import 'club_merge.dart';
 import '../../matches/ui/create_match_screen.dart';
 import '../../clubs/ui/create_club_screen.dart' show CreateClubScreen, kCountryList, generateInviteCode;
 
@@ -856,12 +857,20 @@ class _ClubRow extends StatelessWidget {
               if (v == 'delete') _deleteClub(context, club);
               if (v == 'edit') _editClub(context, club);
               if (v == 'admin') showSetClubAdminDialog(context, club);
+              if (v == 'merge') {
+                showMergeClubDialog(context, club,
+                    byName: context.read<AppProvider>().user?.name ?? 'Super Admin');
+              }
             },
             itemBuilder: (_) => [
               const PopupMenuItem(value: 'edit', child: Text('Edit Club', style: TextStyle(color: Colors.white))),
               const PopupMenuItem(
                 value: 'admin',
                 child: Text('Ορισμός Club Admin', style: TextStyle(color: Colors.white)),
+              ),
+              const PopupMenuItem(
+                value: 'merge',
+                child: Text('Συγχώνευση σε άλλον σύλλογο', style: TextStyle(color: Colors.white)),
               ),
               const PopupMenuDivider(),
               const PopupMenuItem(value: 'delete', child: Text('Delete Club', style: TextStyle(color: AppTheme.red))),
