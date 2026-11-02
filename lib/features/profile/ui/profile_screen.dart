@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -24,6 +23,7 @@ import '../widgets/badges_section.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../core/utils/logo_picker.dart';
 import '../../../core/utils/storage_utils.dart';
+import '../../../core/utils/picked_file.dart';
 import '../../gamification/ui/my_prizes_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -1176,7 +1176,7 @@ class _MenuSection extends StatelessWidget {
 
   void _showEditProfile(BuildContext context, UserModel user) {
     final nameCtrl = TextEditingController(text: user.name);
-    File? newPhotoFile;
+    XFile? newPhotoFile;
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.cardBg,

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'picked_file.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'image_utils.dart';
@@ -6,7 +6,7 @@ import 'storage_utils.dart';
 
 class LogoPicker extends StatefulWidget {
   final String? initialUrl;
-  final void Function(File? file) onPicked;
+  final void Function(XFile? file) onPicked;
   final double size;
   const LogoPicker({
     super.key,
@@ -20,7 +20,7 @@ class LogoPicker extends StatefulWidget {
 }
 
 class _LogoPickerState extends State<LogoPicker> {
-  File? _file;
+  XFile? _file;
   String? _error;
 
   Future<void> _pick() async {
@@ -41,7 +41,7 @@ class _LogoPickerState extends State<LogoPicker> {
   Widget build(BuildContext context) {
     ImageProvider? provider;
     if (_file != null) {
-      provider = FileImage(_file!);
+      provider = xFileImage(_file!);
     } else {
       provider = safeNetworkImage(widget.initialUrl);
     }

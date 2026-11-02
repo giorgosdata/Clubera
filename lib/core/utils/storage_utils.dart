@@ -1,10 +1,17 @@
-import 'dart:io';
+import 'dart:io' as io;
+
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
+// Picked files are XFile / PlatformFile and are uploaded as bytes, so the
+// same code works on phones and in the browser (where dart:io File does not
+// exist). Videos on phones still upload from the file, to avoid loading up
+// to 100 MB into memory.
+
 class PickedPdf {
-  final File file;
+  final PlatformFile file;
   final String name;
   PickedPdf({required this.file, required this.name});
 }
@@ -12,7 +19,7 @@ class PickedPdf {
 class StorageUtils {
   static final _picker = ImagePicker();
 
-  static Future<File?> pickImage({int maxSizeKB = 2048}) async {
+  static Future<XFile?> pickImage({int maxSizeKB = 2048}) async {
     final picked = await _picker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 1024,
@@ -20,42 +27,40 @@ class StorageUtils {
       imageQuality: 80,
     );
     if (picked == null) return null;
-    final file = File(picked.path);
-    final sizeKB = (await file.length()) / 1024;
+    final sizeKB = (await picked.length()) / 1024;
     if (sizeKB > maxSizeKB) {
       throw Exception('Image too large (${sizeKB.toStringAsFixed(0)} KB). Max ${maxSizeKB} KB.');
     }
-    return file;
+    return picked;
   }
 
   static Future<PickedPdf?> pickPdf({int maxSizeMB = 10}) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
-      withData: false,
+      withData: kIsWeb,
     );
     if (result == null || result.files.isEmpty) return null;
     final pf = result.files.single;
-    if (pf.path == null) {
-      throw Exception('Could not access file path');
+    if (pf.bytes == null && pf.path == null) {
+      throw Exception('Could not access file');
     }
-    final file = File(pf.path!);
-    final sizeMB = (await file.length()) / (1024 * 1024);
+    final sizeMB = pf.size / (1024 * 1024);
     if (sizeMB > maxSizeMB) {
       throw Exception('PDF too large (${sizeMB.toStringAsFixed(1)} MB). Max $maxSizeMB MB.');
     }
-    return PickedPdf(file: file, name: pf.name);
+    return PickedPdf(file: pf, name: pf.name);
   }
 
   static Future<String> uploadImage({
-    required File file,
+    required XFile file,
     required String path,
   }) async {
     final ref = FirebaseStorage.instance.ref().child(path);
     // Set contentType explicitly: storage.rules require image/* and Android
     // does not infer it from a file:// path, so uploads were rejected.
-    final task = await ref.putFile(
-      file,
+    final task = await ref.putData(
+      await file.readAsBytes(),
       SettableMetadata(contentType: _imageContentType(path)),
     );
     return await task.ref.getDownloadURL();
@@ -70,57 +75,59 @@ class StorageUtils {
   }
 
   static Future<String> uploadPdf({
-    required File file,
+    required PlatformFile file,
     required String path,
   }) async {
     final ref = FirebaseStorage.instance.ref().child(path);
-    final task = await ref.putFile(
-      file,
-      SettableMetadata(contentType: 'application/pdf'),
-    );
+    final meta = SettableMetadata(contentType: 'application/pdf');
+    final task = file.bytes != null
+        ? await ref.putData(file.bytes!, meta)
+        : await ref.putFile(io.File(file.path!), meta);
     return await task.ref.getDownloadURL();
   }
 
-  static Future<String> uploadClubLogo(File file, String clubId) =>
+  static Future<String> uploadClubLogo(XFile file, String clubId) =>
       uploadImage(file: file, path: 'clubs/$clubId/logo.jpg');
 
-  static Future<String> uploadUserPhoto(File file, String userId) =>
+  static Future<String> uploadUserPhoto(XFile file, String userId) =>
       uploadImage(file: file, path: 'users/$userId/photo.jpg');
 
-  static Future<String> uploadPlayerPhoto(File file, String clubId, String playerId) =>
+  static Future<String> uploadPlayerPhoto(XFile file, String clubId, String playerId) =>
       uploadImage(file: file, path: 'clubs/$clubId/players/$playerId/photo.jpg');
 
   static Future<String> uploadSponsorPdf({
-    required File file,
+    required PlatformFile file,
     required String sponsorId,
     required String fileName,
   }) =>
       uploadPdf(file: file, path: 'sponsors/$sponsorId/$fileName');
 
-  static Future<String> uploadPuzzleImage(File file, String gameId) =>
+  static Future<String> uploadPuzzleImage(XFile file, String gameId) =>
       uploadImage(file: file, path: 'games/$gameId/puzzle.jpg');
 
-  static Future<String> uploadPrizePhoto(File file, String prizeId) =>
+  static Future<String> uploadPrizePhoto(XFile file, String prizeId) =>
       uploadImage(file: file, path: 'prizes/$prizeId/photo.jpg');
 
-  static Future<String> uploadGalleryPhoto(File file, String clubId, String fileName) =>
+  static Future<String> uploadGalleryPhoto(XFile file, String clubId, String fileName) =>
       uploadImage(file: file, path: 'clubs/$clubId/gallery/$fileName');
 
-  static Future<File?> pickVideo({int maxSizeMB = 100}) async {
+  static Future<XFile?> pickVideo({int maxSizeMB = 100}) async {
     final picked = await _picker.pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 5));
     if (picked == null) return null;
-    final file = File(picked.path);
-    final sizeMB = (await file.length()) / (1024 * 1024);
+    final sizeMB = (await picked.length()) / (1024 * 1024);
     if (sizeMB > maxSizeMB) throw Exception('Video too large (${sizeMB.toStringAsFixed(1)} MB). Max $maxSizeMB MB.');
-    return file;
+    return picked;
   }
 
-  static Future<String> uploadGalleryVideo(File file, String clubId, String fileName) async {
+  static Future<String> uploadGalleryVideo(XFile file, String clubId, String fileName) async {
     final ref = FirebaseStorage.instance.ref().child('clubs/$clubId/gallery/$fileName');
-    final task = await ref.putFile(file, SettableMetadata(contentType: 'video/mp4'));
+    final meta = SettableMetadata(contentType: 'video/mp4');
+    final task = kIsWeb
+        ? await ref.putData(await file.readAsBytes(), meta)
+        : await ref.putFile(io.File(file.path), meta);
     return await task.ref.getDownloadURL();
   }
 
-  static Future<String> uploadStadiumPhoto(File file, String clubId, String fileName) =>
+  static Future<String> uploadStadiumPhoto(XFile file, String clubId, String fileName) =>
       uploadImage(file: file, path: 'clubs/$clubId/stadium_photos/$fileName');
 }

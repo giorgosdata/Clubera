@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../core/utils/storage_utils.dart';
+import '../../../core/utils/picked_file.dart';
 import '../../../models/user_model.dart';
 import '../../../models/club_model.dart';
 import '../../../models/match_model.dart';
@@ -883,7 +883,7 @@ class _ClubRow extends StatelessWidget {
     String selCategory = kCategories.contains(club.category) ? club.category : kCategories.first;
     String selCountry = kCountryList.contains(club.country) ? club.country : kCountryList.first;
     String? logoUrl = club.logoUrl;
-    File? pickedLogo;
+    XFile? pickedLogo;
     bool uploading = false;
 
     showDialog(
@@ -918,7 +918,7 @@ class _ClubRow extends StatelessWidget {
                             color: AppTheme.cardBg2,
                             shape: BoxShape.circle,
                             image: pickedLogo != null
-                                ? DecorationImage(image: FileImage(pickedLogo!), fit: BoxFit.cover)
+                                ? DecorationImage(image: xFileImage(pickedLogo!), fit: BoxFit.cover)
                                 : (logoUrl != null && logoUrl.isNotEmpty
                                     ? DecorationImage(image: NetworkImage(logoUrl), fit: BoxFit.cover)
                                     : null),
@@ -1659,7 +1659,7 @@ class _AdminGamesTab extends StatelessWidget {
     String type = 'spin_wheel';
     final List<Map<String, dynamic>> prizes = [];
     DateTime? expiresAt;
-    File? puzzleImage;
+    XFile? puzzleImage;
 
     showDialog(
       context: context,
@@ -1725,7 +1725,7 @@ class _AdminGamesTab extends StatelessWidget {
                         color: AppTheme.cardBg2,
                         borderRadius: BorderRadius.circular(10),
                         image: puzzleImage != null
-                            ? DecorationImage(image: FileImage(puzzleImage!), fit: BoxFit.cover)
+                            ? DecorationImage(image: xFileImage(puzzleImage!), fit: BoxFit.cover)
                             : null,
                       ),
                       child: puzzleImage == null
@@ -1872,7 +1872,7 @@ class _AdminGamesTab extends StatelessWidget {
     final digitalContentCtrl = TextEditingController();
     String prizeType = 'points';
     double weight = 1;
-    File? prizePhoto;
+    XFile? prizePhoto;
     DateTime? redeemByDate;
 
     showDialog(
@@ -1957,7 +1957,7 @@ class _AdminGamesTab extends StatelessWidget {
                       child: prizePhoto != null
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              child: Image.file(prizePhoto!, fit: BoxFit.cover, width: double.infinity),
+                              child: xFileImageWidget(prizePhoto!, fit: BoxFit.cover, width: double.infinity),
                             )
                           : const Center(
                               child: Column(
@@ -2184,7 +2184,7 @@ class _GameAdminRow extends StatelessWidget {
     String type = game.type;
     final List<Map<String, dynamic>> prizes = game.prizes.map((p) => p.toMap()).toList();
     DateTime? expiresAt = game.expiresAt;
-    File? puzzleImage;
+    XFile? puzzleImage;
 
     showDialog(
       context: context,
@@ -2250,7 +2250,7 @@ class _GameAdminRow extends StatelessWidget {
                         color: AppTheme.cardBg2,
                         borderRadius: BorderRadius.circular(10),
                         image: puzzleImage != null
-                            ? DecorationImage(image: FileImage(puzzleImage!), fit: BoxFit.cover)
+                            ? DecorationImage(image: xFileImage(puzzleImage!), fit: BoxFit.cover)
                             : (game.puzzleImageUrl != null
                                 ? DecorationImage(
                                     image: NetworkImage(game.puzzleImageUrl!),

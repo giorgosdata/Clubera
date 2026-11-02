@@ -11,12 +11,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/save_file.dart';
 import 'roster_file.dart';
 import 'roster_parser.dart';
 import 'roster_service.dart';
@@ -49,16 +48,13 @@ class _RosterUploadScreenState extends State<RosterUploadScreen> {
 
   Future<void> _downloadTemplate() async {
     try {
-      final bytes = buildRosterTemplate();
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/Clubera_roster_protypo.xlsx');
-      await file.writeAsBytes(bytes);
-      await Share.shareXFiles(
-        [
-          XFile(file.path,
-              mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        ],
-        text: 'Πρότυπο ρόστερ Clubera — συμπληρώστε το φύλλο «Ρόστερ».',
+      final bytes = Uint8List.fromList(buildRosterTemplate());
+      // Browser: downloads the file. Phones: share sheet (save, email, …).
+      await saveBytesAsFile(
+        bytes,
+        'Clubera_roster_protypo.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        subject: 'Πρότυπο ρόστερ Clubera — συμπληρώστε το φύλλο «Ρόστερ».',
       );
     } catch (e) {
       _snack('Δεν φτιάχτηκε το πρότυπο: $e', error: true);

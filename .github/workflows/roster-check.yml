@@ -53,6 +53,14 @@ jobs:
             exit 1
           fi
 
+      - name: Build web
+        run: |
+          set -o pipefail
+          if ! flutter build web --release --no-tree-shake-icons 2>&1 | tee web.log; then
+            grep -nE "Error|error" web.log | tail -40 | while IFS= read -r l; do echo "::error::${l//%/%25}"; done
+            exit 1
+          fi
+
       - name: Build debug APK
         run: |
           set -o pipefail

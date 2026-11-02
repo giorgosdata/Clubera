@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -48,6 +45,17 @@ class DefaultFirebaseOptions {
         );
     }
   }
+
+  // Web app "Clubera Web" (Firebase console → Project settings → Your apps).
+  // These values are public by design; access is controlled by the rules.
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'WEB_API_KEY',
+    appId: 'WEB_APP_ID',
+    messagingSenderId: '539400130045',
+    projectId: 'clubera-app',
+    authDomain: 'clubera-app.firebaseapp.com',
+    storageBucket: 'clubera-app.firebasestorage.app',
+  );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyB_l3IVQzyXs39E_FdL7OeGoydufLlbKuI',
