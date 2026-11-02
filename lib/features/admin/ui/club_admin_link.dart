@@ -281,3 +281,75 @@ Future<void> showSetClubAdminDialog(BuildContext context, ClubModel club) async 
     messenger.showSnackBar(SnackBar(content: Text('Σφάλμα: $e'), backgroundColor: AppTheme.red));
   }
 }
+
+/// Super Admin: removes the Club Admin of [club] (e.g. a test account). The
+/// account stays a normal user; if it is still the admin of another club it
+/// goes back to that club, otherwise it becomes a fan.
+Future<void> showRemoveClubAdminDialog(BuildContext context, ClubModel club) async {
+  final db = FirebaseFirestore.instance;
+  final uid = club.adminUid;
+  if (uid.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Ο σύλλογος «${club.name}» δεν έχει Club Admin.')),
+    );
+    return;
+  }
+  final userSnap = await db.collection('users').doc(uid).get();
+  final u = userSnap.data() ?? const <String, dynamic>{};
+  final who = [u['name'], u['email']].where((s) => s != null && '$s'.isNotEmpty).join(' · ');
+  final others = (await db.collection('clubs').where('adminUid', isEqualTo: uid).get())
+      .docs
+      .where((d) => d.id != club.id)
+      .toList();
+  final backTo = others.isEmpty ? null : others.first;
+  if (!context.mounted) return;
+
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: AppTheme.cardBg,
+      title: Text('Αφαίρεση Club Admin — ${club.name}', style: const TextStyle(color: Colors.white)),
+      content: Text(
+        'Ο λογαριασμός ${who.isEmpty ? uid : who} δεν θα είναι πια διαχειριστής ούτε συνεργάτης του «${club.name}».\n\n'
+        '${backTo != null ? 'Επιστρέφει ως Club Admin στον σύλλογο «${backTo.data()['name'] ?? backTo.id}».' : 'Γίνεται απλός χρήστης (fan).'}\n\n'
+        'Μετά μπορείτε να στείλετε σύνδεσμο πρόσκλησης στον πραγματικό υπεύθυνο.',
+        style: const TextStyle(color: AppTheme.textSecondary),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Άκυρο')),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Αφαίρεση', style: TextStyle(color: AppTheme.red)),
+        ),
+      ],
+    ),
+  );
+  if (ok != true) return;
+
+  try {
+    final batch = db.batch();
+    batch.update(db.collection('clubs').doc(club.id), {
+      'adminUid': '',
+      'staffUids': FieldValue.arrayRemove([uid]),
+    });
+    if (userSnap.exists && (u['clubId'] == club.id || u['clubId'] == null)) {
+      batch.update(db.collection('users').doc(uid), {
+        if (backTo != null) ...{'clubId': backTo.id, 'role': 'club'} else ...{'clubId': null, 'role': u['role'] == 'admin' ? 'admin' : 'fan'},
+      });
+    }
+    await batch.commit();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: AppTheme.supportGreen,
+        content: Text('Αφαιρέθηκε ο Club Admin του «${club.name}».'
+            '${backTo != null ? ' Ο λογαριασμός επέστρεψε στον «${backTo.data()['name'] ?? backTo.id}».' : ''}'),
+      ));
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: AppTheme.red, content: Text('Η αφαίρεση απέτυχε: $e')),
+      );
+    }
+  }
+}

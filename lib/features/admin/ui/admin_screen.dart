@@ -858,6 +858,7 @@ class _ClubRow extends StatelessWidget {
               if (v == 'delete') _deleteClub(context, club);
               if (v == 'edit') _editClub(context, club);
               if (v == 'admin') showSetClubAdminDialog(context, club);
+              if (v == 'removeAdmin') showRemoveClubAdminDialog(context, club);
               if (v == 'invite') {
                 final me = context.read<AppProvider>().user;
                 showCreateInviteDialog(context,
@@ -880,6 +881,10 @@ class _ClubRow extends StatelessWidget {
               const PopupMenuItem(
                 value: 'admin',
                 child: Text('Ορισμός Club Admin (με email)', style: TextStyle(color: Colors.white)),
+              ),
+              const PopupMenuItem(
+                value: 'removeAdmin',
+                child: Text('Αφαίρεση Club Admin', style: TextStyle(color: Colors.white)),
               ),
               const PopupMenuItem(
                 value: 'merge',
