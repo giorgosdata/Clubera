@@ -42,9 +42,6 @@ bool isPublicPlayer(Map<String, dynamic> data) {
 /// roster (nothing to do).
 enum RosterAction { create, update, unchanged, remove, notFound }
 
-);
-}
-
 class RosterPlanItem {
   final RosterRow row;
   final RosterAction action;

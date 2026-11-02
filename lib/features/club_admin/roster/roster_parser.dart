@@ -82,7 +82,8 @@ class TemplatePlayer {
     this.number,
     required this.squadLabel,
     this.consentOnFile = false,
-  }
+  });
+}
 
 /// One row of the file after validation.
 class RosterRow {
