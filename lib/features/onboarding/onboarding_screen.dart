@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/clubera_icons.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onDone;
@@ -16,25 +17,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   static const _pages = [
     _OnboardPage(
-      icon: Icons.sports_soccer,
+      art: _Art.welcome,
       color: AppTheme.primaryLight,
       title: 'Καλώς ήρθες στο Clubera!',
       subtitle: 'Η εφαρμογή για τους λάτρεις του ερασιτεχνικού ποδοσφαίρου. Παρακολούθησε αγώνες, παίκτες και σωματεία σε ένα μέρος.',
     ),
     _OnboardPage(
-      icon: Icons.shield,
+      art: _Art.follow,
       color: AppTheme.supportGreen,
       title: 'Ακολούθησε την ομάδα σου',
       subtitle: 'Μείνε ενημερωμένος για αγώνες, αποτελέσματα, μεταγραφές και νέα της αγαπημένης σου ομάδας.',
     ),
     _OnboardPage(
-      icon: Icons.analytics_outlined,
+      art: _Art.predict,
       color: AppTheme.accent,
       title: 'Πρόβλεψε & Κέρδισε',
       subtitle: 'Δώσε προβλέψεις για αγώνες, μάζεψε πόντους, ανέβα στην κατάταξη και κέρδισε ανταμοιβές.',
     ),
     _OnboardPage(
-      icon: Icons.notifications_active,
+      art: _Art.live,
       color: AppTheme.liveRed,
       title: 'Live Ειδοποιήσεις',
       subtitle: 'Μάθε για γκολ και αποτελέσματα real-time ακόμα και αν δεν έχεις ανοιχτό το app.',
@@ -126,12 +127,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class _OnboardPage extends StatelessWidget {
-  final IconData icon;
+  final _Art art;
   final Color color;
   final String title;
   final String subtitle;
   const _OnboardPage({
-    required this.icon,
+    required this.art,
     required this.color,
     required this.title,
     required this.subtitle,
@@ -140,21 +141,17 @@ class _OnboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 130,
-            height: 130,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-              border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 340),
+              child: _OnboardArt(art: art),
             ),
-            child: Icon(icon, size: 60, color: color),
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 32),
           Text(
             title,
             style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
@@ -170,4 +167,167 @@ class _OnboardPage extends StatelessWidget {
       ),
     );
   }
+}
+
+enum _Art { welcome, follow, predict, live }
+
+/// Picture at the top of each onboarding page: the Clubera stadium at night
+/// with the shield or the page's subject in front.
+class _OnboardArt extends StatelessWidget {
+  final _Art art;
+  const _OnboardArt({required this.art});
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 1.05,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset('assets/images/stadium_clubera.jpg', fit: BoxFit.cover, alignment: const Alignment(0, 0.55)),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x33000000), Color(0x00000000), Color(0x99080E2A)],
+                  stops: [0, 0.5, 1],
+                ),
+              ),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: const Color(0x24FFFFFF)),
+              ),
+            ),
+            Center(child: _content()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _content() {
+    switch (art) {
+      case _Art.welcome:
+        return Container(
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [BoxShadow(color: Color(0x594ADE80), blurRadius: 60, spreadRadius: 4)],
+          ),
+          child: Image.asset('assets/images/shield.png', width: 170, height: 170),
+        );
+      case _Art.follow:
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Opacity(opacity: 0.75, child: ClIconTile(ClIcon.clubs, size: 64)),
+                SizedBox(width: 14),
+                ClIconTile(ClIcon.clubs, size: 96),
+                SizedBox(width: 14),
+                Opacity(opacity: 0.75, child: ClIconTile(ClIcon.clubs, size: 64)),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _chip(ClIcon.support, 'Ακολουθείς'),
+          ],
+        );
+      case _Art.predict:
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _card(
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClIconView(ClIcon.clubs, size: 34),
+                  SizedBox(width: 14),
+                  Text('2  –  1', style: TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w900)),
+                  SizedBox(width: 14),
+                  ClIconView(ClIcon.clubs, size: 34, muted: true),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const ClIconTile(ClIcon.rewards, size: 64),
+                const SizedBox(width: 12),
+                _chip(null, '+50 πόντοι'),
+              ],
+            ),
+          ],
+        );
+      case _Art.live:
+        return _card(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ClIconTile(ClIcon.matches, size: 56),
+              const SizedBox(width: 14),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(color: AppTheme.liveRed, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text('LIVE · 67΄', style: TextStyle(color: AppTheme.liveRed, fontSize: 12, fontWeight: FontWeight.w800)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('ΓΚΟΛ!  1 – 0', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+                  const Text('Η ομάδα σου προηγείται', style: TextStyle(color: Color(0xFFC7D2F0), fontSize: 13)),
+                ],
+              ),
+            ],
+          ),
+        );
+    }
+  }
+
+  static Widget _card({required Widget child}) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xE61A2560), Color(0xE60C1238)],
+          ),
+          border: Border.all(color: const Color(0x24FFFFFF)),
+          boxShadow: const [BoxShadow(color: Color(0x80000000), blurRadius: 24, offset: Offset(0, 10))],
+        ),
+        child: child,
+      );
+
+  static Widget _chip(ClIcon? icon, String text) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0x334ADE80),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0x804ADE80)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[ClIconView(icon, size: 18), const SizedBox(width: 6)],
+            Text(text, style: const TextStyle(color: Color(0xFF4ADE80), fontWeight: FontWeight.w800, fontSize: 14)),
+          ],
+        ),
+      );
 }
