@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:clubera/l10n/app_localizations.dart';
 import '../../../core/widgets/club_ball.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
