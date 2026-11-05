@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/widgets/club_ball.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -1343,31 +1344,7 @@ class _TopClubChip extends StatelessWidget {
       children: [
         Stack(
           children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: AppTheme.cardBg2,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: rank == 1 ? AppTheme.accent : AppTheme.divider,
-                  width: rank == 1 ? 2 : 1,
-                ),
-                image: safeNetworkImage(club.logoUrl) != null
-                    ? DecorationImage(
-                        image: safeNetworkImage(club.logoUrl)!,
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-              ),
-              child: safeNetworkImage(club.logoUrl) == null
-                  ? const Icon(
-                      Icons.sports_soccer,
-                      color: AppTheme.primaryLight,
-                      size: 28,
-                    )
-                  : null,
-            ),
+            ClubBall(club.name, size: 60),
             if (rank <= 3)
               Positioned(
                 right: 0,

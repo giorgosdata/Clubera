@@ -4,7 +4,7 @@ class AppTheme {
   // Dark navy blue theme (like the screenshot)
   static const Color primary = Color(0xFF1A237E);       // deep blue
   static const Color primaryLight = Color(0xFF4361EE);  // electric blue
-  static const Color accent = Color(0xFF4ADE80);        // light green
+  static const Color accent = Color(0xFFB4FF1E);        // bright lime
   static const Color surface = Color(0xFF080E2A);       // very dark navy
   static const Color cardBg = Color(0xFF101840);        // dark navy card
   static const Color cardBg2 = Color(0xFF1A2560);       // slightly lighter card
