@@ -39,7 +39,12 @@ class CluperaApp extends StatelessWidget {
       builder: (context, child) => Stack(
         children: [
           Positioned.fill(
-            child: Image.asset('assets/images/stadium_clubera.jpg', fit: BoxFit.cover),
+            child: Image.asset(
+              MediaQuery.sizeOf(context).width >= 700
+                  ? 'assets/images/stadium_clubera_web.jpg'
+                  : 'assets/images/stadium_clubera.jpg',
+              fit: BoxFit.cover,
+            ),
           ),
           Positioned.fill(
             child: Container(

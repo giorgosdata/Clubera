@@ -96,7 +96,12 @@ class _IntroSplashState extends State<IntroSplash> with SingleTickerProviderStat
                       scale: 1.12 - 0.12 * _ramp(t, 0.10, 0.45),
                       child: ColorFiltered(
                         colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 1 - dim), BlendMode.darken),
-                        child: Image.asset('assets/images/stadium_clubera.jpg', fit: BoxFit.cover),
+                        child: Image.asset(
+                          MediaQuery.sizeOf(context).width >= 700
+                              ? 'assets/images/stadium_clubera_web.jpg'
+                              : 'assets/images/stadium_clubera.jpg',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),
