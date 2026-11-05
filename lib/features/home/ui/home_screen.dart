@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../core/widgets/club_ball.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -61,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen>
             actions: [
               IconButton(
                 icon: const Icon(Icons.search, color: Colors.white),
-                tooltip: 'Αναζήτηση',
+                tooltip: AppLocalizations.of(context).home_search,
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const SearchScreen()),
@@ -75,11 +76,11 @@ class _HomeScreenState extends State<HomeScreen>
               labelColor: AppTheme.accent,
               unselectedLabelColor: AppTheme.textSecondary,
               indicatorSize: TabBarIndicatorSize.label,
-              tabs: const [
-                Tab(text: 'Latest'),
-                Tab(text: 'Play'),
-                Tab(text: 'Rewards'),
-                Tab(text: 'News'),
+              tabs: [
+                Tab(text: AppLocalizations.of(context).tab_latest),
+                Tab(text: AppLocalizations.of(context).tab_play),
+                Tab(text: AppLocalizations.of(context).tab_rewards),
+                Tab(text: AppLocalizations.of(context).tab_news),
               ],
             ),
           ),
@@ -616,12 +617,12 @@ class _HeroLiveCard extends StatelessWidget {
                           color: AppTheme.liveRed,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(Icons.circle, color: Colors.white, size: 6),
                             SizedBox(width: 5),
                             Text(
-                              'LIVE',
+                              AppLocalizations.of(context).live,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w900,
@@ -687,8 +688,8 @@ class _HeroLiveCard extends StatelessWidget {
                         color: Colors.white12,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        'Tap to watch live',
+                      child: Text(
+                        AppLocalizations.of(context).tap_to_watch,
                         style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                     ),
@@ -825,8 +826,8 @@ class _HeroUpcomingCard extends StatelessWidget {
                             color: AppTheme.primaryLight.withOpacity(0.5),
                           ),
                         ),
-                        child: const Text(
-                          'NEXT MATCH',
+                        child: Text(
+                          AppLocalizations.of(context).next_match,
                           style: TextStyle(
                             color: AppTheme.primaryLight,
                             fontWeight: FontWeight.w900,
@@ -845,8 +846,8 @@ class _HeroUpcomingCard extends StatelessWidget {
                           ),
                           Column(
                             children: [
-                              const Text(
-                                'VS',
+                              Text(
+                                AppLocalizations.of(context).vs,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 28,
@@ -934,13 +935,13 @@ class _MatchCountdownState extends State<_MatchCountdown> {
       children: [
         const Icon(Icons.timer_outlined, color: Colors.white54, size: 14),
         const SizedBox(width: 4),
-        if (d > 0) _unit('$d', 'μέρες'),
+        if (d > 0) _unit('$d', AppLocalizations.of(context).countdown_days),
         if (d > 0) const SizedBox(width: 8),
-        _unit(_pad(h), 'ώρες'),
+        _unit(_pad(h), AppLocalizations.of(context).countdown_hours),
         const SizedBox(width: 8),
-        _unit(_pad(m), 'λεπτά'),
+        _unit(_pad(m), AppLocalizations.of(context).countdown_minutes),
         const SizedBox(width: 8),
-        _unit(_pad(s), 'δευτ.'),
+        _unit(_pad(s), AppLocalizations.of(context).countdown_seconds),
       ],
     );
   }
@@ -974,7 +975,7 @@ class _HeroEmptyCard extends StatelessWidget {
               child: CustomPaint(painter: _StadiumPatternPainter()),
             ),
           ),
-          const Center(
+          Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -985,14 +986,14 @@ class _HeroEmptyCard extends StatelessWidget {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'No upcoming matches',
+                  AppLocalizations.of(context).no_upcoming,
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  'Check back soon',
+                  AppLocalizations.of(context).check_back_soon,
                   style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                 ),
               ],
@@ -1014,9 +1015,9 @@ class _PredictGameBanner extends StatelessWidget {
         // Navigate to matches screen coupon tab - using bottom nav index 1
         // This is a simplified navigation; in production you'd use a router
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Go to Matches → Coupon tab to predict today\'s games!',
+              AppLocalizations.of(context).coupon_hint,
             ),
             backgroundColor: AppTheme.primaryLight,
             duration: Duration(seconds: 3),
@@ -1050,12 +1051,12 @@ class _PredictGameBanner extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 14),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Predict & Win Points',
+                    AppLocalizations.of(context).predict_title,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
@@ -1063,7 +1064,7 @@ class _PredictGameBanner extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Pick today\'s match winners and earn up to 50 pts',
+                    AppLocalizations.of(context).predict_sub,
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
@@ -1075,8 +1076,8 @@ class _PredictGameBanner extends StatelessWidget {
                 color: AppTheme.accent,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                'Play',
+              child: Text(
+                AppLocalizations.of(context).play_button,
                 style: TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.w900,
@@ -1127,12 +1128,12 @@ class _LiveSection extends StatelessWidget {
                       color: AppTheme.liveRed,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.circle, color: Colors.white, size: 7),
                         SizedBox(width: 5),
                         Text(
-                          'LIVE',
+                          AppLocalizations.of(context).live,
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -1145,7 +1146,7 @@ class _LiveSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${matches.length} ongoing',
+                    AppLocalizations.of(context).ongoing(matches.length),
                     style: const TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 12,
@@ -1212,8 +1213,8 @@ class _UpcomingSection extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Upcoming',
+                  Text(
+                    AppLocalizations.of(context).upcoming,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -1225,7 +1226,7 @@ class _UpcomingSection extends StatelessWidget {
                       context,
                       MaterialPageRoute(builder: (_) => const MatchesScreen()),
                     ),
-                    child: const Text('See all'),
+                    child: Text(AppLocalizations.of(context).see_all),
                   ),
                 ],
               ),
@@ -1280,7 +1281,7 @@ class _TopClubsSection extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
                       Icon(
                         Icons.emoji_events,
@@ -1289,7 +1290,7 @@ class _TopClubsSection extends StatelessWidget {
                       ),
                       SizedBox(width: 6),
                       Text(
-                        'Top Clubs',
+                        AppLocalizations.of(context).top_clubs,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -1303,7 +1304,7 @@ class _TopClubsSection extends StatelessWidget {
                       context,
                       MaterialPageRoute(builder: (_) => const TeamsScreen()),
                     ),
-                    child: const Text('See all'),
+                    child: Text(AppLocalizations.of(context).see_all),
                   ),
                 ],
               ),
@@ -1425,7 +1426,7 @@ class _SponsorsSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
               child: Row(
                 children: [
@@ -1436,7 +1437,7 @@ class _SponsorsSection extends StatelessWidget {
                   ),
                   SizedBox(width: 6),
                   Text(
-                    'Official Partners',
+                    AppLocalizations.of(context).official_partners,
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontWeight: FontWeight.bold,
@@ -1465,8 +1466,8 @@ class _SponsorsSection extends StatelessWidget {
                         .toList(),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Proud Sponsors of Clubera',
+                  Text(
+                    AppLocalizations.of(context).proud_sponsors,
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 11,
