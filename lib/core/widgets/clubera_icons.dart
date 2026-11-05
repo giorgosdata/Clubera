@@ -107,7 +107,7 @@ class ClIconTile extends StatelessWidget {
           border: Border.all(color: const Color(0x24FFFFFF)),
           boxShadow: const [
             BoxShadow(color: Color(0x73000000), blurRadius: 18, offset: Offset(0, 8)),
-            BoxShadow(color: Color(0x2E4ADE80), blurRadius: 18),
+            BoxShadow(color: Color(0x2EB4FF1E), blurRadius: 18),
           ],
         ),
         alignment: Alignment.center,
@@ -132,9 +132,9 @@ class ClNavIcon extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0x294ADE80),
+        color: const Color(0x29B4FF1E),
         borderRadius: BorderRadius.circular(14),
-        boxShadow: const [BoxShadow(color: Color(0x594ADE80), blurRadius: 16)],
+        boxShadow: const [BoxShadow(color: Color(0x59B4FF1E), blurRadius: 16)],
       ),
       child: ClIconView(icon, size: 24),
     );

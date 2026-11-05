@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:clubera/l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/providers/app_provider.dart';
+import 'core/providers/locale_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/services/streak_service.dart';
 import 'core/theme/app_theme.dart';
@@ -36,6 +39,14 @@ class CluperaApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeProvider.mode,
+      locale: context.watch<LocaleProvider>().locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: LocaleProvider.supported.map(Locale.new),
       builder: (context, child) => Stack(
         children: [
           Positioned.fill(
@@ -264,11 +275,11 @@ class _MainShellState extends State<_MainShell> {
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: ClNavIcon(ClIcon.home), activeIcon: ClNavIcon(ClIcon.home, active: true), label: 'Αρχική'),
-          BottomNavigationBarItem(icon: ClNavIcon(ClIcon.matches), activeIcon: ClNavIcon(ClIcon.matches, active: true), label: 'Αγώνες'),
-          BottomNavigationBarItem(icon: ClNavIcon(ClIcon.clubs), activeIcon: ClNavIcon(ClIcon.clubs, active: true), label: 'Σύλλογοι'),
-          BottomNavigationBarItem(icon: ClNavIcon(ClIcon.profile), activeIcon: ClNavIcon(ClIcon.profile, active: true), label: 'Προφίλ'),
+        items: [
+          BottomNavigationBarItem(icon: const ClNavIcon(ClIcon.home), activeIcon: const ClNavIcon(ClIcon.home, active: true), label: AppLocalizations.of(context).nav_home),
+          BottomNavigationBarItem(icon: const ClNavIcon(ClIcon.matches), activeIcon: const ClNavIcon(ClIcon.matches, active: true), label: AppLocalizations.of(context).nav_matches),
+          BottomNavigationBarItem(icon: const ClNavIcon(ClIcon.clubs), activeIcon: const ClNavIcon(ClIcon.clubs, active: true), label: AppLocalizations.of(context).nav_clubs),
+          BottomNavigationBarItem(icon: const ClNavIcon(ClIcon.profile), activeIcon: const ClNavIcon(ClIcon.profile, active: true), label: AppLocalizations.of(context).nav_profile),
         ],
       ),
     );

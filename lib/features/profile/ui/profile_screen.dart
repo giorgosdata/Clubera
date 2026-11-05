@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:clubera/l10n/app_localizations.dart';
+import '../../../core/providers/locale_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -985,6 +987,7 @@ class _MenuSection extends StatelessWidget {
           const _SectionLabel('Εμφάνιση'),
           const SizedBox(height: 8),
           _ThemeToggleTile(),
+          _LanguageTile(),
           const SizedBox(height: 16),
           const _SectionLabel('Account'),
           const SizedBox(height: 8),
@@ -1711,6 +1714,53 @@ class _MenuItem extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );
+}
+
+class _LanguageTile extends StatelessWidget {
+  const _LanguageTile();
+
+  static const _names = {
+    'el': 'Ελληνικά',
+    'en': 'English',
+    'es': 'Español',
+    'pt': 'Português',
+    'it': 'Italiano',
+    'fr': 'Français',
+    'tr': 'Türkçe',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final lp = context.watch<LocaleProvider>();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.language, color: AppTheme.primaryLight),
+        title: Text(
+          AppLocalizations.of(context).language,
+          style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
+        ),
+        trailing: DropdownButton<String>(
+          value: lp.locale.languageCode,
+          underline: const SizedBox.shrink(),
+          dropdownColor: AppTheme.cardBg,
+          style: const TextStyle(color: AppTheme.textPrimary),
+          items: [
+            for (final code in LocaleProvider.supported)
+              DropdownMenuItem(value: code, child: Text(_names[code] ?? code)),
+          ],
+          onChanged: (v) {
+            if (v != null) context.read<LocaleProvider>().setLanguage(v);
+          },
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
 }
 
 class _ThemeToggleTile extends StatelessWidget {
