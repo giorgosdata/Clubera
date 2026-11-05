@@ -61,7 +61,7 @@ class CluperaApp extends StatelessWidget {
             child: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xCC000000), Color(0xEE0A1628)],
+                  colors: [Color(0x66000000), Color(0x990A1628)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
