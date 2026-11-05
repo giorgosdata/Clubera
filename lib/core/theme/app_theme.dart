@@ -19,6 +19,7 @@ class AppTheme {
   static const Color supportGreenDark = Color(0xFF2E7D32);
 
   static ThemeData get dark => ThemeData(
+    fontFamily: 'Roboto',
     brightness: Brightness.dark,
     scaffoldBackgroundColor: Colors.transparent,
     primaryColor: primaryLight,
@@ -110,6 +111,7 @@ class AppTheme {
   );
 
   static ThemeData get light => ThemeData(
+    fontFamily: 'Roboto',
     brightness: Brightness.light,
     scaffoldBackgroundColor: const Color(0xFFF0F4FF),
     primaryColor: primaryLight,
