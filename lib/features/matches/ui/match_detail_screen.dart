@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/services/weather_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/feature_flags.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../models/match_model.dart';
 import '../../../models/player_model.dart';
@@ -29,7 +30,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 6, vsync: this);
+    _tab = TabController(
+        length: FeatureFlags.chanceGamesEnabled ? 6 : 5, vsync: this);
   }
 
   @override
@@ -60,7 +62,14 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
                   indicatorColor: AppTheme.accent,
                   labelColor: AppTheme.accent,
                   unselectedLabelColor: AppTheme.textSecondary,
-                  tabs: const [Tab(text: 'Events'), Tab(text: 'Line-Up'), Tab(text: 'Predict'), Tab(text: 'MVP'), Tab(text: 'Photos'), Tab(text: 'Ratings')],
+                  tabs: [
+                    const Tab(text: 'Events'),
+                    const Tab(text: 'Line-Up'),
+                    if (FeatureFlags.chanceGamesEnabled) const Tab(text: 'Predict'),
+                    const Tab(text: 'MVP'),
+                    const Tab(text: 'Photos'),
+                    const Tab(text: 'Ratings'),
+                  ],
                 )),
               ),
             ],
@@ -69,7 +78,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
               children: [
                 _EventsSection(matchId: widget.matchId, match: match),
                 _LineupSection(match: match),
-                _PredictSection(match: match, userId: user?.uid ?? ''),
+                if (FeatureFlags.chanceGamesEnabled)
+                  _PredictSection(match: match, userId: user?.uid ?? ''),
                 _MvpSection(matchId: widget.matchId, match: match, userId: user?.uid ?? ''),
                 _PhotosSection(matchId: widget.matchId, match: match, user: user),
                 _RatingsSection(matchId: widget.matchId, match: match, userId: user?.uid ?? ''),

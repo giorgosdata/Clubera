@@ -1,0 +1,60 @@
+# Builds an Android test APK that looks like the iOS version
+# (simulated-gambling features hidden), so it can be checked on an
+# Android phone before the iOS build is sent to Apple.
+name: iOS preview APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ios-hide-chance-games]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter --version
+
+      # lib/core/config/app_config.dart is gitignored (holds API keys).
+      # Create it for CI; the weather feature is skipped when the key is empty.
+      - name: Create app_config.dart
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+        run: |
+          mkdir -p lib/core/config
+          cat > lib/core/config/app_config.dart <<EOF
+          class AppConfig {
+            static const String openWeatherApiKey = '${OPENWEATHER_API_KEY}';
+          }
+          EOF
+
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/core/utils/feature_flags.dart lib/features/home lib/features/matches lib/features/teams lib/features/clubs lib/features/profile
+
+      - name: Build debug APK in iOS preview mode
+        run: |
+          set -o pipefail
+          if ! flutter build apk --debug --dart-define=PREVIEW_IOS_MODE=true 2>&1 | tee build.log; then
+            grep -nE "error|Error|FAILURE|What went wrong|Exception|> " build.log | tail -40 | while IFS= read -r l; do
+              echo "::error::${l//%/%25}"
+            done
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clubera-ios-preview-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14

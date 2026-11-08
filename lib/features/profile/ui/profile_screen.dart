@@ -23,6 +23,7 @@ import '../../gamification/ui/prediction_history_screen.dart';
 import 'notification_prefs_screen.dart';
 import '../widgets/fan_card.dart';
 import '../widgets/badges_section.dart';
+import '../../../core/utils/feature_flags.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../core/utils/logo_picker.dart';
 import '../../../core/utils/storage_utils.dart';
@@ -48,13 +49,18 @@ class ProfileScreen extends StatelessWidget {
             SliverToBoxAdapter(child: _StatsRow(user: user)),
             SliverToBoxAdapter(child: _FanCardsSection(user: user)),
             SliverToBoxAdapter(child: BadgesSection(userId: user.uid)),
-            SliverToBoxAdapter(child: _WalletCard(user: user)),
-            SliverToBoxAdapter(child: _MyPrizesSection(userId: user.uid)),
+            if (FeatureFlags.chanceGamesEnabled) ...[
+              SliverToBoxAdapter(child: _WalletCard(user: user)),
+              SliverToBoxAdapter(child: _MyPrizesSection(userId: user.uid)),
+            ],
             SliverToBoxAdapter(child: _FollowedClubsSection(user: user)),
-            SliverToBoxAdapter(child: _GamesSection(user: user)),
+            if (FeatureFlags.chanceGamesEnabled)
+              SliverToBoxAdapter(child: _GamesSection(user: user)),
             SliverToBoxAdapter(child: _MenuSection(user: user)),
-            SliverToBoxAdapter(child: _ActivitiesSection(userId: user.uid)),
-            SliverToBoxAdapter(child: _CouponHistorySection(userId: user.uid)),
+            if (FeatureFlags.chanceGamesEnabled) ...[
+              SliverToBoxAdapter(child: _ActivitiesSection(userId: user.uid)),
+              SliverToBoxAdapter(child: _CouponHistorySection(userId: user.uid)),
+            ],
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
@@ -972,18 +978,20 @@ class _MenuSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
           ],
-          const _SectionLabel('My Activity'),
-          const SizedBox(height: 8),
-          _MenuItem(
-            icon: Icons.analytics_outlined,
-            label: 'Prediction History',
-            color: AppTheme.primaryLight,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PredictionHistoryScreen()),
+          if (FeatureFlags.chanceGamesEnabled) ...[
+            const _SectionLabel('My Activity'),
+            const SizedBox(height: 8),
+            _MenuItem(
+              icon: Icons.analytics_outlined,
+              label: 'Prediction History',
+              color: AppTheme.primaryLight,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PredictionHistoryScreen()),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
+          ],
           const _SectionLabel('Εμφάνιση'),
           const SizedBox(height: 8),
           _ThemeToggleTile(),

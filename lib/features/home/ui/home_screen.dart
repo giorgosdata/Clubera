@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/feature_flags.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../models/match_model.dart';
 import '../../../models/club_model.dart';
@@ -39,7 +40,8 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 4, vsync: this);
+    _tab = TabController(
+        length: FeatureFlags.chanceGamesEnabled ? 4 : 2, vsync: this);
   }
 
   @override
@@ -78,8 +80,10 @@ class _HomeScreenState extends State<HomeScreen>
               indicatorSize: TabBarIndicatorSize.label,
               tabs: [
                 Tab(text: AppLocalizations.of(context).tab_latest),
-                Tab(text: AppLocalizations.of(context).tab_play),
-                Tab(text: AppLocalizations.of(context).tab_rewards),
+                if (FeatureFlags.chanceGamesEnabled) ...[
+                  Tab(text: AppLocalizations.of(context).tab_play),
+                  Tab(text: AppLocalizations.of(context).tab_rewards),
+                ],
                 Tab(text: AppLocalizations.of(context).tab_news),
               ],
             ),
@@ -89,8 +93,10 @@ class _HomeScreenState extends State<HomeScreen>
           controller: _tab,
           children: [
             _LatestTab(user: user),
-            const _GamesTab(),
-            _RewardsTab(user: user),
+            if (FeatureFlags.chanceGamesEnabled) ...[
+              const _GamesTab(),
+              _RewardsTab(user: user),
+            ],
             const _NewsTab(),
           ],
         ),
@@ -115,7 +121,7 @@ class _LatestTab extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           _HeroMatchCard(),
-          _PredictGameBanner(),
+          if (FeatureFlags.chanceGamesEnabled) _PredictGameBanner(),
           _LiveSection(),
           _UpcomingSection(),
           _TopClubsSection(),
@@ -1310,7 +1316,7 @@ class _TopClubsSection extends StatelessWidget {
               ),
             ),
             SizedBox(
-              height: 120,
+              height: 150,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
