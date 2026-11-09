@@ -1708,6 +1708,7 @@ class _AdminGamesTab extends StatelessWidget {
                     {'v': 'scratch_card', 'l': '🎫 Ξυστό'},
                     {'v': 'daily_bonus', 'l': '🎁 Ημερήσιο Bonus'},
                     {'v': 'trivia', 'l': '🧠 Trivia'},
+                    {'v': 'penalty', 'l': '⚽ Πέναλτι'},
                     {'v': 'puzzle', 'l': '🧩 Puzzle'},
                   ].map((e) {
                     final selected = type == e['v'];
@@ -2233,6 +2234,7 @@ class _GameAdminRow extends StatelessWidget {
                     {'v': 'scratch_card', 'l': '🎫 Ξυστό'},
                     {'v': 'daily_bonus', 'l': '🎁 Ημερήσιο Bonus'},
                     {'v': 'trivia', 'l': '🧠 Trivia'},
+                    {'v': 'penalty', 'l': '⚽ Πέναλτι'},
                     {'v': 'puzzle', 'l': '🧩 Puzzle'},
                   ].map((e) {
                     final selected = type == e['v'];

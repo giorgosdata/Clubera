@@ -9,6 +9,7 @@ import '../../../models/prize_model.dart';
 import '../../../models/trivia_question.dart';
 import '../../../models/user_prize_model.dart';
 import 'leaderboard_screen.dart';
+import 'penalty_play_screen.dart';
 
 class GamesScreen extends StatelessWidget {
   const GamesScreen({super.key});
@@ -225,9 +226,11 @@ class _GameCard extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => game.type == 'trivia'
-            ? TriviaPlayScreen(game: game)
-            : GamePlayScreen(game: game),
+        builder: (_) => switch (game.type) {
+              'trivia' => TriviaPlayScreen(game: game),
+              'penalty' => PenaltyPlayScreen(game: game),
+              _ => GamePlayScreen(game: game),
+            },
       ),
     );
   }
