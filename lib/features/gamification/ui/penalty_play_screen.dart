@@ -38,8 +38,11 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen> {
   String? _result;
   int _pointsWon = 0;
 
-  /// Πόντοι ανά γκολ. Ορίζεται από το `minPoints` του παιχνιδιού.
-  int get _pointsPerGoal => widget.game.minPoints < 1 ? 1 : widget.game.minPoints;
+  /// Πόντοι ανά γκολ: το μέγιστο του παιχνιδιού ÷ 5 σουτ, ώστε 5 γκολ να δίνουν το μέγιστο.
+  int get _pointsPerGoal {
+    final perGoal = widget.game.maxPoints ~/ _totalKicks;
+    return perGoal < 1 ? 1 : perGoal;
+  }
 
   @override
   void initState() {
