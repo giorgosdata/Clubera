@@ -345,7 +345,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
               }
               final arc = sin(pi * kickT) * h * 0.09;
               // Η μπάλα στέκεται λίγο πιο μπροστά από τα πόδια του σουτέρ (πιο κοντά στην κάμερα).
-              final ballStart = Offset(spot.dx, spot.dy + h * 0.06);
+              final ballStart = Offset(spot.dx, spot.dy + h * 0.09);
               var ground = _bezier(
                 ballStart,
                 Offset((spot.dx + groundImpact.dx) / 2, spot.dy - h * 0.25),
