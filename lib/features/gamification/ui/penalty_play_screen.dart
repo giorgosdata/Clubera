@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/app_provider.dart';
@@ -7,7 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../models/game_model.dart';
 
 /// Πέναλτι: ο παίκτης σουτάρει 5 φορές σε μία από τις 3 ζώνες του τέρματος.
-/// Ο τερματοφύλακας πηδά τυχαία σε μία ζώνη. Τα γκολ είναι η βαθμολογία.
+/// Ο τερματοφύλακας βουτάει τυχαία σε μία ζώνη. Τα γκολ είναι η βαθμολογία.
 ///
 /// Οι πόντοι προκύπτουν μόνο από τα γκολ (`goals × pointsPerGoal`), και
 /// δεν συνδέονται με δώρα ή κλήρωση. Η κατάταξη βασίζεται στους πόντους.
@@ -24,25 +25,37 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
   static const int _totalKicks = 5;
   static const List<String> _zoneLabels = ['Αριστερά', 'Κέντρο', 'Δεξιά'];
 
-  // Γεωμετρία σκηνής (pixels). Το τέρμα είναι στο κέντρο, οι ζώνες είναι
-  // ίσα τρίτα του πλάτους του τέρματος, ώστε η διάταξη να είναι συμμετρική.
-  static const double _areaHeight = 340;
+  // Γεωμετρία σκηνής (pixels). Κάμερα πίσω από τον σουτέρ: το τέρμα είναι
+  // μπροστά, ο σουτέρ κάτω στη μέση και ο τερματοφύλακας κοιτά τον παίκτη.
+  static const double _areaHeight = 360;
   static const double _goalWidth = 300;
   static const double _goalHeight = 224; // αναλογία goal.png 1400x1045
-  static const double _goalTop = 34;
-  static const double _keeperHeight = 170;
-  static const double _keeperWidth = 127; // 896x1200
-  static const double _shooterHeight = 150;
-  static const double _shooterWidth = 112;
-  static const double _ballSize = 26;
-  // Σημεία-στόχοι μέσα στο τέρμα, συμμετρικά γύρω από το κέντρο.
+  static const double _goalTop = 30;
+  static const double _goalBottom = _goalTop + _goalHeight;
+  static const double _spotY = _areaHeight - 26; // σημείο πέναλτι (έδαφος)
+  static const double _ballSize = 30;
+
+  // Σταθερές διαστάσεις εικόνων (ύψος → πλάτος αναλογικά).
+  static const double _keeperHeight = 170; // keeper.png 896x1200
+  static const double _keeperWidth = 127;
+  static const double _diveHeight = 150; // keeper_dive_*.png 4:3
+  static const double _diveWidth = 200;
+  static const double _shooterHeight = 180; // shooter_*.png 3:4
+  static const double _shooterWidth = 135;
+
+  // Στόχοι μέσα στο τέρμα, συμμετρικοί γύρω από το κέντρο.
   static const List<double> _targetX = [1 / 6, 0.5, 5 / 6];
   static const double _targetY = 0.4;
+
+  // Χρονισμός (κλάσμα της συνολικής κίνησης).
+  static const double _kickAt = 0.14; // η μπάλα φεύγει από το πόδι
+  static const double _impactAt = 0.62; // επαφή με τέρμα ή τερματοφύλακα
+  static const double _endAt = 0.92;
 
   final Random _rng = Random();
   late final AnimationController _anim = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1100),
+    duration: const Duration(milliseconds: 1400),
   );
 
   bool _checking = true;
@@ -117,21 +130,27 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
 
   Future<void> _shoot(int zone) async {
     if (_busy || _finished || !_canPlay) return;
+    final keeper = _rng.nextInt(3);
     setState(() {
       _busy = true;
       _shotZone = zone;
-      _keeperZone = _rng.nextInt(3);
+      _keeperZone = keeper;
       _result = null;
     });
 
-    // Η κίνηση (σουτ, πέταγμα μπάλας, ντάιβ τερματοφύλακα) παίζει σε ένα animation.
+    // Όλη η κίνηση (προετοιμασία, σουτ, πτήση, βουτιά) σε ένα animation.
     await _anim.forward(from: 0);
     if (!mounted) return;
-    final scored = _shotZone != _keeperZone;
+    final scored = zone != keeper;
     setState(() {
       if (scored) _goals++;
       _result = scored ? 'ΓΚΟΛ!' : 'Σεηβ!';
     });
+    if (scored) {
+      HapticFeedback.heavyImpact();
+    } else {
+      HapticFeedback.lightImpact();
+    }
 
     await Future.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
@@ -139,7 +158,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
     if (_kicks >= _totalKicks) {
       await _finish();
     } else {
-      // Επιστροφή της μπάλας και του τερματοφύλακα στη θέση εκκίνησης.
+      // Επιστροφή όλων στη θέση εκκίνησης πριν το επόμενο σουτ.
       await _anim.animateBack(0, duration: const Duration(milliseconds: 500));
       if (!mounted) return;
       setState(() {
@@ -272,7 +291,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
     return curve.transform(t);
   }
 
-  /// Τετραγωνική καμπύλη Bezier: η διαδρομή της μπάλας έχει καμπύλη (φέξιμο).
+  /// Τετραγωνική καμπύλη Bezier στο έδαφος.
   static Offset _bezier(Offset p0, Offset p1, Offset p2, double t) {
     final u = 1 - t;
     return Offset(
@@ -295,63 +314,96 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
               final goalLeft = (w - _goalWidth) / 2;
               final cx = w / 2;
 
-              // Σημεία.
-              final spot = Offset(cx, _areaHeight - 20); // σημείο πέναλτι
               final shot = _shotZone ?? 1;
               final keep = _keeperZone ?? 1;
+              final scored = _shotZone != null && shot != keep;
+
+              // Στόχος της μπάλας μέσα στο τέρμα.
               final target = Offset(
                 goalLeft + _targetX[shot] * _goalWidth,
                 _goalTop + _targetY * _goalHeight,
               );
 
-              // Τερματοφύλακας: ξεκινά στη μέση και πέφτει προς τη ζώνη του.
-              final keeperRest = Offset(cx, _goalTop + _goalHeight * 0.62);
-              final keeperDive = Offset(
-                goalLeft + _targetX[keep] * _goalWidth,
-                keeperRest.dy + 10,
-              );
-              final dive = _ease(v, 0.05, 0.5, Curves.easeOutCubic);
-              final keeperPos = Offset.lerp(keeperRest, keeperDive, dive)!;
-              final keeperTilt = (keep - 1) * 0.5 * dive;
-
-              // Μπάλα: γκολ ή σεηβ. Η σεηβ την σταματά ο τερματοφύλακας.
-              final scored = _shotZone != null && shot != keep;
-              final impact = scored
-                  ? target
-                  : Offset(keeperPos.dx, keeperPos.dy - 30);
-              final flight = _ease(v, 0.12, 0.6, Curves.easeOutCubic);
-              final bend = (impact.dx - cx).sign * 60;
-              final control = Offset(
-                (spot.dx + impact.dx) / 2 + bend,
-                (spot.dy + impact.dy) / 2 - 90,
-              );
-              var ballPos = _bezier(spot, control, impact, flight);
-              if (!scored && v > 0.6) {
-                // Αναπήδηση από τα χέρια του τερματοφύλακα.
-                final rebound = Offset(
-                  impact.dx + (impact.dx >= cx ? 70 : -70),
-                  impact.dy + 90,
+              // ── Μπάλα: έδαφος + ύψος (για να φαίνεται το βάθος και η σκιά) ──
+              final kickT = _ease(v, _kickAt, _impactAt, Curves.easeOutCubic);
+              final groundStart = Offset(cx, _spotY);
+              final Offset impact;
+              final double heightAtImpact;
+              final Offset groundImpact;
+              if (scored) {
+                groundImpact = Offset(target.dx, _goalBottom + 4);
+                impact = target;
+                heightAtImpact = groundImpact.dy - target.dy;
+              } else {
+                // Η μπάλα σταματά στα χέρια του τερματοφύλακα.
+                final keeperCenterY = _goalTop + _goalHeight * 0.62;
+                impact = Offset(
+                  cx + (target.dx - cx) * 0.9,
+                  keeperCenterY - 40,
                 );
-                ballPos = Offset.lerp(
-                  impact,
-                  rebound,
-                  _ease(v, 0.6, 0.9, Curves.easeOut),
-                )!;
+                groundImpact = Offset(impact.dx, _goalBottom + 4);
+                heightAtImpact = groundImpact.dy - impact.dy;
+              }
+              final arc = sin(pi * kickT) * 40;
+              var ground = _bezier(
+                groundStart,
+                Offset((groundStart.dx + groundImpact.dx) / 2, _spotY - 110),
+                groundImpact,
+                kickT,
+              );
+              var height = heightAtImpact * kickT + arc;
+
+              // Αναπήδηση μετά τη σεηβ: προς τα έξω και κάτω.
+              final bounceT = _ease(v, _impactAt, _endAt, Curves.easeOut);
+              if (!scored && v > _impactAt) {
+                final outward = impact.dx >= cx ? 90.0 : -90.0;
+                final reboundGround = Offset(impact.dx + outward, _spotY - 40);
+                ground = Offset.lerp(groundImpact, reboundGround, bounceT)!;
+                height = heightAtImpact * (1 - bounceT) +
+                    sin(pi * bounceT) * 36 * (1 - bounceT);
               }
 
-              // Σουτέρ: μικρή φόρα προς τα εμπρός στην αρχή της κίνησης.
-              final run = _ease(v, 0.0, 0.14, Curves.easeIn);
-              final shooterTilt = run * 0.18;
+              final ballCenter = Offset(ground.dx, ground.dy - height);
+              final depthScale = 1 - 0.32 * kickT;
+              final shadowAlpha =
+                  (0.38 * (1 - height / 160)).clamp(0.08, 0.38).toDouble();
+
+              // ── Σουτέρ: από πίσω. Τρέχει (προετοιμασία) και μετά σουτάρει ──
+              final kickStarted = v >= _kickAt;
+              final shooterAsset = kickStarted
+                  ? 'assets/images/penalty/shooter_kick.png'
+                  : 'assets/images/penalty/shooter_run.png';
+
+              // ── Τερματοφύλακας: στέκεται και βουτάει στη ζώνη του ──
+              final dive = _ease(v, 0.08, 0.5, Curves.easeOutBack);
+              final keeperRest = Offset(cx, _goalTop + _goalHeight * 0.6);
+              final keeperDiveTarget = Offset(
+                goalLeft + _targetX[keep] * _goalWidth,
+                _goalTop + _goalHeight * 0.72,
+              );
+              final keeperPos = keep == 1
+                  ? keeperRest
+                  : Offset.lerp(keeperRest, keeperDiveTarget, dive)!;
+              final diving = keep != 1 && dive > 0.05;
+              // Μικρό «κάθισμα» πριν το σουτ.
+              final crouch = v < _kickAt ? sin(pi * v / _kickAt) * 0.05 : 0.0;
+
+              // Μπάλα μέσα στα δίχτυα: μικρό φούσκωμα του τέρματος.
+              final bulge = scored
+                  ? sin(pi * _ease(v, _impactAt, _endAt, Curves.linear)) * 0.025
+                  : 0.0;
+
+              
 
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // Ετικέτες ζωνών, ακριβώς πάνω από κάθε τρίτο του τέρματος.
+                  // Ετικέτες ζωνών πάνω από κάθε τρίτο του τέρματος.
                   Positioned(
                     left: goalLeft,
                     top: 0,
                     width: _goalWidth,
-                    height: 26,
+                    height: 24,
                     child: Row(
                       children: List.generate(3, (i) {
                         return Expanded(
@@ -369,55 +421,84 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                       }),
                     ),
                   ),
-                  // Τέρμα.
+                  // Τέρμα (με φούσκωμα στο γκολ).
                   Positioned(
                     left: goalLeft,
                     top: _goalTop,
                     width: _goalWidth,
                     height: _goalHeight,
-                    child: Image.asset(
-                      'assets/images/penalty/goal.png',
-                      fit: BoxFit.fill,
-                      filterQuality: FilterQuality.high,
-                    ),
-                  ),
-                  // Σουτέρ, πίσω από τη μπάλα, μπροστά από το τέρμα.
-                  Positioned(
-                    left: cx - _shooterWidth / 2,
-                    top: spot.dy - _shooterHeight + 14,
-                    child: Transform.rotate(
-                      angle: shooterTilt,
-                      alignment: Alignment.bottomCenter,
+                    child: Transform.scale(
+                      scale: 1 + bulge,
                       child: Image.asset(
-                        'assets/images/penalty/shooter.png',
-                        height: _shooterHeight,
+                        'assets/images/penalty/goal.png',
+                        fit: BoxFit.fill,
                         filterQuality: FilterQuality.high,
                       ),
                     ),
                   ),
                   // Τερματοφύλακας.
-                  Positioned(
-                    left: keeperPos.dx - _keeperWidth / 2,
-                    top: keeperPos.dy - _keeperHeight / 2,
-                    child: Transform.rotate(
-                      angle: keeperTilt,
+                  if (!diving)
+                    Positioned(
+                      left: keeperPos.dx - _keeperWidth / 2,
+                      top: keeperPos.dy - _keeperHeight / 2,
+                      child: Transform(
+                        alignment: Alignment.bottomCenter,
+                        transform: Matrix4.diagonal3Values(1, 1 - crouch, 1),
+                        child: Image.asset(
+                          'assets/images/penalty/keeper.png',
+                          height: _keeperHeight,
+                          filterQuality: FilterQuality.high,
+                        ),
+                      ),
+                    )
+                  else
+                    Positioned(
+                      left: keeperPos.dx - _diveWidth / 2,
+                      top: keeperPos.dy - _diveHeight / 2,
                       child: Image.asset(
-                        'assets/images/penalty/keeper.png',
-                        height: _keeperHeight,
+                        keep == 0
+                            ? 'assets/images/penalty/keeper_dive_left.png'
+                            : 'assets/images/penalty/keeper_dive_right.png',
+                        height: _diveHeight,
                         filterQuality: FilterQuality.high,
                       ),
+                    ),
+                  // Σκιά μπάλας στο έδαφος.
+                  Positioned(
+                    left: ground.dx - 13 * depthScale,
+                    top: ground.dy - 4,
+                    child: Container(
+                      width: 26 * depthScale,
+                      height: 8 * depthScale,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withValues(alpha: shadowAlpha),
+                      ),
+                    ),
+                  ),
+                  // Σουτέρ (πίσω από τη μπάλα).
+                  Positioned(
+                    left: cx - _shooterWidth / 2,
+                    top: _spotY - _shooterHeight + 24,
+                    child: Image.asset(
+                      shooterAsset,
+                      height: _shooterHeight,
+                      filterQuality: FilterQuality.high,
                     ),
                   ),
                   // Μπάλα.
                   Positioned(
-                    left: ballPos.dx - _ballSize / 2,
-                    top: ballPos.dy - _ballSize / 2,
+                    left: ballCenter.dx - _ballSize / 2,
+                    top: ballCenter.dy - _ballSize / 2,
                     child: Transform.rotate(
-                      angle: flight * 8,
-                      child: const SizedBox(
-                        width: _ballSize,
-                        height: _ballSize,
-                        child: FittedBox(child: Text('⚽')),
+                      angle: kickT * 10,
+                      child: Transform.scale(
+                        scale: depthScale,
+                        child: const SizedBox(
+                          width: _ballSize,
+                          height: _ballSize,
+                          child: FittedBox(child: Text('⚽')),
+                        ),
                       ),
                     ),
                   ),
@@ -437,9 +518,14 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                                 ? () => _shoot(i)
                                 : null,
                             child: Container(
-                              color: isShot
-                                  ? AppTheme.accent.withValues(alpha: 0.15)
-                                  : Colors.transparent,
+                              decoration: BoxDecoration(
+                                border: isShot
+                                    ? Border.all(
+                                        color: AppTheme.accent.withValues(alpha: 0.7),
+                                        width: 2,
+                                      )
+                                    : null,
+                              ),
                             ),
                           ),
                         );
