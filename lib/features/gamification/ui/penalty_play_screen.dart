@@ -41,7 +41,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
   static const double _keeperH = 0.75; // του ύψους τέρματος
   static const double _keeperAspect = 0.741; // keeper.png
   static const double _diveAspect = 2.7; // keeper_dive_*.png
-  static const double _ballH = 0.047; // του ύψους σκηνής (≈ 1/8 του σουτέρ)
+  static const double _ballH = 0.062; // του ύψους σκηνής (μεγαλύτερη, μπροστά από τον σουτέρ)
   static const double _diveW = 0.52; // του πλάτους του τέρματος
 
   // Χρονισμός (κλάσμα της συνολικής κίνησης).
@@ -344,8 +344,10 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                 heightAtImpact = groundImpact.dy - impact.dy;
               }
               final arc = sin(pi * kickT) * h * 0.09;
+              // Η μπάλα στέκεται λίγο πιο μπροστά από τα πόδια του σουτέρ (πιο κοντά στην κάμερα).
+              final ballStart = Offset(spot.dx, spot.dy + h * 0.035);
               var ground = _bezier(
-                spot,
+                ballStart,
                 Offset((spot.dx + groundImpact.dx) / 2, spot.dy - h * 0.25),
                 groundImpact,
                 kickT,
