@@ -33,6 +33,8 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
   static const double _spotX = 0.5, _spotY = 0.714; // σημείο πέναλτι, στο κέντρο
   // Στόχοι μέσα στο τέρμα (κλάσμα του τέρματος), συμμετρικοί.
   static const List<double> _targetX = [1 / 6, 0.5, 5 / 6];
+  // Θέση του κέντρου της βουτιάς (πιο κοντά στο κέντρο της εστίας).
+  static const List<double> _diveCenterX = [0.27, 0.5, 0.73];
   static const double _targetY = 0.4;
   // Μεγέθη σε σχέση με τη σκηνή (ύψος / πλάτος).
   static const double _shooterH = 0.40; // του ύψους
@@ -397,7 +399,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
               final dive = _ease(v, 0.08, 0.5, Curves.easeOutBack);
               final keeperRest = Offset(cx, goalTop + goalH * 0.6);
               final keeperDiveTarget = Offset(
-                goalLeft + _targetX[keep] * goalW,
+                goalLeft + _diveCenterX[keep] * goalW,
                 goalBottom - goalH * 0.3,
               );
               final keeperPos = keep == 1
