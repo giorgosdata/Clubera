@@ -35,12 +35,12 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
   static const List<double> _targetX = [1 / 6, 0.5, 5 / 6];
   static const double _targetY = 0.4;
   // Μεγέθη σε σχέση με τη σκηνή (ύψος / πλάτος).
-  static const double _shooterH = 0.36; // του ύψους
-  static const double _keeperH = 0.85; // του ύψους τέρματος
+  static const double _shooterH = 0.40; // του ύψους
+  static const double _keeperH = 0.75; // του ύψους τέρματος
   static const double _keeperAspect = 0.741; // keeper.png
   static const double _diveAspect = 2.7; // keeper_dive_*.png
   static const double _ballH = 0.047; // του ύψους σκηνής (≈ 1/8 του σουτέρ)
-  static const double _diveW = 0.6; // του πλάτους του τέρματος
+  static const double _diveW = 0.52; // του πλάτους του τέρματος
 
   // Χρονισμός (κλάσμα της συνολικής κίνησης).
   static const double _kickAt = 0.14; // η μπάλα φεύγει από το πόδι
