@@ -35,12 +35,12 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
   static const List<double> _targetX = [1 / 6, 0.5, 5 / 6];
   static const double _targetY = 0.4;
   // Μεγέθη σε σχέση με τη σκηνή (ύψος / πλάτος).
-  static const double _shooterH = 0.42; // του ύψους
+  static const double _shooterH = 0.36; // του ύψους
   static const double _keeperH = 0.85; // του ύψους τέρματος
   static const double _keeperAspect = 0.741; // keeper.png
   static const double _diveAspect = 2.7; // keeper_dive_*.png
-  static const double _ballW = 0.10; // του πλάτους
-  static const double _diveW = 0.95; // του πλάτους του τέρματος
+  static const double _ballW = 0.06; // του πλάτους
+  static const double _diveW = 0.6; // του πλάτους του τέρματος
 
   // Χρονισμός (κλάσμα της συνολικής κίνησης).
   static const double _kickAt = 0.14; // η μπάλα φεύγει από το πόδι
@@ -398,7 +398,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
               final keeperRest = Offset(cx, goalTop + goalH * 0.6);
               final keeperDiveTarget = Offset(
                 goalLeft + _targetX[keep] * goalW,
-                goalBottom - goalH * 0.12,
+                goalBottom - goalH * 0.3,
               );
               final keeperPos = keep == 1
                   ? keeperRest
@@ -488,7 +488,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                   Positioned(
                     left: 0,
                     right: 0,
-                    top: spot.dy - shooterHeight - h * 0.02,
+                    top: spot.dy - shooterHeight - h * 0.10,
                     height: shooterHeight,
                     child: Transform.rotate(
                       angle: shooterTilt,
