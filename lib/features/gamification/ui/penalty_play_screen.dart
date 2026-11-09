@@ -38,8 +38,8 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
   // Σταθερές διαστάσεις εικόνων (ύψος → πλάτος αναλογικά).
   static const double _keeperHeight = 170; // keeper.png 896x1200
   static const double _keeperWidth = 127;
-  static const double _diveHeight = 172; // keeper_dive_*.png 4:3
-  static const double _diveWidth = 230;
+  static const double _diveHeight = 150; // keeper_dive_*.png 4:3
+  static const double _diveWidth = 200;
   static const double _shooterHeight = 180; // shooter_*.png 3:4
   static const double _shooterWidth = 135;
 
