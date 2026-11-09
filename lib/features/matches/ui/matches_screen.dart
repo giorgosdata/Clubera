@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/match_model.dart';
@@ -42,7 +43,7 @@ class _MatchesScreenState extends State<MatchesScreen>
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Matches'),
+        title: Text(AppLocalizations.of(context).m_title),
         backgroundColor: Colors.transparent,
         bottom: TabBar(
           controller: _tab,
@@ -51,10 +52,10 @@ class _MatchesScreenState extends State<MatchesScreen>
           unselectedLabelColor: AppTheme.textSecondary,
           isScrollable: false,
           tabs: [
-            const Tab(text: 'Live'),
-            const Tab(text: 'Upcoming'),
-            if (FeatureFlags.chanceGamesEnabled) const Tab(text: 'Coupon'),
-            const Tab(text: 'Results'),
+            Tab(text: AppLocalizations.of(context).m_tab_live),
+            Tab(text: AppLocalizations.of(context).m_tab_upcoming),
+            if (FeatureFlags.chanceGamesEnabled) Tab(text: AppLocalizations.of(context).m_tab_coupon),
+            Tab(text: AppLocalizations.of(context).m_tab_results),
           ],
         ),
         actions: [
@@ -128,8 +129,8 @@ class _MatchList extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   filter == 'live'
-                      ? 'No live matches right now'
-                      : 'No matches found',
+                      ? AppLocalizations.of(context).m_no_live
+                      : AppLocalizations.of(context).m_no_matches,
                   style: const TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 15,
@@ -250,7 +251,7 @@ class _DatePickerRow extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    isToday ? 'Today' : DateFormat('EEE').format(date),
+                    isToday ? AppLocalizations.of(context).m_today : DateFormat('EEE').format(date),
                     style: TextStyle(
                       color: isSelected ? Colors.white : AppTheme.textSecondary,
                       fontSize: 11,
@@ -315,7 +316,7 @@ class _DateFilteredList extends StatelessWidget {
                 const Icon(Icons.event_busy, size: 56, color: AppTheme.cardBg2),
                 const SizedBox(height: 12),
                 Text(
-                  'No matches on ${DateFormat('EEEE d MMM').format(date)}',
+                  AppLocalizations.of(context).m_no_matches_on(DateFormat('EEEE d MMM').format(date)),
                   style: const TextStyle(color: AppTheme.textSecondary),
                 ),
               ],
@@ -396,7 +397,7 @@ class _CouponTabState extends State<_CouponTab> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Coupon submitted! $count picks saved.'),
+            content: Text(AppLocalizations.of(context).m_coupon_saved(count)),
             backgroundColor: AppTheme.supportGreen,
           ),
         );
@@ -404,7 +405,7 @@ class _CouponTabState extends State<_CouponTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.red),
+          SnackBar(content: Text(AppLocalizations.of(context).m_error(e)), backgroundColor: AppTheme.red),
         );
       }
     } finally {
@@ -439,7 +440,7 @@ class _CouponTabState extends State<_CouponTab> {
                 Icon(Icons.receipt_long, size: 64, color: AppTheme.cardBg2),
                 SizedBox(height: 12),
                 Text(
-                  'No matches available for prediction',
+                  AppLocalizations.of(context).m_no_predict,
                   style: TextStyle(color: AppTheme.textSecondary),
                 ),
               ],
@@ -473,7 +474,7 @@ class _CouponTabState extends State<_CouponTab> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Daily Coupon',
+                          AppLocalizations.of(context).m_daily_coupon,
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
@@ -481,7 +482,7 @@ class _CouponTabState extends State<_CouponTab> {
                           ),
                         ),
                         Text(
-                          'Pick 1 (Home), X (Draw) or 2 (Away) for each match. Earn 5 pts per correct pick!',
+                          AppLocalizations.of(context).m_coupon_rules,
                           style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                       ],
@@ -675,7 +676,7 @@ class _CouponMatchRowState extends State<_CouponMatchRow> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'vs',
+                  AppLocalizations.of(context).vs,
                   style: const TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 12,
@@ -701,21 +702,21 @@ class _CouponMatchRowState extends State<_CouponMatchRow> {
             children: [
               _PickButton(
                 label: '1',
-                sublabel: 'Home',
+                sublabel: AppLocalizations.of(context).m_home,
                 selected: selectedPick == '1',
                 onTap: () => widget.onPick('1'),
               ),
               const SizedBox(width: 8),
               _PickButton(
                 label: 'X',
-                sublabel: 'Draw',
+                sublabel: AppLocalizations.of(context).m_draw,
                 selected: selectedPick == 'X',
                 onTap: () => widget.onPick('X'),
               ),
               const SizedBox(width: 8),
               _PickButton(
                 label: '2',
-                sublabel: 'Away',
+                sublabel: AppLocalizations.of(context).m_away,
                 selected: selectedPick == '2',
                 onTap: () => widget.onPick('2'),
               ),
@@ -742,8 +743,8 @@ class _CouponMatchRowState extends State<_CouponMatchRow> {
                 const SizedBox(width: 4),
                 Text(
                   _exactExpanded
-                      ? 'Hide exact score'
-                      : 'Predict exact score (+10 pts)',
+                      ? AppLocalizations.of(context).m_hide_exact
+                      : AppLocalizations.of(context).m_predict_exact,
                   style: const TextStyle(
                     color: AppTheme.accent,
                     fontSize: 12,
