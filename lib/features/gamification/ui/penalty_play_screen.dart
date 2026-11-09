@@ -37,11 +37,10 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
 
   // Σταθερές διαστάσεις εικόνων (ύψος → πλάτος αναλογικά).
   static const double _keeperHeight = 170; // keeper.png 896x1200
-  static const double _keeperWidth = 127;
+  static const double _keeperWidth = 126;
   static const double _diveWidth = 300; // keeper_dive_*.png (ύψος από την αναλογία)
   static const double _diveHalfHeight = 56;
   static const double _shooterHeight = 180; // shooter_*.png (περικομμένο)
-  static const double _shooterWidth = 133;
 
   // Στόχοι μέσα στο τέρμα, συμμετρικοί γύρω από το κέντρο.
   static const List<double> _targetX = [1 / 6, 0.5, 5 / 6];
@@ -478,12 +477,17 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                   ),
                   // Σουτέρ (πίσω από τη μπάλα).
                   Positioned(
-                    left: cx - _shooterWidth / 2,
+                    left: 0,
+                    right: 0,
                     top: _spotY - _shooterHeight + 6,
-                    child: Image.asset(
-                      shooterAsset,
-                      height: _shooterHeight,
-                      filterQuality: FilterQuality.high,
+                    height: _shooterHeight,
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Image.asset(
+                        shooterAsset,
+                        height: _shooterHeight,
+                        filterQuality: FilterQuality.high,
+                      ),
                     ),
                   ),
                   // Μπάλα.
