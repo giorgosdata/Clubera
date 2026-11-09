@@ -76,4 +76,5 @@ flutter:
   assets:
     - assets/images/
     - assets/images/balls/
+    - assets/images/penalty/
     - assets/adi-registration.properties

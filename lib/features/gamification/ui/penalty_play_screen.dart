@@ -237,38 +237,49 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen> {
   }
 
   Widget _goalArea() {
-    return Container(
+    return SizedBox(
       height: 180,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.white, width: 3),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: List.generate(3, (i) {
-          final isKeeper = _keeperZone == i && _result != null;
-          final isShot = _shotZone == i;
-          return Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: (_canPlay && !_busy && !_finished) ? () => _shoot(i) : null,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isKeeper
-                      ? AppTheme.liveRed.withValues(alpha: 0.35)
-                      : (isShot ? AppTheme.accent.withValues(alpha: 0.2) : Colors.transparent),
-                  border: i < 2
-                      ? const Border(right: BorderSide(color: Colors.white24))
-                      : null,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/images/penalty/goal.png',
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+          ),
+          Row(
+            children: List.generate(3, (i) {
+              final isKeeper = _keeperZone == i && _result != null;
+              final isShot = _shotZone == i;
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: (_canPlay && !_busy && !_finished) ? () => _shoot(i) : null,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isKeeper
+                          ? AppTheme.liveRed.withValues(alpha: 0.35)
+                          : (isShot
+                              ? AppTheme.accent.withValues(alpha: 0.2)
+                              : Colors.transparent),
+                    ),
+                    alignment: Alignment.bottomCenter,
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      _zoneLabels[i],
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                      ),
+                    ),
+                  ),
                 ),
-                alignment: Alignment.center,
-                child: Text(
-                  _zoneLabels[i],
-                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                ),
-              ),
-            ),
-          );
-        }),
+              );
+            }),
+          ),
+        ],
       ),
     );
   }
