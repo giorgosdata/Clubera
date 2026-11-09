@@ -53,6 +53,7 @@ class GameModel {
       case 'daily_bonus': return '🎁';
       case 'trivia':      return '🧠';
       case 'puzzle':      return '🧩';
+      case 'penalty':     return '⚽';
       default:            return emoji;
     }
   }
