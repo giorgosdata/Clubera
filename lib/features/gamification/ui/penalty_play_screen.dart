@@ -236,9 +236,11 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen> {
     );
   }
 
+  static const List<double> _zoneX = [-0.67, 0.0, 0.67];
+
   Widget _goalArea() {
     return SizedBox(
-      height: 180,
+      height: 260,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -246,6 +248,24 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen> {
             'assets/images/penalty/goal.png',
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
+          ),
+          AnimatedAlign(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+            alignment: Alignment(_zoneX[_keeperZone ?? 1], 0.1),
+            child: Image.asset(
+              'assets/images/penalty/keeper.png',
+              height: 150,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+          Align(
+            alignment: const Alignment(0, 1),
+            child: Image.asset(
+              'assets/images/penalty/shooter.png',
+              height: 120,
+              filterQuality: FilterQuality.high,
+            ),
           ),
           Row(
             children: List.generate(3, (i) {
@@ -263,8 +283,8 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen> {
                               ? AppTheme.accent.withValues(alpha: 0.2)
                               : Colors.transparent),
                     ),
-                    alignment: Alignment.bottomCenter,
-                    padding: const EdgeInsets.only(bottom: 8),
+                    alignment: Alignment.topCenter,
+                    padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       _zoneLabels[i],
                       style: const TextStyle(
