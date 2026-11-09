@@ -433,7 +433,7 @@ class _CouponTabState extends State<_CouponTab> {
             .toList();
 
         if (matches.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -469,7 +469,7 @@ class _CouponTabState extends State<_CouponTab> {
                     size: 32,
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
