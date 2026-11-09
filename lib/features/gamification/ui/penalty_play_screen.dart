@@ -27,20 +27,20 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
 
   // Σκηνή: φωτογραφία stadium.jpg (1744x2336). Όλες οι θέσεις είναι κλάσματα
   // του πλάτους (w) και του ύψους (h) της εικόνας, ώστε να ταιριάζουν ακριβώς.
-  static const double _sceneAspect = 1744 / 2336;
-  static const double _goalL = 0.213, _goalR = 0.789; // άκρα τέρματος (x)
-  static const double _goalT = 0.413, _goalB = 0.5675; // άνω/κάτω άκρο (y)
-  static const double _spotX = 0.497, _spotY = 0.80; // σημείο πέναλτι
+  static const double _sceneAspect = 0.8112; // stadium.jpg (1100 px wide)
+  static const double _goalL = 0.121, _goalR = 0.879; // άκρα τέρματος (x), συμμετρικά
+  static const double _goalT = 0.161, _goalB = 0.382; // άνω/κάτω άκρο (y)
+  static const double _spotX = 0.5, _spotY = 0.714; // σημείο πέναλτι, στο κέντρο
   // Στόχοι μέσα στο τέρμα (κλάσμα του τέρματος), συμμετρικοί.
   static const List<double> _targetX = [1 / 6, 0.5, 5 / 6];
   static const double _targetY = 0.4;
   // Μεγέθη σε σχέση με τη σκηνή (ύψος / πλάτος).
-  static const double _shooterH = 0.60; // του ύψους
+  static const double _shooterH = 0.42; // του ύψους
   static const double _keeperH = 0.85; // του ύψους τέρματος
   static const double _keeperAspect = 0.741; // keeper.png
   static const double _diveAspect = 2.7; // keeper_dive_*.png
-  static const double _ballW = 0.085; // του πλάτους
-  static const double _diveW = 1.1; // της πλάτους του τέρματος
+  static const double _ballW = 0.10; // του πλάτους
+  static const double _diveW = 0.95; // του πλάτους του τέρματος
 
   // Χρονισμός (κλάσμα της συνολικής κίνησης).
   static const double _kickAt = 0.14; // η μπάλα φεύγει από το πόδι
@@ -395,10 +395,10 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
               final keeperStandH = goalH * _keeperH;
               final keeperStandW = keeperStandH * _keeperAspect;
               final dive = _ease(v, 0.08, 0.5, Curves.easeOutBack);
-              final keeperRest = Offset(cx, goalTop + goalH * 0.55);
+              final keeperRest = Offset(cx, goalTop + goalH * 0.6);
               final keeperDiveTarget = Offset(
                 goalLeft + _targetX[keep] * goalW,
-                goalTop + goalH * 0.62,
+                goalBottom - goalH * 0.12,
               );
               final keeperPos = keep == 1
                   ? keeperRest
@@ -406,6 +406,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
               final diving = keep != 1 && dive > 0.05;
               final diveW = goalW * _diveW;
               final diveHalfH = diveW / _diveAspect / 2;
+
               final crouch = v < _kickAt ? sin(pi * v / _kickAt) * 0.05 : 0.0;
 
               return Stack(
@@ -487,7 +488,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                   Positioned(
                     left: 0,
                     right: 0,
-                    top: spot.dy - shooterHeight + 8,
+                    top: spot.dy - shooterHeight - h * 0.02,
                     height: shooterHeight,
                     child: Transform.rotate(
                       angle: shooterTilt,
