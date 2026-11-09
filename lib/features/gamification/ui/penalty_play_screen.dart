@@ -32,16 +32,13 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
   static const double _goalT = 0.161, _goalB = 0.382; // άνω/κάτω άκρο (y)
   static const double _spotX = 0.5, _spotY = 0.714; // σημείο πέναλτι, στο κέντρο
   // Στόχοι μέσα στο τέρμα (κλάσμα του τέρματος), συμμετρικοί.
-  static const List<double> _targetX = [1 / 6, 0.5, 5 / 6];
   // Θέση του κέντρου της βουτιάς (πιο κοντά στο κέντρο της εστίας).
   static const List<double> _diveCenterX = [0.27, 0.5, 0.73];
-  static const double _targetY = 0.4;
   // Μεγέθη σε σχέση με τη σκηνή (ύψος / πλάτος).
   static const double _shooterH = 0.40; // του ύψους
   static const double _keeperH = 0.75; // του ύψους τέρματος
   static const double _keeperAspect = 0.741; // keeper.png
   static const double _diveAspect = 2.7; // keeper_dive_*.png
-  static const double _ballH = 0.047; // του ύψους σκηνής (≈ 1/8 του σουτέρ)
   static const double _diveW = 0.52; // του πλάτους του τέρματος
 
   // Χρονισμός (κλάσμα της συνολικής κίνησης).
@@ -288,30 +285,6 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
     return curve.transform(t);
   }
 
-  /// Τετραγωνική καμπύλη Bezier στο έδαφος.
-  static Offset _bezier(Offset p0, Offset p1, Offset p2, double t) {
-    final u = 1 - t;
-    return Offset(
-      u * u * p0.dx + 2 * u * t * p1.dx + t * t * p2.dx,
-      u * u * p0.dy + 2 * u * t * p1.dy + t * t * p2.dy,
-    );
-  }
-
-  /// Τιμή ενός διαστήματος [begin, end] του animation, με καμπύλη.
-  static double _ease(double v, double begin, double end, Curve curve) {
-    final t = ((v - begin) / (end - begin)).clamp(0.0, 1.0);
-    return curve.transform(t);
-  }
-
-  /// Τετραγωνική καμπύλη Bezier.
-  static Offset _bezier(Offset p0, Offset p1, Offset p2, double t) {
-    final u = 1 - t;
-    return Offset(
-      u * u * p0.dx + 2 * u * t * p1.dx + t * t * p2.dx,
-      u * u * p0.dy + 2 * u * t * p1.dy + t * t * p2.dy,
-    );
-  }
-
   Widget _goalArea() {
     return AspectRatio(
       aspectRatio: _sceneAspect,
@@ -332,57 +305,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
               final goalBottom = _goalB * h;
               final cx = _spotX * w;
               final spot = Offset(cx, _spotY * h);
-              final ballBase = _ballH * h;
-
-              final shot = _shotZone ?? 1;
               final keep = _keeperZone ?? 1;
-              final scored = _shotZone != null && shot != keep;
-
-              // Στόχος μέσα στο τέρμα.
-              final target = Offset(
-                goalLeft + _targetX[shot] * goalW,
-                goalTop + _targetY * goalH,
-              );
-
-              // ── Μπάλα: έδαφος + ύψος ──
-              final kickT = _ease(v, _kickAt, _impactAt, Curves.easeOutCubic);
-              final groundImpact = Offset(target.dx, goalBottom);
-              final Offset impact;
-              final double heightAtImpact;
-              if (scored) {
-                impact = target;
-                heightAtImpact = groundImpact.dy - target.dy;
-              } else {
-                // Η μπάλα σταματά στα χέρια του τερματοφύλακα.
-                final keeperCenterY = goalTop + goalH * 0.55;
-                impact = Offset(cx + (target.dx - cx) * 0.9, keeperCenterY - goalH * 0.12);
-                heightAtImpact = groundImpact.dy - impact.dy;
-              }
-              final arc = sin(pi * kickT) * h * 0.09;
-              var ground = _bezier(
-                spot,
-                Offset((spot.dx + groundImpact.dx) / 2, spot.dy - h * 0.25),
-                groundImpact,
-                kickT,
-              );
-              var height = heightAtImpact * kickT + arc;
-
-              // Αναπήδηση μετά τη σεηβ: προς τα έξω και προς την κάμερα.
-              final bounceT = _ease(v, _impactAt, _endAt, Curves.easeOut);
-              if (!scored && v > _impactAt) {
-                final outward = impact.dx >= cx ? w * 0.22 : -w * 0.22;
-                final reboundGround = Offset(impact.dx + outward, spot.dy - h * 0.02);
-                ground = Offset.lerp(groundImpact, reboundGround, bounceT)!;
-                height = heightAtImpact * (1 - bounceT) +
-                    sin(pi * bounceT) * h * 0.05 * (1 - bounceT);
-              }
-
-              final ballCenter = Offset(ground.dx, ground.dy - height);
-              // Βάθος: η μπάλα μικραίνει καθώς πηγαίνει στο τέρμα.
-              final depthScale = 1 - 0.4 * kickT;
-              final ballSize = ballBase * depthScale;
-              final shadowAlpha =
-                  (0.4 * (1 - height / (h * 0.4))).clamp(0.08, 0.4).toDouble();
 
               // ── Σουτέρ ──
               final kickStarted = v >= _kickAt;
@@ -473,19 +396,6 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                         filterQuality: FilterQuality.high,
                       ),
                     ),
-                  // Σκιά μπάλας στο έδαφος.
-                  Positioned(
-                    left: ground.dx - ballSize * 0.5,
-                    top: ground.dy - ballSize * 0.12,
-                    child: Container(
-                      width: ballSize,
-                      height: ballSize * 0.28,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withValues(alpha: shadowAlpha),
-                      ),
-                    ),
-                  ),
                   // Σουτέρ, με τα πόδια στο σημείο πέναλτι. Το Align τον κεντράρει.
                   Positioned(
                     left: 0,
@@ -502,19 +412,6 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                           height: shooterHeight,
                           filterQuality: FilterQuality.high,
                         ),
-                      ),
-                    ),
-                  ),
-                  // Μπάλα.
-                  Positioned(
-                    left: ballCenter.dx - ballSize / 2,
-                    top: ballCenter.dy - ballSize / 2,
-                    child: Transform.rotate(
-                      angle: kickT * 10,
-                      child: SizedBox(
-                        width: ballSize,
-                        height: ballSize,
-                        child: const FittedBox(child: Text('⚽')),
                       ),
                     ),
                   ),
