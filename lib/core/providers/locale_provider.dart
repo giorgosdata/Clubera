@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// App language. Greek is the default; the choice is remembered on the device.
 class LocaleProvider extends ChangeNotifier {
   static const _key = 'app_locale';
-  static const supported = ['el', 'en', 'es', 'pt', 'it', 'fr', 'tr'];
+  static const supported = ['el', 'en', 'es', 'pt', 'it', 'fr', 'tr', 'de'];
 
   Locale _locale = const Locale('el');
   Locale get locale => _locale;
