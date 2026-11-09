@@ -36,7 +36,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
   static const double _targetY = 0.4;
   // Μεγέθη σε σχέση με τη σκηνή (ύψος / πλάτος).
   static const double _shooterH = 0.36; // του ύψους
-  static const double _keeperH = 0.85; // του ύψους τέρματος
+  static const double _keeperH = 0.65; // του ύψους τέρματος
   static const double _keeperAspect = 0.741; // keeper.png
   static const double _diveAspect = 2.7; // keeper_dive_*.png
   static const double _ballW = 0.06; // του πλάτους
@@ -488,7 +488,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                   Positioned(
                     left: 0,
                     right: 0,
-                    top: spot.dy - shooterHeight - h * 0.10,
+                    top: spot.dy + h * 0.05 - shooterHeight,
                     height: shooterHeight,
                     child: Transform.rotate(
                       angle: shooterTilt,
