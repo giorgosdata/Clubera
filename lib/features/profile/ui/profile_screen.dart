@@ -1735,6 +1735,7 @@ class _LanguageTile extends StatelessWidget {
     'it': 'Italiano',
     'fr': 'Français',
     'tr': 'Türkçe',
+    'de': 'Deutsch',
   };
 
   @override
