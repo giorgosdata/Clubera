@@ -345,7 +345,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
               }
               final arc = sin(pi * kickT) * h * 0.09;
               // Η μπάλα στέκεται λίγο πιο μπροστά από τα πόδια του σουτέρ (πιο κοντά στην κάμερα).
-              final ballStart = Offset(spot.dx, spot.dy + h * 0.09);
+              final ballStart = Offset(spot.dx, spot.dy + h * 0.02);
               var ground = _bezier(
                 ballStart,
                 Offset((spot.dx + groundImpact.dx) / 2, spot.dy - h * 0.25),
@@ -473,6 +473,23 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                       ),
                     ),
                   ),
+                  // Μπάλα.
+                  Positioned(
+                    left: ballCenter.dx - ballSize / 2,
+                    top: ballCenter.dy - ballSize / 2,
+                    child: Transform.rotate(
+                      angle: kickT * 10,
+                      child: SizedBox(
+                        width: ballSize,
+                        height: ballSize,
+                        child: Image.asset(
+                          'assets/images/penalty/ball.png',
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                        ),
+                      ),
+                    ),
+                  ),
                   // Σουτέρ, με τα πόδια στο σημείο πέναλτι. Το Align τον κεντράρει.
                   Positioned(
                     left: 0,
@@ -487,23 +504,6 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                         child: Image.asset(
                           shooterAsset,
                           height: shooterHeight,
-                          filterQuality: FilterQuality.high,
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Μπάλα.
-                  Positioned(
-                    left: ballCenter.dx - ballSize / 2,
-                    top: ballCenter.dy - ballSize / 2,
-                    child: Transform.rotate(
-                      angle: kickT * 10,
-                      child: SizedBox(
-                        width: ballSize,
-                        height: ballSize,
-                        child: Image.asset(
-                          'assets/images/penalty/ball.png',
-                          fit: BoxFit.contain,
                           filterQuality: FilterQuality.high,
                         ),
                       ),
