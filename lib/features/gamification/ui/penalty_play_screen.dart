@@ -514,7 +514,7 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
                       child: SizedBox(
                         width: ballSize,
                         height: ballSize,
-                        child: const FittedBox(child: Text('⚽')),
+                        child: const CustomPaint(painter: _BallPainter()),
                       ),
                     ),
                   ),
@@ -557,3 +557,90 @@ class _PenaltyPlayScreenState extends State<PenaltyPlayScreen>
     );
   }
 }
+
+/// Μπάλα ποδοσφαίρου σχεδιασμένη με κώδικα: λευκή σφαίρα, μαύρα εξάγωνα/πεντάγωνα
+/// και ελαφρύς φωτισμός, ώστε να φαίνεται ίδια σε όλες τις πλατφόρμες.
+class _BallPainter extends CustomPainter {
+  const _BallPainter();
+
+  static const Color _ink = Color(0xFF1A1A1A);
+
+  Path _pentagon(Offset center, double radius, double rotation) {
+    final path = Path();
+    for (var i = 0; i < 5; i++) {
+      final a = -pi / 2 + rotation + 2 * pi * i / 5;
+      final pt = center + Offset(cos(a), sin(a)) * radius;
+      if (i == 0) {
+        path.moveTo(pt.dx, pt.dy);
+      } else {
+        path.lineTo(pt.dx, pt.dy);
+      }
+    }
+    return path..close();
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    final r = size.shortestSide / 2 * 0.94;
+    final ink = Paint()..color = _ink;
+
+    canvas.save();
+    canvas.clipPath(Path()..addOval(Rect.fromCircle(center: c, radius: r)));
+    canvas.drawCircle(c, r, Paint()..color = Colors.white);
+
+    // Κεντρικό πεντάγωνο και οι ακτίνες προς την άκρη.
+    final seam = Paint()
+      ..color = _ink
+      ..strokeWidth = r * 0.07
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 5; i++) {
+      final a = -pi / 2 + 2 * pi * i / 5;
+      final dir = Offset(cos(a), sin(a));
+      canvas.drawLine(c + dir * r * 0.36, c + dir * r * 1.1, seam);
+    }
+    canvas.drawPath(_pentagon(c, r * 0.36, 0), ink);
+
+    // Μισά πεντάγωνα στην άκρη, ανάμεσα στις ακτίνες.
+    for (var i = 0; i < 5; i++) {
+      final mid = -pi / 2 + 2 * pi * i / 5 + pi / 5;
+      final centerOut = c + Offset(cos(mid), sin(mid)) * r * 1.05;
+      final towardCentre = mid + pi;
+      canvas.drawPath(
+        _pentagon(centerOut, r * 0.42, towardCentre + pi / 2),
+        ink,
+      );
+    }
+
+    // Φωτισμός και σκίαση στην άκρη.
+    canvas.drawCircle(
+      c,
+      r,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.4, -0.5),
+          radius: 0.95,
+          colors: [
+            Colors.white.withValues(alpha: 0.35),
+            Colors.transparent,
+            Colors.black.withValues(alpha: 0.35),
+          ],
+          stops: const [0.0, 0.6, 1.0],
+        ).createShader(Rect.fromCircle(center: c, radius: r)),
+    );
+    canvas.restore();
+
+    canvas.drawCircle(
+      c,
+      r,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = r * 0.05
+        ..color = Colors.black54,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _BallPainter oldDelegate) => false;
+}
+
