@@ -113,5 +113,26 @@
     "placeholders": { "country": {"type": "String"}, "category": {"type": "String"} }
   },
   "teams_clubs_register_hint": "Οι σύλλογοι μπορούν να εγγραφούν και να επιλέξουν την κατηγορία τους",
-  "teams_count_clubs": "σύλλογοι"
+  "teams_count_clubs": "σύλλογοι",
+  "profile_stat_points": "Πόντοι",
+  "profile_stat_streak": "Σερί",
+  "profile_stat_clubs": "Σύλλογοι",
+  "profile_section_club_mgmt": "Διαχείριση συλλόγου",
+  "profile_club_dashboard": "Πίνακας συλλόγου",
+  "profile_my_club_page": "Η σελίδα του συλλόγου μου",
+  "profile_create_club": "Δημιούργησε τον σύλλογό μου",
+  "profile_section_admin": "Διαχείριση",
+  "profile_admin_panel": "Πίνακας διαχειριστή",
+  "profile_admin_access": "Πρόσβαση διαχειριστή",
+  "profile_section_activity": "Η δραστηριότητά μου",
+  "profile_prediction_history": "Ιστορικό προβλέψεων",
+  "profile_section_appearance": "Εμφάνιση",
+  "profile_section_account": "Λογαριασμός",
+  "profile_join_club_code": "Σύνδεση σε σύλλογο με κωδικό",
+  "profile_edit_profile": "Επεξεργασία προφίλ",
+  "profile_notifications": "Ειδοποιήσεις",
+  "profile_how_it_works": "Πώς λειτουργεί το Clubera",
+  "profile_user_guide": "Οδηγός χρήσης του Gazette",
+  "profile_sign_out": "Αποσύνδεση",
+  "profile_sign_out_confirm": "Είσαι σίγουρος ότι θέλεις να αποσυνδεθείς;"
 }

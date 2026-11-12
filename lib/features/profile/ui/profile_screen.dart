@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:clubera/l10n/app_localizations.dart';
 import '../../../core/providers/locale_provider.dart';
@@ -154,11 +155,11 @@ class _StatsRow extends StatelessWidget {
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _stat('${user.points}', 'Points', AppTheme.accent),
+        _stat('${user.points}', AppLocalizations.of(context).profile_stat_points, AppTheme.accent),
         _vdiv(),
-        _stat('${user.streak}', 'Streak', AppTheme.primaryLight),
+        _stat('${user.streak}', AppLocalizations.of(context).profile_stat_streak, AppTheme.primaryLight),
         _vdiv(),
-        _stat('${user.followedClubs.length}', 'Clubs', Colors.white),
+        _stat('${user.followedClubs.length}', AppLocalizations.of(context).profile_stat_clubs, Colors.white),
       ],
     ),
   );
@@ -922,11 +923,11 @@ class _MenuSection extends StatelessWidget {
           if (user.role == 'fan' && user.clubId == null)
             _ClubApplicationTile(user: user),
           if (user.role == 'club') ...[
-            const _SectionLabel('Διαχείριση συλλόγου'),
+            _SectionLabel(AppLocalizations.of(context).profile_section_club_mgmt),
             const SizedBox(height: 8),
             _MenuItem(
               icon: Icons.dashboard,
-              label: 'Πίνακας συλλόγου',
+              label: AppLocalizations.of(context).profile_club_dashboard,
               color: AppTheme.supportGreen,
               onTap: () => Navigator.push(
                 context,
@@ -936,7 +937,7 @@ class _MenuSection extends StatelessWidget {
             if (user.clubId != null)
               _MenuItem(
                 icon: Icons.shield_outlined,
-                label: 'Η σελίδα του συλλόγου μου',
+                label: AppLocalizations.of(context).profile_my_club_page,
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -947,7 +948,7 @@ class _MenuSection extends StatelessWidget {
             else if (user.role == 'club' || user.role == 'admin')
               _MenuItem(
                 icon: Icons.add_circle_outline,
-                label: 'Create My Club',
+                label: AppLocalizations.of(context).profile_create_club,
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const CreateClubScreen()),
@@ -956,11 +957,11 @@ class _MenuSection extends StatelessWidget {
             const SizedBox(height: 16),
           ],
           if (user.role == 'admin') ...[
-            const _SectionLabel('Administration'),
+            _SectionLabel(AppLocalizations.of(context).profile_section_admin),
             const SizedBox(height: 8),
             _MenuItem(
               icon: Icons.admin_panel_settings,
-              label: 'Admin Panel',
+              label: AppLocalizations.of(context).profile_admin_panel,
               color: AppTheme.accent,
               onTap: () => Navigator.push(
                 context,
@@ -972,18 +973,18 @@ class _MenuSection extends StatelessWidget {
           if (user.role == 'admin') ...[
             _MenuItem(
               icon: Icons.lock_outlined,
-              label: 'Admin Access',
+              label: AppLocalizations.of(context).profile_admin_access,
               color: AppTheme.textSecondary,
               onTap: () => _showAdminPinDialog(context, user),
             ),
             const SizedBox(height: 8),
           ],
           if (FeatureFlags.chanceGamesEnabled) ...[
-            const _SectionLabel('My Activity'),
+            _SectionLabel(AppLocalizations.of(context).profile_section_activity),
             const SizedBox(height: 8),
             _MenuItem(
               icon: Icons.analytics_outlined,
-              label: 'Prediction History',
+              label: AppLocalizations.of(context).profile_prediction_history,
               color: AppTheme.primaryLight,
               onTap: () => Navigator.push(
                 context,
@@ -992,28 +993,28 @@ class _MenuSection extends StatelessWidget {
             ),
             const SizedBox(height: 16),
           ],
-          const _SectionLabel('Εμφάνιση'),
+          _SectionLabel(AppLocalizations.of(context).profile_section_appearance),
           const SizedBox(height: 8),
           _ThemeToggleTile(),
           _LanguageTile(),
           const SizedBox(height: 16),
-          const _SectionLabel('Account'),
+          _SectionLabel(AppLocalizations.of(context).profile_section_account),
           const SizedBox(height: 8),
           if (user.clubId == null)
             _MenuItem(
               icon: Icons.vpn_key_outlined,
-              label: 'Join Club with Code',
+              label: AppLocalizations.of(context).profile_join_club_code,
               color: AppTheme.primaryLight,
               onTap: () => _showJoinWithCodeSheet(context, user),
             ),
           _MenuItem(
             icon: Icons.person_outline,
-            label: 'Edit Profile',
+            label: AppLocalizations.of(context).profile_edit_profile,
             onTap: () => _showEditProfile(context, user),
           ),
           _MenuItem(
             icon: Icons.notifications_outlined,
-            label: 'Ειδοποιήσεις',
+            label: AppLocalizations.of(context).profile_notifications,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const NotificationPrefsScreen()),
@@ -1021,19 +1022,19 @@ class _MenuSection extends StatelessWidget {
           ),
           _MenuItem(
             icon: Icons.help_outline,
-            label: 'Πώς λειτουργεί το Clubera',
+            label: AppLocalizations.of(context).profile_how_it_works,
             color: AppTheme.accent,
             onTap: () => openAdminGuide(context),
           ),
           _MenuItem(
             icon: Icons.auto_stories,
-            label: 'The Gazette — User Guide',
+            label: AppLocalizations.of(context).profile_user_guide,
             onTap: () => _showHelp(context),
           ),
           const SizedBox(height: 8),
           _MenuItem(
             icon: Icons.logout,
-            label: 'Sign Out',
+            label: AppLocalizations.of(context).profile_sign_out,
             color: AppTheme.red,
             onTap: () => _confirmSignOut(context),
           ),
@@ -1047,15 +1048,15 @@ class _MenuSection extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.cardBg,
-        title: const Text('Sign Out', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'Are you sure you want to sign out?',
+        title: Text(AppLocalizations.of(context).profile_sign_out, style: const TextStyle(color: Colors.white)),
+        content: Text(
+          AppLocalizations.of(context).profile_sign_out_confirm,
           style: TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).home_cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.red),
@@ -1063,7 +1064,7 @@ class _MenuSection extends StatelessWidget {
               Navigator.pop(ctx);
               await context.read<AppProvider>().signOut();
             },
-            child: const Text('Sign Out'),
+            child: Text(AppLocalizations.of(context).profile_sign_out),
           ),
         ],
       ),
@@ -1119,7 +1120,7 @@ class _MenuSection extends StatelessWidget {
                 if (ctx.mounted) Navigator.pop(ctx);
               });
             },
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).home_cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accent),
@@ -2284,7 +2285,7 @@ class _GameCard extends StatelessWidget {
             actions: [
               TextButton(
                 onPressed: processing ? null : () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
+                child: Text(AppLocalizations.of(context).home_cancel),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.supportGreen),
