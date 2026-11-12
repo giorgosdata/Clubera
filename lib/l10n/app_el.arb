@@ -176,5 +176,24 @@
   "wallet_type_support": "Υποστήριξη {club}",
   "@wallet_type_support": {
     "placeholders": { "club": {"type": "String"} }
-  }
+  },
+  "profile_admin_pin_prompt": "Βάλε τον κωδικό PIN διαχειριστή για να ξεκλειδώσεις τον πίνακα διαχειριστή",
+  "profile_unlock": "Ξεκλείδωμα",
+  "profile_admin_pin_not_set": "Το PIN διαχειριστή δεν έχει οριστεί. Επικοινώνησε με τον ιδιοκτήτη της εφαρμογής.",
+  "profile_admin_granted": "Η πρόσβαση διαχειριστή δόθηκε!",
+  "profile_wrong_pin": "Λάθος PIN",
+  "profile_display_name": "Όνομα εμφάνισης",
+  "profile_email": "Email",
+  "profile_saved": "Το προφίλ ενημερώθηκε!",
+  "profile_failed": "Αποτυχία: {error}",
+  "@profile_failed": {
+    "placeholders": { "error": {"type": "String"} }
+  },
+  "profile_save_changes": "Αποθήκευση αλλαγών",
+  "profile_join_hint": "Ζήτα από τον διαχειριστή του συλλόγου τον κωδικό πρόσκλησης 6 χαρακτήρων",
+  "profile_join_button": "Σύνδεση",
+  "profile_join_invalid": "Μη έγκυρος κωδικός. Έλεγξε με τον διαχειριστή του συλλόγου.",
+  "profile_join_owner": "Είσαι ήδη ο ιδιοκτήτης αυτού του συλλόγου.",
+  "profile_join_member": "Είσαι ήδη μέλος αυτού του συλλόγου.",
+  "profile_join_success": "Συνδέθηκες στον σύλλογο με επιτυχία!"
 }
