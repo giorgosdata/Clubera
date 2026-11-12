@@ -27,7 +27,7 @@ class MatchCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _statusBadge(),
+            _statusBadge(context),
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -45,7 +45,7 @@ class MatchCard extends StatelessWidget {
     );
   }
 
-  Widget _statusBadge() {
+  Widget _statusBadge(BuildContext context) {
     if (match.isLive) {
       final minute = match.minute ?? '';
       return Row(
