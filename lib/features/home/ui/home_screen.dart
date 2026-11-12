@@ -152,6 +152,7 @@ class _RewardsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('rewards')
@@ -168,21 +169,21 @@ class _RewardsTab extends StatelessWidget {
             .toList();
 
         if (rewards.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.card_giftcard_outlined, size: 64, color: AppTheme.cardBg2),
-                SizedBox(height: 16),
+                const Icon(Icons.card_giftcard_outlined, size: 64, color: AppTheme.cardBg2),
+                const SizedBox(height: 16),
                 Text(
-                  'No rewards yet',
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  l10n.home_no_rewards,
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  'Οι σύλλογοι προσθέτουν επιβραβεύσεις από τον Πίνακα συλλόγου',
+                  l10n.home_rewards_hint,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                 ),
               ],
             ),
@@ -212,8 +213,8 @@ class _RewardsTab extends StatelessWidget {
                   Expanded(
                     child: Text(
                       user != null
-                          ? 'You have $userPoints pts — earn more by voting & predicting!'
-                          : 'Sign in to earn points and redeem rewards!',
+                          ? l10n.home_points_in(userPoints)
+                          : l10n.home_sign_in_rewards,
                       style: const TextStyle(color: Colors.white, fontSize: 13),
                     ),
                   ),
@@ -225,7 +226,7 @@ class _RewardsTab extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '$userPoints pts',
+                        l10n.home_pts(userPoints),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w900,
@@ -251,6 +252,7 @@ class _RewardHomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final canRedeem = userPoints >= reward.pointsCost;
 
     return Container(
@@ -312,7 +314,7 @@ class _RewardHomeCard extends StatelessWidget {
                   border: Border.all(color: AppTheme.supportGreen.withOpacity(0.4)),
                 ),
                 child: Text(
-                  '${reward.pointsCost} pts',
+                  l10n.home_pts(reward.pointsCost),
                   style: const TextStyle(
                     color: AppTheme.supportGreen,
                     fontWeight: FontWeight.bold,
@@ -333,7 +335,7 @@ class _RewardHomeCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
-                  child: Text(canRedeem ? 'Redeem' : 'Locked'),
+                  child: Text(canRedeem ? l10n.home_redeem : l10n.home_locked),
                 ),
               ),
             ],
@@ -346,65 +348,76 @@ class _RewardHomeCard extends StatelessWidget {
   void _showRedeem(BuildContext context) {
     final user = context.read<AppProvider>().user;
     if (user == null) return;
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) {
         bool processing = false;
         return StatefulBuilder(
           builder: (ctx, setDlg) => AlertDialog(
-        backgroundColor: AppTheme.cardBg,
-        title: Row(
-          children: [
-            Text(reward.emoji, style: const TextStyle(fontSize: 24)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(reward.title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+            backgroundColor: AppTheme.cardBg,
+            title: Row(
+              children: [
+                Text(reward.emoji, style: const TextStyle(fontSize: 24)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(reward.title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+                ),
+              ],
             ),
-          ],
-        ),
-        content: Text(
-          'Redeem "${reward.title}" for ${reward.pointsCost} pts?\n\nBalance: ${user.points} pts → ${user.points - reward.pointsCost} pts remaining.',
-          style: const TextStyle(color: AppTheme.textSecondary),
-        ),
-        actions: [
-          TextButton(onPressed: processing ? null : () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.supportGreen),
-            onPressed: processing ? null : () async {
-              setDlg(() => processing = true);
-              try {
-                final provider = context.read<AppProvider>();
-                await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(user.uid)
-                    .update({'points': FieldValue.increment(-reward.pointsCost)});
-                provider.updateUser(user.copyWith(points: user.points - reward.pointsCost));
-                if (!ctx.mounted) return;
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  SnackBar(
-                    content: Text('${reward.emoji} Redeemed! Contact the club to claim it.'),
-                    backgroundColor: AppTheme.supportGreen,
-                  ),
-                );
-              } catch (e) {
-                if (ctx.mounted) setDlg(() => processing = false);
-                if (!ctx.mounted) return;
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  SnackBar(content: Text('Failed: $e'), backgroundColor: AppTheme.red),
-                );
-              }
-            },
-            child: const Text('Redeem'),
-          ),
-        ],
+            content: Text(
+              l10n.home_redeem_confirm(
+                reward.title,
+                reward.pointsCost,
+                user.points,
+                user.points - reward.pointsCost,
+              ),
+              style: const TextStyle(color: AppTheme.textSecondary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: processing ? null : () => Navigator.pop(ctx),
+                child: Text(l10n.home_cancel),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.supportGreen),
+                onPressed: processing ? null : () async {
+                  setDlg(() => processing = true);
+                  try {
+                    final provider = context.read<AppProvider>();
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .update({'points': FieldValue.increment(-reward.pointsCost)});
+                    provider.updateUser(user.copyWith(points: user.points - reward.pointsCost));
+                    if (!ctx.mounted) return;
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(
+                        content: Text('${reward.emoji} ${l10n.home_redeemed}'),
+                        backgroundColor: AppTheme.supportGreen,
+                      ),
+                    );
+                  } catch (e) {
+                    if (ctx.mounted) setDlg(() => processing = false);
+                    if (!ctx.mounted) return;
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.home_redeem_failed('$e')),
+                        backgroundColor: AppTheme.red,
+                      ),
+                    );
+                  }
+                },
+                child: Text(l10n.home_redeem),
+              ),
+            ],
           ),
         );
       },
     );
   }
 }
-
 // ─── NEWS TAB ────────────────────────────────────────────────────────────────
 
 class _NewsTab extends StatelessWidget {
@@ -428,16 +441,16 @@ class _NewsTab extends StatelessWidget {
               (d) => NewsModel.fromMap(d.data() as Map<String, dynamic>, d.id),
             )
             .toList();
-        if (articles.isEmpty) {
-          return const Center(
+               if (articles.isEmpty) {
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.article_outlined, size: 64, color: AppTheme.cardBg2),
-                SizedBox(height: 12),
+                const Icon(Icons.article_outlined, size: 64, color: AppTheme.cardBg2),
+                const SizedBox(height: 12),
                 Text(
-                  'No news yet',
-                  style: TextStyle(color: AppTheme.textSecondary),
+                  AppLocalizations.of(ctx).home_no_news,
+                  style: const TextStyle(color: AppTheme.textSecondary),
                 ),
               ],
             ),
@@ -458,7 +471,6 @@ class _NewsTab extends StatelessWidget {
     );
   }
 }
-
 // ─── HERO MATCH CARD ─────────────────────────────────────────────────────────
 
 class _HeroMatchCard extends StatefulWidget {

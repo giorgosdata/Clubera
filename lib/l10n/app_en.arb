@@ -48,5 +48,17 @@
   "m_draw": "Draw",
   "m_away": "Away",
   "m_coupon_saved": "Coupon submitted! {count} picks saved.",
-  "m_error": "Error: {error}"
+  "m_error": "Error: {error}",
+  "home_no_rewards": "No rewards yet",
+  "home_rewards_hint": "Clubs add rewards from the Club dashboard",
+  "home_points_in": "You have {points} pts — earn more by voting & predicting!",
+  "home_sign_in_rewards": "Sign in to earn points and redeem rewards!",
+  "home_pts": "{count} pts",
+  "home_redeem": "Redeem",
+  "home_locked": "Locked",
+  "home_cancel": "Cancel",
+  "home_redeem_confirm": "Redeem \"{title}\" for {cost} pts? Balance: {balance} → {remaining}.",
+  "home_redeemed": "Redeemed! Contact the club to claim it.",
+  "home_redeem_failed": "Failed: {error}",
+  "home_no_news": "No news yet"
 }

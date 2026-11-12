@@ -48,5 +48,17 @@
   "m_draw": "Unentschieden",
   "m_away": "Gast",
   "m_coupon_saved": "Coupon abgeschickt! {count} Tipps gespeichert.",
-  "m_error": "Fehler: {error}"
+  "m_error": "Fehler: {error}",
+  "home_no_rewards": "Noch keine Belohnungen",
+  "home_rewards_hint": "Vereine fügen Belohnungen im Vereins-Dashboard hinzu",
+  "home_points_in": "Du hast {points} Punkte – sammle mehr durch Abstimmen und Tippen!",
+  "home_sign_in_rewards": "Melde dich an, um Punkte zu sammeln und Belohnungen einzulösen!",
+  "home_pts": "{count} Punkte",
+  "home_redeem": "Einlösen",
+  "home_locked": "Gesperrt",
+  "home_cancel": "Abbrechen",
+  "home_redeem_confirm": "\"{title}\" für {cost} Punkte einlösen? Guthaben: {balance} → {remaining}.",
+  "home_redeemed": "Eingelöst! Kontaktiere den Verein, um die Belohnung abzuholen.",
+  "home_redeem_failed": "Fehler: {error}",
+  "home_no_news": "Noch keine Neuigkeiten"
 }
