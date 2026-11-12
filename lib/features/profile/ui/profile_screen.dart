@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:clubera/l10n/app_localizations.dart';
+import 'package:flutter/material.dart';
 import '../../../core/providers/locale_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -1077,7 +1077,7 @@ class _MenuSection extends StatelessWidget {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.cardBg,
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.admin_panel_settings, color: AppTheme.accent, size: 20),
             SizedBox(width: 8),
@@ -1136,7 +1136,7 @@ class _MenuSection extends StatelessWidget {
                 if (storedPin.isEmpty) {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(AppLocalizations.of(context).profile_admin_pin_not_set),
                         backgroundColor: AppTheme.red,
                       ),
@@ -1158,7 +1158,7 @@ class _MenuSection extends StatelessWidget {
                   // Use outer context for snackbar — ctx is unmounted after pop
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(AppLocalizations.of(context).profile_admin_granted),
                         backgroundColor: AppTheme.supportGreen,
                       ),
@@ -1167,7 +1167,7 @@ class _MenuSection extends StatelessWidget {
                 } else {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(AppLocalizations.of(context).profile_wrong_pin),
                         backgroundColor: AppTheme.red,
                       ),
@@ -1242,7 +1242,7 @@ class _MenuSection extends StatelessWidget {
               controller: nameCtrl,
               style: const TextStyle(color: Colors.white),
               maxLength: 50,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).profile_display_name,
                 prefixIcon: Icon(
                   Icons.person_outline,
@@ -1294,7 +1294,7 @@ class _MenuSection extends StatelessWidget {
                     ));
                     if (ctx.mounted) Navigator.pop(ctx);
                     messenger.showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(AppLocalizations.of(context).profile_saved),
                         backgroundColor: AppTheme.primaryLight,
                       ),
@@ -1875,7 +1875,7 @@ class _JoinWithCodeSheetState extends State<_JoinWithCodeSheet> {
         );
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(AppLocalizations.of(context).profile_join_success),
             backgroundColor: AppTheme.supportGreen,
           ),
