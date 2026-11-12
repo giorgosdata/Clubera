@@ -564,7 +564,7 @@ class _CouponTabState extends State<_CouponTab> {
                       child: _submitting
                           ? const CircularProgressIndicator(color: Colors.white)
                           : Text(
-                              'Submit ${_picks.length} Pick${_picks.length > 1 ? 's' : ''}',
+                              AppLocalizations.of(context).m_submit_picks(_picks.length),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,

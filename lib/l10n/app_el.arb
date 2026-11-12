@@ -47,6 +47,14 @@
   "m_home": "Γηπεδούχος",
   "m_draw": "Ισοπαλία",
   "m_away": "Φιλοξενούμενος",
+  "m_submit_picks": "Υποβολή επιλογών ({count})",
+  "m_halftime": "ΗΧ",
+  "m_full_time": "ΤΕΛΟΣ",
+  "@m_submit_picks": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "m_coupon_saved": "Το κουπόνι υποβλήθηκε! Αποθηκεύτηκαν {count} επιλογές.",
     
   "m_error": "Σφάλμα: {error}",
