@@ -59,6 +59,8 @@
   "home_cancel": "Annulla",
   "home_redeem_confirm": "Riscattare \"{title}\" per {cost} punti? Saldo: {balance} → {remaining}.",
   "home_redeemed": "Riscattato! Contatta il club per ritirarlo.",
+  "prizes_title": "I miei premi",
+  "prizes_subtitle": "Scopri i tuoi regali e premi",
   "home_redeem_failed": "Errore: {error}",
   "home_no_news": "Nessuna notizia per ora",
   "teams_title": "Club",

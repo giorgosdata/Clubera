@@ -2247,7 +2247,7 @@ class _GameCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     textStyle: const TextStyle(fontSize: 11),
                   ),
-                  child: Text(canRedeem ? 'Redeem' : 'Locked'),
+                  child: Text(canRedeem ? AppLocalizations.of(context).home_redeem : AppLocalizations.of(context).home_locked),
                 ),
               ),
             ],
@@ -2280,7 +2280,7 @@ class _GameCard extends StatelessWidget {
               ],
             ),
             content: Text(
-              'Redeem "${game.title}" for ${game.pointsCost} pts?\n\nBalance: ${user.points} pts → ${user.points - game.pointsCost} pts remaining.',
+              AppLocalizations.of(context).home_redeem_confirm(game.title, game.pointsCost, user.points, user.points - game.pointsCost),
               style: const TextStyle(color: AppTheme.textSecondary),
             ),
             actions: [
@@ -2303,7 +2303,7 @@ class _GameCard extends StatelessWidget {
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(ctx).showSnackBar(
                       SnackBar(
-                        content: Text('${game.emoji} Redeemed! Contact the club to claim it.'),
+                        content: Text('${game.emoji} ${AppLocalizations.of(context).home_redeemed}'),
                         backgroundColor: AppTheme.supportGreen,
                       ),
                     );
@@ -2315,7 +2315,7 @@ class _GameCard extends StatelessWidget {
                     );
                   }
                 },
-                child: const Text('Redeem'),
+                child: Text(AppLocalizations.of(context).home_redeem),
               ),
             ],
           ),
@@ -2682,12 +2682,12 @@ class _MyPrizesSection extends StatelessWidget {
                 children: [
                   const Text('🎁', style: TextStyle(fontSize: 32)),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Τα Δώρα μου',
+                          AppLocalizations.of(ctx).prizes_title,
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -2695,7 +2695,7 @@ class _MyPrizesSection extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Δες τα δώρα και τα βραβεία σου',
+                          AppLocalizations.of(ctx).prizes_subtitle,
                           style: TextStyle(
                             color: AppTheme.textSecondary,
                             fontSize: 12,

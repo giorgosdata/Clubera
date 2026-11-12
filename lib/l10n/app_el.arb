@@ -78,6 +78,8 @@
     }
   },
   "home_redeemed": "Εξαργυρώθηκε! Επικοινώνησε με τον σύλλογο για να το παραλάβεις.",
+  "prizes_title": "Τα Δώρα μου",
+  "prizes_subtitle": "Δες τα δώρα και τα βραβεία σου",
   "home_redeem_failed": "Αποτυχία: {error}",
   "@home_redeem_failed": {
     "placeholders": {
