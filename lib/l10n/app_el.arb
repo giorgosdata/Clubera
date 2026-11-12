@@ -134,5 +134,47 @@
   "profile_how_it_works": "Πώς λειτουργεί το Clubera",
   "profile_user_guide": "Οδηγός χρήσης του Gazette",
   "profile_sign_out": "Αποσύνδεση",
-  "profile_sign_out_confirm": "Είσαι σίγουρος ότι θέλεις να αποσυνδεθείς;"
+  "profile_sign_out_confirm": "Είσαι σίγουρος ότι θέλεις να αποσυνδεθείς;",
+  "wallet_balance": "Υπόλοιπο πορτοφολιού",
+  "wallet_deposit": "Κατάθεση",
+  "wallet_withdraw": "Ανάληψη",
+  "wallet_withdrawal": "Ανάληψη",
+  "wallet_history": "Ιστορικό",
+  "wallet_enter_valid_amount": "Εισήγαγε έγκυρο ποσό",
+  "wallet_add_failed": "Αποτυχία προσθήκης κεφαλαίων: {error}",
+  "@wallet_add_failed": {
+    "placeholders": { "error": {"type": "String"} }
+  },
+  "wallet_added": "{amount} προστέθηκαν στο πορτοφόλι!",
+  "@wallet_added": {
+    "placeholders": { "amount": {"type": "String"} }
+  },
+  "wallet_add_funds_title": "Προσθήκη κεφαλαίων",
+  "wallet_quick_select": "Επίλεξε γρήγορα ή εισήγαγε οποιοδήποτε ποσό",
+  "wallet_add_to_wallet": "Πρόσθεσε στο πορτοφόλι",
+  "wallet_simulated_deposit": "Προσομοιωμένη κατάθεση — η ενσωμάτωση πληρωμών έρχεται σύντομα",
+  "wallet_insufficient": "Ανεπαρκές υπόλοιπο",
+  "wallet_withdrawn": "{amount} αναλήφθηκαν με επιτυχία",
+  "@wallet_withdrawn": {
+    "placeholders": { "amount": {"type": "String"} }
+  },
+  "wallet_withdraw_failed": "Αποτυχία ανάληψης: {error}",
+  "@wallet_withdraw_failed": {
+    "placeholders": { "error": {"type": "String"} }
+  },
+  "wallet_withdraw_title": "Ανάληψη κεφαλαίων",
+  "wallet_available": "Διαθέσιμο: €{amount}",
+  "@wallet_available": {
+    "placeholders": { "amount": {"type": "String"} }
+  },
+  "wallet_payment_history": "Ιστορικό πληρωμών",
+  "wallet_no_payments": "Δεν υπάρχει ιστορικό πληρωμών",
+  "wallet_type_donation": "Δωρεά στο {club}",
+  "@wallet_type_donation": {
+    "placeholders": { "club": {"type": "String"} }
+  },
+  "wallet_type_support": "Υποστήριξη {club}",
+  "@wallet_type_support": {
+    "placeholders": { "club": {"type": "String"} }
+  }
 }

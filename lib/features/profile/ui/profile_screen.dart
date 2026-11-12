@@ -1,4 +1,3 @@
-import 'package:clubera/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:clubera/l10n/app_localizations.dart';
 import '../../../core/providers/locale_provider.dart';
@@ -243,8 +242,8 @@ class _WalletCard extends StatelessWidget {
                 size: 16,
               ),
               const SizedBox(width: 6),
-              const Text(
-                'Wallet Balance',
+              Text(
+                AppLocalizations.of(context).wallet_balance,
                 style: TextStyle(color: Colors.white70, fontSize: 13),
               ),
               const Spacer(),
@@ -281,7 +280,7 @@ class _WalletCard extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: () => _showDepositSheet(context, user),
                   icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Deposit'),
+                  label: Text(AppLocalizations.of(context).wallet_deposit),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.supportGreen,
                     foregroundColor: Colors.white,
@@ -297,7 +296,7 @@ class _WalletCard extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: () => _showWithdrawSheet(context, user),
                   icon: const Icon(Icons.remove, size: 16),
-                  label: const Text('Withdraw'),
+                  label: Text(AppLocalizations.of(context).wallet_withdraw),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.red,
                     foregroundColor: Colors.white,
@@ -313,7 +312,7 @@ class _WalletCard extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: () => _showHistorySheet(context, user.uid),
                   icon: const Icon(Icons.history, size: 16),
-                  label: const Text('History'),
+                  label: Text(AppLocalizations.of(context).wallet_history),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white38),
@@ -399,8 +398,8 @@ class _DepositSheetState extends State<_DepositSheet> {
     final amount = double.tryParse(raw);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter a valid amount'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).wallet_enter_valid_amount),
           backgroundColor: AppTheme.red,
         ),
       );
@@ -419,7 +418,7 @@ class _DepositSheetState extends State<_DepositSheet> {
       if (mounted) navigator.pop();
       messenger.showSnackBar(
         SnackBar(
-          content: Text('€${amount.toStringAsFixed(2)} added to wallet!'),
+          content: Text(AppLocalizations.of(context).wallet_added('€${amount.toStringAsFixed(2)}')),
           backgroundColor: AppTheme.supportGreen,
         ),
       );
@@ -427,7 +426,7 @@ class _DepositSheetState extends State<_DepositSheet> {
       if (mounted) setState(() => _loading = false);
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Failed to add funds: ${e.message}'),
+          content: Text(AppLocalizations.of(context).wallet_add_failed('${e.message}')),
           backgroundColor: AppTheme.red,
         ),
       );
@@ -435,7 +434,7 @@ class _DepositSheetState extends State<_DepositSheet> {
       if (mounted) setState(() => _loading = false);
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Failed to add funds: $e'),
+          content: Text(AppLocalizations.of(context).wallet_add_failed('$e')),
           backgroundColor: AppTheme.red,
         ),
       );
@@ -476,8 +475,8 @@ class _DepositSheetState extends State<_DepositSheet> {
             size: 40,
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Add Funds',
+          Text(
+            AppLocalizations.of(context).wallet_add_funds_title,
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -485,8 +484,8 @@ class _DepositSheetState extends State<_DepositSheet> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Quick select or enter any amount',
+          Text(
+            AppLocalizations.of(context).wallet_quick_select,
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 20),
@@ -572,8 +571,8 @@ class _DepositSheetState extends State<_DepositSheet> {
               ),
               child: _loading
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                      'Add to Wallet',
+                  : Text(
+                      AppLocalizations.of(context).wallet_add_to_wallet,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
@@ -582,8 +581,8 @@ class _DepositSheetState extends State<_DepositSheet> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Simulated deposit — payment integration coming soon',
+          Text(
+            AppLocalizations.of(context).wallet_simulated_deposit,
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 11),
           ),
         ],
@@ -625,13 +624,13 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
     final amount = double.tryParse(raw);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid amount'), backgroundColor: AppTheme.red),
+        SnackBar(content: Text(AppLocalizations.of(context).wallet_enter_valid_amount), backgroundColor: AppTheme.red),
       );
       return;
     }
     if (amount > widget.user.balance) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Insufficient balance'), backgroundColor: AppTheme.red),
+        SnackBar(content: Text(AppLocalizations.of(context).wallet_insufficient), backgroundColor: AppTheme.red),
       );
       return;
     }
@@ -648,19 +647,19 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
       if (mounted) navigator.pop();
       messenger.showSnackBar(
         SnackBar(
-          content: Text('€${amount.toStringAsFixed(2)} withdrawn successfully'),
+          content: Text(AppLocalizations.of(context).wallet_withdrawn('€${amount.toStringAsFixed(2)}')),
           backgroundColor: AppTheme.supportGreen,
         ),
       );
     } on FirebaseFunctionsException catch (e) {
       if (mounted) setState(() => _loading = false);
       messenger.showSnackBar(
-        SnackBar(content: Text('Withdrawal failed: ${e.message}'), backgroundColor: AppTheme.red),
+        SnackBar(content: Text(AppLocalizations.of(context).wallet_withdraw_failed('${e.message}')), backgroundColor: AppTheme.red),
       );
     } catch (e) {
       if (mounted) setState(() => _loading = false);
       messenger.showSnackBar(
-        SnackBar(content: Text('Withdrawal failed: $e'), backgroundColor: AppTheme.red),
+        SnackBar(content: Text(AppLocalizations.of(context).wallet_withdraw_failed('$e')), backgroundColor: AppTheme.red),
       );
     }
   }
@@ -682,11 +681,11 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
           const SizedBox(height: 20),
           const Icon(Icons.arrow_circle_down_rounded, color: AppTheme.red, size: 40),
           const SizedBox(height: 12),
-          const Text('Withdraw Funds',
+          Text(AppLocalizations.of(context).wallet_withdraw_title,
               style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
           const SizedBox(height: 4),
           Text(
-            'Available: €${widget.user.balance.toStringAsFixed(2)}',
+            AppLocalizations.of(context).wallet_available('${widget.user.balance.toStringAsFixed(2)}'),
             style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 20),
@@ -790,8 +789,8 @@ class _PaymentHistorySheet extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
-          'Payment History',
+        Text(
+          AppLocalizations.of(context).wallet_payment_history,
           style: TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -813,7 +812,7 @@ class _PaymentHistorySheet extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      'Σφάλμα: ${snap.error}',
+                      AppLocalizations.of(ctx).m_error('${snap.error}'),
                       style: const TextStyle(color: AppTheme.textSecondary),
                       textAlign: TextAlign.center,
                     ),
@@ -825,9 +824,9 @@ class _PaymentHistorySheet extends StatelessWidget {
               }
               final docs = snap.data?.docs ?? [];
               if (docs.isEmpty) {
-                return const Center(
+                return Center(
                   child: Text(
-                    'No payment history',
+                    AppLocalizations.of(ctx).wallet_no_payments,
                     style: TextStyle(color: AppTheme.textSecondary),
                   ),
                 );
@@ -869,12 +868,12 @@ class _PaymentHistorySheet extends StatelessWidget {
                     ),
                     title: Text(
                       type == 'deposit'
-                          ? 'Deposit'
+                          ? AppLocalizations.of(ctx).wallet_deposit
                           : type == 'withdrawal'
-                          ? 'Withdrawal'
+                          ? AppLocalizations.of(ctx).wallet_withdrawal
                           : type == 'donate'
-                          ? 'Donation to ${d['clubName'] ?? ''}'
-                          : 'Support ${d['clubName'] ?? ''}',
+                          ? AppLocalizations.of(ctx).wallet_type_donation(d['clubName'] ?? '')
+                          : AppLocalizations.of(ctx).wallet_type_support(d['clubName'] ?? ''),
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                     ),
                     subtitle: date != null
