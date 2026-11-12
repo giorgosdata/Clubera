@@ -156,5 +156,13 @@
   "form_about": "Informazioni sul tuo club (facoltativo)",
   "form_submit": "Invia candidatura",
   "form_required": "Nome e città del club sono obbligatori.",
-  "form_submitted": "Candidatura inviata! La esamineremo a breve."
+  "form_submitted": "Candidatura inviata! La esamineremo a breve.",
+  "pred_section": "I miei pronostici",
+  "pred_total": "+{points} punti in totale",
+  "pred_pick": "Scelta: {pick} • {date}",
+  "pred_home_win": "Vittoria in casa",
+  "pred_draw": "Pareggio",
+  "pred_away_win": "Vittoria in trasferta",
+  "pred_pending": "In attesa",
+  "pred_pts": "{points} punti"
 }

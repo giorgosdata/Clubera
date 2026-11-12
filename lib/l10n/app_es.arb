@@ -156,5 +156,13 @@
   "form_about": "Sobre tu club (opcional)",
   "form_submit": "Enviar solicitud",
   "form_required": "El nombre y la ciudad del club son obligatorios.",
-  "form_submitted": "¡Solicitud enviada! La revisaremos pronto."
+  "form_submitted": "¡Solicitud enviada! La revisaremos pronto.",
+  "pred_section": "Mis predicciones",
+  "pred_total": "+{points} puntos en total",
+  "pred_pick": "Elección: {pick} • {date}",
+  "pred_home_win": "Victoria local",
+  "pred_draw": "Empate",
+  "pred_away_win": "Victoria visitante",
+  "pred_pending": "Pendiente",
+  "pred_pts": "{points} puntos"
 }

@@ -156,5 +156,13 @@
   "form_about": "About your club (optional)",
   "form_submit": "Submit application",
   "form_required": "Club name and city are required.",
-  "form_submitted": "Application submitted! We'll review it shortly."
+  "form_submitted": "Application submitted! We'll review it shortly.",
+  "pred_section": "My predictions",
+  "pred_total": "+{points} pts total",
+  "pred_pick": "Pick: {pick} • {date}",
+  "pred_home_win": "Home win",
+  "pred_draw": "Draw",
+  "pred_away_win": "Away win",
+  "pred_pending": "Pending",
+  "pred_pts": "{points} pts"
 }

@@ -222,5 +222,22 @@
   "form_about": "Σχετικά με τον σύλλογο (προαιρετικό)",
   "form_submit": "Υποβολή αίτησης",
   "form_required": "Το όνομα και η πόλη του συλλόγου είναι υποχρεωτικά.",
-  "form_submitted": "Η αίτηση υποβλήθηκε! Θα την εξετάσουμε σύντομα."
+  "form_submitted": "Η αίτηση υποβλήθηκε! Θα την εξετάσουμε σύντομα.",
+  "pred_section": "Οι προβλέψεις μου",
+  "pred_total": "+{points} πόντοι συνολικά",
+  "@pred_total": {
+    "placeholders": { "points": {"type": "String"} }
+  },
+  "pred_pick": "Επιλογή: {pick} • {date}",
+  "@pred_pick": {
+    "placeholders": { "pick": {"type": "String"}, "date": {"type": "String"} }
+  },
+  "pred_home_win": "Νίκη γηπεδούχου",
+  "pred_draw": "Ισοπαλία",
+  "pred_away_win": "Νίκη φιλοξενούμενου",
+  "pred_pending": "Σε αναμονή",
+  "pred_pts": "{points} πόντοι",
+  "@pred_pts": {
+    "placeholders": { "points": {"type": "String"} }
+  }
 }

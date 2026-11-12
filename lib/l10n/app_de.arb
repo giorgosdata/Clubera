@@ -156,5 +156,13 @@
   "form_about": "Über deinen Verein (optional)",
   "form_submit": "Antrag senden",
   "form_required": "Vereinsname und Stadt sind erforderlich.",
-  "form_submitted": "Antrag gesendet! Wir prüfen ihn bald."
+  "form_submitted": "Antrag gesendet! Wir prüfen ihn bald.",
+  "pred_section": "Meine Vorhersagen",
+  "pred_total": "+{points} Punkte gesamt",
+  "pred_pick": "Tipp: {pick} • {date}",
+  "pred_home_win": "Heimsieg",
+  "pred_draw": "Unentschieden",
+  "pred_away_win": "Auswärtssieg",
+  "pred_pending": "Ausstehend",
+  "pred_pts": "{points} Punkte"
 }
