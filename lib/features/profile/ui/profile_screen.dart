@@ -759,7 +759,7 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                   ? const SizedBox(
                       width: 20, height: 20,
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Withdraw', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  : Text(AppLocalizations.of(context).wallet_withdraw, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
