@@ -2346,11 +2346,11 @@ class _ClubApplicationTile extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SectionLabel('CLUB'),
+              _SectionLabel(AppLocalizations.of(context).club_section),
               const SizedBox(height: 8),
               _MenuItem(
                 icon: Icons.sports_soccer,
-                label: 'Apply as Club',
+                label: AppLocalizations.of(context).club_apply,
                 color: AppTheme.primaryLight,
                 onTap: () => _showApplySheet(context),
               ),
@@ -2365,7 +2365,7 @@ class _ClubApplicationTile extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionLabel('CLUB APPLICATION'),
+            _SectionLabel(AppLocalizations.of(context).club_application_section),
             const SizedBox(height: 8),
             _ApplicationStatusCard(status: status, clubName: data['clubName'] ?? ''),
             const SizedBox(height: 16),
@@ -2411,16 +2411,16 @@ class _ApplicationStatusCard extends StatelessWidget {
             : Icons.cancel_outlined;
 
     final title = isPending
-        ? 'Application Under Review'
+        ? AppLocalizations.of(context).app_under_review
         : isApproved
-            ? 'Application Approved!'
-            : 'Application Rejected';
+            ? AppLocalizations.of(context).app_approved
+            : AppLocalizations.of(context).app_rejected;
 
     final subtitle = isPending
-        ? 'Your application for "$clubName" is being reviewed by our team.'
+        ? AppLocalizations.of(context).app_pending_desc(clubName)
         : isApproved
-            ? 'Ο σύλλογος «$clubName» εγκρίθηκε. Δείτε τον Πίνακα συλλόγου!'
-            : 'Your application for "$clubName" was not approved.';
+            ? AppLocalizations.of(context).app_approved_desc(clubName)
+            : AppLocalizations.of(context).app_rejected_desc(clubName);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2488,7 +2488,7 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
     final name = _nameCtrl.text.trim();
     final city = _cityCtrl.text.trim();
     if (name.isEmpty || city.isEmpty) {
-      setState(() => _error = 'Club name and city are required.');
+      setState(() => _error = AppLocalizations.of(context).form_required);
       return;
     }
     setState(() { _loading = true; _error = null; });
@@ -2508,8 +2508,8 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Application submitted! We\'ll review it shortly.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).form_submitted),
             backgroundColor: AppTheme.supportGreen,
           ),
         );
@@ -2535,20 +2535,20 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
               ),
             ),
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: Icon(Icons.sports_soccer, color: AppTheme.primaryLight, size: 40),
             ),
             const SizedBox(height: 12),
-            const Center(
+            Center(
               child: Text(
-                'Apply as Club',
+                AppLocalizations.of(context).club_apply,
                 style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 4),
-            const Center(
+            Center(
               child: Text(
-                'Fill in your club details and we\'ll review your application.',
+                AppLocalizations.of(context).form_desc,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
               ),
@@ -2558,8 +2558,8 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
               controller: _nameCtrl,
               style: const TextStyle(color: Colors.white),
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Club Name *',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).form_club_name,
                 prefixIcon: Icon(Icons.shield_outlined, color: AppTheme.textSecondary),
               ),
             ),
@@ -2568,13 +2568,13 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
               controller: _cityCtrl,
               style: const TextStyle(color: Colors.white),
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'City *',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).form_city,
                 prefixIcon: Icon(Icons.location_city_outlined, color: AppTheme.textSecondary),
               ),
             ),
             const SizedBox(height: 14),
-            const Text('League', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+            Text(AppLocalizations.of(context).form_league, style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
             const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -2590,7 +2590,7 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
               ),
             ),
             const SizedBox(height: 14),
-            const Text('Category', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+            Text(AppLocalizations.of(context).form_category, style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -2610,8 +2610,8 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
               controller: _descCtrl,
               style: const TextStyle(color: Colors.white),
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'About your club (optional)',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).form_about,
                 alignLabelWithHint: true,
               ),
             ),
@@ -2631,7 +2631,7 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
                 ),
                 child: _loading
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Submit Application', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                    : Text(AppLocalizations.of(context).form_submit, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
               ),
             ),
           ],

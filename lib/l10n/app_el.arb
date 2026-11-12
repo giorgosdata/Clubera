@@ -195,5 +195,32 @@
   "profile_join_invalid": "Μη έγκυρος κωδικός. Έλεγξε με τον διαχειριστή του συλλόγου.",
   "profile_join_owner": "Είσαι ήδη ο ιδιοκτήτης αυτού του συλλόγου.",
   "profile_join_member": "Είσαι ήδη μέλος αυτού του συλλόγου.",
-  "profile_join_success": "Συνδέθηκες στον σύλλογο με επιτυχία!"
+  "profile_join_success": "Συνδέθηκες στον σύλλογο με επιτυχία!",
+  "club_section": "ΣΥΛΛΟΓΟΣ",
+  "club_apply": "Αίτηση για σύλλογο",
+  "club_application_section": "ΑΙΤΗΣΗ ΣΥΛΛΟΓΟΥ",
+  "app_under_review": "Η αίτηση είναι υπό εξέταση",
+  "app_approved": "Η αίτηση εγκρίθηκε!",
+  "app_rejected": "Η αίτηση απορρίφθηκε",
+  "app_pending_desc": "Η αίτησή σου για τον σύλλογο «{club}» εξετάζεται από την ομάδα μας.",
+  "@app_pending_desc": {
+    "placeholders": { "club": {"type": "String"} }
+  },
+  "app_approved_desc": "Ο σύλλογος «{club}» εγκρίθηκε. Δες τον Πίνακα συλλόγου!",
+  "@app_approved_desc": {
+    "placeholders": { "club": {"type": "String"} }
+  },
+  "app_rejected_desc": "Η αίτησή σου για τον σύλλογο «{club}» δεν εγκρίθηκε.",
+  "@app_rejected_desc": {
+    "placeholders": { "club": {"type": "String"} }
+  },
+  "form_desc": "Συμπλήρωσε τα στοιχεία του συλλόγου σου και θα εξετάσουμε την αίτησή σου.",
+  "form_club_name": "Όνομα συλλόγου *",
+  "form_city": "Πόλη *",
+  "form_league": "Κατηγορία",
+  "form_category": "Κατηγορία",
+  "form_about": "Σχετικά με τον σύλλογο (προαιρετικό)",
+  "form_submit": "Υποβολή αίτησης",
+  "form_required": "Το όνομα και η πόλη του συλλόγου είναι υποχρεωτικά.",
+  "form_submitted": "Η αίτηση υποβλήθηκε! Θα την εξετάσουμε σύντομα."
 }
