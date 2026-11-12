@@ -59,6 +59,8 @@
   "home_cancel": "Abbrechen",
   "home_redeem_confirm": "\"{title}\" für {cost} Punkte einlösen? Guthaben: {balance} → {remaining}.",
   "home_redeemed": "Eingelöst! Kontaktiere den Verein, um die Belohnung abzuholen.",
+  "prizes_title": "Meine Preise",
+  "prizes_subtitle": "Sieh dir deine Geschenke und Auszeichnungen an",
   "home_redeem_failed": "Fehler: {error}",
   "home_no_news": "Noch keine Neuigkeiten",
   "teams_title": "Vereine",

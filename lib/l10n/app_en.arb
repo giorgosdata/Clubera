@@ -59,6 +59,8 @@
   "home_cancel": "Cancel",
   "home_redeem_confirm": "Redeem \"{title}\" for {cost} pts? Balance: {balance} → {remaining}.",
   "home_redeemed": "Redeemed! Contact the club to claim it.",
+  "prizes_title": "My Prizes",
+  "prizes_subtitle": "See your gifts and awards",
   "home_redeem_failed": "Failed: {error}",
   "home_no_news": "No news yet",
   "teams_title": "Clubs",

@@ -59,6 +59,8 @@
   "home_cancel": "İptal",
   "home_redeem_confirm": "\"{title}\" için {cost} puan harcansın mı? Bakiye: {balance} → {remaining}.",
   "home_redeemed": "Kullanıldı! Ödülü almak için kulüple iletişime geç.",
+  "prizes_title": "Ödüllerim",
+  "prizes_subtitle": "Hediyelerini ve ödüllerini gör",
   "home_redeem_failed": "Hata: {error}",
   "home_no_news": "Henüz haber yok",
   "teams_title": "Kulüpler",

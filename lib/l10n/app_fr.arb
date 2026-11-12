@@ -59,6 +59,8 @@
   "home_cancel": "Annuler",
   "home_redeem_confirm": "Échanger « {title} » contre {cost} points ? Solde : {balance} → {remaining}.",
   "home_redeemed": "Échangé ! Contactez le club pour le récupérer.",
+  "prizes_title": "Mes cadeaux",
+  "prizes_subtitle": "Découvre tes cadeaux et récompenses",
   "home_redeem_failed": "Échec : {error}",
   "home_no_news": "Aucune actualité pour le moment",
   "teams_title": "Clubs",

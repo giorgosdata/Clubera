@@ -59,6 +59,8 @@
   "home_cancel": "Cancelar",
   "home_redeem_confirm": "¿Canjear \"{title}\" por {cost} puntos? Saldo: {balance} → {remaining}.",
   "home_redeemed": "¡Canjeado! Contacta con el club para recogerlo.",
+  "prizes_title": "Mis premios",
+  "prizes_subtitle": "Mira tus regalos y premios",
   "home_redeem_failed": "Error: {error}",
   "home_no_news": "Aún no hay noticias",
   "teams_title": "Clubes",
