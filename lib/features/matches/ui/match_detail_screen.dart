@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -957,7 +958,7 @@ class _MvpSectionState extends State<_MvpSection> {
   Widget build(BuildContext context) {
     final isFinished = match.status == 'finished';
     if (!isFinished) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
           child: Column(
@@ -1024,7 +1025,7 @@ class _MvpSectionState extends State<_MvpSection> {
                 ),
                 const SizedBox(height: 12),
                 if (players.isEmpty)
-                  const Center(
+                  Center(
                     child: Padding(
                       padding: EdgeInsets.all(24),
                       child: Text(AppLocalizations.of(context).md_no_players_lineup,
@@ -1298,7 +1299,7 @@ class _PhotosSectionState extends State<_PhotosSection> with AutomaticKeepAliveC
                 )
               : null,
           body: photos.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -1451,7 +1452,7 @@ class _RatingsSectionState extends State<_RatingsSection>
       ...widget.match.awayLineup,
     ];
     if (allPlayers.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(32),
           child: Column(
