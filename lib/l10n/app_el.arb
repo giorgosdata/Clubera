@@ -239,5 +239,20 @@
   "pred_pts": "{points} πόντοι",
   "@pred_pts": {
     "placeholders": { "points": {"type": "String"} }
-  }
+  },
+  "notif_title": "Ειδοποιήσεις",
+  "notif_section_matches": "Αγώνες",
+  "notif_section_club": "Σωματείο",
+  "notif_section_gamification": "Πόντοι και προβλέψεις",
+  "notif_goals": "Γκολ",
+  "notif_goals_desc": "Ειδοποίηση για κάθε γκολ σε live αγώνα",
+  "notif_match_start": "Έναρξη αγώνα",
+  "notif_match_start_desc": "Όταν ξεκινά αγώνας σωματείου που ακολουθείς",
+  "notif_match_end": "Τελικό αποτέλεσμα",
+  "notif_match_end_desc": "Ειδοποίηση για το τελικό σκορ αγώνα",
+  "notif_announcements": "Ανακοινώσεις",
+  "notif_announcements_desc": "Νέες ανακοινώσεις από σωματεία που ακολουθείς",
+  "notif_predictions": "Προβλέψεις",
+  "notif_predictions_desc": "Όταν βαθμολογηθούν οι προβλέψεις σου",
+  "notif_device_hint": "Βεβαιώσου ότι έχεις ενεργοποιήσει ειδοποιήσεις για το Clubera στις ρυθμίσεις του τηλεφώνου σου."
 }

@@ -164,5 +164,20 @@
   "pred_draw": "Beraberlik",
   "pred_away_win": "Deplasman galibiyeti",
   "pred_pending": "Beklemede",
-  "pred_pts": "{points} puan"
+  "pred_pts": "{points} puan",
+  "notif_title": "Bildirimler",
+  "notif_section_matches": "Maçlar",
+  "notif_section_club": "Kulüp",
+  "notif_section_gamification": "Puanlar ve tahminler",
+  "notif_goals": "Goller",
+  "notif_goals_desc": "Canlı maçta her golde bildirim",
+  "notif_match_start": "Maç başlangıcı",
+  "notif_match_start_desc": "Takip ettiğin bir kulübün maçı başladığında",
+  "notif_match_end": "Son sonuç",
+  "notif_match_end_desc": "Bir maçın son skoru için bildirim",
+  "notif_announcements": "Duyurular",
+  "notif_announcements_desc": "Takip ettiğin kulüplerden yeni duyurular",
+  "notif_predictions": "Tahminler",
+  "notif_predictions_desc": "Tahminlerin puanlandığında",
+  "notif_device_hint": "Telefonunun ayarlarında Clubera bildirimlerinin açık olduğundan emin ol."
 }

@@ -164,5 +164,20 @@
   "pred_draw": "Draw",
   "pred_away_win": "Away win",
   "pred_pending": "Pending",
-  "pred_pts": "{points} pts"
+  "pred_pts": "{points} pts",
+  "notif_title": "Notifications",
+  "notif_section_matches": "Matches",
+  "notif_section_club": "Club",
+  "notif_section_gamification": "Points and predictions",
+  "notif_goals": "Goals",
+  "notif_goals_desc": "Notification for every goal in a live match",
+  "notif_match_start": "Match start",
+  "notif_match_start_desc": "When a match of a club you follow starts",
+  "notif_match_end": "Final result",
+  "notif_match_end_desc": "Notification for the final score of a match",
+  "notif_announcements": "Announcements",
+  "notif_announcements_desc": "New announcements from clubs you follow",
+  "notif_predictions": "Predictions",
+  "notif_predictions_desc": "When your predictions are scored",
+  "notif_device_hint": "Make sure notifications for Clubera are enabled in your phone's settings."
 }

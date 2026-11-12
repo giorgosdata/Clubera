@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
@@ -46,7 +47,7 @@ class _NotificationPrefsScreenState extends State<NotificationPrefsScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Ειδοποιήσεις'),
+        title: Text(AppLocalizations.of(context).notif_title),
         backgroundColor: Colors.transparent,
       ),
       body: _loading
@@ -54,12 +55,12 @@ class _NotificationPrefsScreenState extends State<NotificationPrefsScreen> {
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
               children: [
-                _section('Αγώνες'),
+                _section(AppLocalizations.of(context).notif_section_matches),
                 _toggle(
                   icon: Icons.sports_soccer,
                   color: AppTheme.supportGreen,
-                  label: 'Γκολ',
-                  subtitle: 'Ειδοποίηση για κάθε γκολ σε live αγώνα',
+                  label: AppLocalizations.of(context).notif_goals,
+                  subtitle: AppLocalizations.of(context).notif_goals_desc,
                   value: _goals,
                   onChanged: (v) {
                     setState(() => _goals = v);
@@ -69,8 +70,8 @@ class _NotificationPrefsScreenState extends State<NotificationPrefsScreen> {
                 _toggle(
                   icon: Icons.play_circle_outline,
                   color: AppTheme.primaryLight,
-                  label: 'Έναρξη αγώνα',
-                  subtitle: 'Όταν ξεκινά αγώνας σωματείου που ακολουθείς',
+                  label: AppLocalizations.of(context).notif_match_start,
+                  subtitle: AppLocalizations.of(context).notif_match_start_desc,
                   value: _matchStart,
                   onChanged: (v) {
                     setState(() => _matchStart = v);
@@ -80,8 +81,8 @@ class _NotificationPrefsScreenState extends State<NotificationPrefsScreen> {
                 _toggle(
                   icon: Icons.sports_score,
                   color: AppTheme.accent,
-                  label: 'Τελικό αποτέλεσμα',
-                  subtitle: 'Ειδοποίηση για το τελικό σκορ αγώνα',
+                  label: AppLocalizations.of(context).notif_match_end,
+                  subtitle: AppLocalizations.of(context).notif_match_end_desc,
                   value: _matchEnd,
                   onChanged: (v) {
                     setState(() => _matchEnd = v);
@@ -89,12 +90,12 @@ class _NotificationPrefsScreenState extends State<NotificationPrefsScreen> {
                   },
                 ),
                 const SizedBox(height: 8),
-                _section('Σωματείο'),
+                _section(AppLocalizations.of(context).notif_section_club),
                 _toggle(
                   icon: Icons.campaign_outlined,
                   color: AppTheme.liveRed,
-                  label: 'Ανακοινώσεις',
-                  subtitle: 'Νέες ανακοινώσεις από σωματεία που ακολουθείς',
+                  label: AppLocalizations.of(context).notif_announcements,
+                  subtitle: AppLocalizations.of(context).notif_announcements_desc,
                   value: _announcements,
                   onChanged: (v) {
                     setState(() => _announcements = v);
@@ -102,12 +103,12 @@ class _NotificationPrefsScreenState extends State<NotificationPrefsScreen> {
                   },
                 ),
                 const SizedBox(height: 8),
-                _section('Gamification'),
+                _section(AppLocalizations.of(context).notif_section_gamification),
                 _toggle(
                   icon: Icons.analytics_outlined,
                   color: AppTheme.primaryLight,
-                  label: 'Προβλέψεις',
-                  subtitle: 'Όταν βαθμολογηθούν οι προβλέψεις σου',
+                  label: AppLocalizations.of(context).notif_predictions,
+                  subtitle: AppLocalizations.of(context).notif_predictions_desc,
                   value: _predictions,
                   onChanged: (v) {
                     setState(() => _predictions = v);
@@ -122,14 +123,14 @@ class _NotificationPrefsScreenState extends State<NotificationPrefsScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppTheme.divider),
                   ),
-                  child: const Row(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(Icons.info_outline, color: AppTheme.textSecondary, size: 16),
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Βεβαιώσου ότι έχεις ενεργοποιήσει ειδοποιήσεις για το Clubera στις ρυθμίσεις του τηλεφώνου σου.',
+                          AppLocalizations.of(context).notif_device_hint,
                           style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, height: 1.5),
                         ),
                       ),
