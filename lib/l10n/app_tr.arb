@@ -156,5 +156,13 @@
   "form_about": "Kulübün hakkında (isteğe bağlı)",
   "form_submit": "Başvuruyu gönder",
   "form_required": "Kulüp adı ve şehir zorunludur.",
-  "form_submitted": "Başvuru gönderildi! Yakında inceleyeceğiz."
+  "form_submitted": "Başvuru gönderildi! Yakında inceleyeceğiz.",
+  "pred_section": "Tahminlerim",
+  "pred_total": "Toplam +{points} puan",
+  "pred_pick": "Tahmin: {pick} • {date}",
+  "pred_home_win": "Ev sahibi galibiyeti",
+  "pred_draw": "Beraberlik",
+  "pred_away_win": "Deplasman galibiyeti",
+  "pred_pending": "Beklemede",
+  "pred_pts": "{points} puan"
 }

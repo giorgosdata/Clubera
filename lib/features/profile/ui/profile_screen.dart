@@ -1550,7 +1550,7 @@ class _CouponHistorySection extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const _SectionLabel('My Predictions'),
+                  _SectionLabel(AppLocalizations.of(ctx).pred_section),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -1562,7 +1562,7 @@ class _CouponHistorySection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      '+$earned pts total',
+                      AppLocalizations.of(ctx).pred_total('$earned'),
                       style: const TextStyle(
                         color: AppTheme.accent,
                         fontSize: 12,
@@ -1583,15 +1583,17 @@ class _CouponHistorySection extends StatelessWidget {
                           ? '✅'
                           : '❌',
                       title: '${p.homeClubName} vs ${p.awayClubName}',
-                      subtitle:
-                          'Pick: ${p.pick == '1'
-                              ? 'Home Win'
-                              : p.pick == 'X'
-                              ? 'Draw'
-                              : 'Away Win'} • ${DateFormat('d MMM').format(p.createdAt)}',
+                      subtitle: AppLocalizations.of(ctx).pred_pick(
+                        p.pick == '1'
+                            ? AppLocalizations.of(ctx).pred_home_win
+                            : p.pick == 'X'
+                            ? AppLocalizations.of(ctx).pred_draw
+                            : AppLocalizations.of(ctx).pred_away_win,
+                        DateFormat('d MMM').format(p.createdAt),
+                      ),
                       amount: p.isPending
-                          ? 'Pending'
-                          : '${p.pointsEarned ?? 0} pts',
+                          ? AppLocalizations.of(ctx).pred_pending
+                          : AppLocalizations.of(ctx).pred_pts('${p.pointsEarned ?? 0}'),
                       amountColor: p.isPending
                           ? AppTheme.textSecondary
                           : (p.pointsEarned ?? 0) > 0
