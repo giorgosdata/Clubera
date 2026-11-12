@@ -2508,7 +2508,7 @@ class _ApplyAsClubSheetState extends State<_ApplyAsClubSheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(AppLocalizations.of(context).form_submitted),
             backgroundColor: AppTheme.supportGreen,
           ),
