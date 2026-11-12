@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -578,15 +579,15 @@ class _TeamsScreenState extends State<TeamsScreen>
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Teams'),
+        title: Text(AppLocalizations.of(context).teams_title),
         backgroundColor: Colors.transparent,
         bottom: TabBar(
           controller: _tab,
-          tabs: const [
-            Tab(text: 'Browse'),
-            Tab(text: 'Search'),
-            Tab(text: 'Standings'),
-            Tab(text: 'Τουρνουά'),
+          tabs: [
+            Tab(text: AppLocalizations.of(context).teams_tab_browse),
+            Tab(text: AppLocalizations.of(context).teams_tab_search),
+            Tab(text: AppLocalizations.of(context).teams_tab_standings),
+            Tab(text: AppLocalizations.of(context).teams_tab_tournaments),
           ],
         ),
       ),
@@ -635,7 +636,7 @@ class _BrowseTabState extends State<_BrowseTab> with AutomaticKeepAliveClientMix
           child: TextField(
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              hintText: 'Search country...',
+              hintText: AppLocalizations.of(context).teams_search_country,
               prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
               filled: true,
               fillColor: AppTheme.cardBg,
@@ -699,12 +700,12 @@ class _SpinBanner extends StatelessWidget {
           children: [
             const Text('🎰', style: TextStyle(fontSize: 36)),
             const SizedBox(width: 14),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Ποια ομάδα σου αναλογεί;',
+                    AppLocalizations.of(context).teams_spin_title,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -713,7 +714,7 @@ class _SpinBanner extends StatelessWidget {
                   ),
                   SizedBox(height: 2),
                   Text(
-                    'Γύρισε τον τροχό και μάθε!',
+                    AppLocalizations.of(context).teams_spin_subtitle,
                     style: TextStyle(color: Color(0xFFAABBFF), fontSize: 12),
                   ),
                 ],
@@ -802,8 +803,8 @@ class _MyClubCard extends StatelessWidget {
                               color: AppTheme.supportGreen,
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Text(
-                              'MY CLUB',
+                            child: Text(
+                              AppLocalizations.of(context).teams_my_club,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
@@ -872,7 +873,7 @@ class _SearchTabState extends State<_SearchTab> with AutomaticKeepAliveClientMix
               TextField(
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  hintText: _searchClubs ? 'Search clubs...' : 'Search players...',
+                  hintText: _searchClubs ? AppLocalizations.of(context).teams_search_clubs : AppLocalizations.of(context).teams_search_players,
                   prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
                   filled: true,
                   fillColor: AppTheme.cardBg,
@@ -887,13 +888,13 @@ class _SearchTabState extends State<_SearchTab> with AutomaticKeepAliveClientMix
               Row(
                 children: [
                   _ToggleChip(
-                    label: 'Clubs',
+                    label: AppLocalizations.of(context).teams_clubs,
                     selected: _searchClubs,
                     onTap: () => setState(() => _searchClubs = true),
                   ),
                   const SizedBox(width: 8),
                   _ToggleChip(
-                    label: 'Players',
+                    label: AppLocalizations.of(context).teams_players,
                     selected: !_searchClubs,
                     onTap: () => setState(() => _searchClubs = false),
                   ),
@@ -904,9 +905,9 @@ class _SearchTabState extends State<_SearchTab> with AutomaticKeepAliveClientMix
         ),
         Expanded(
           child: _query.length < 2
-              ? const Center(
+              ? Center(
                   child: Text(
-                    'Type at least 2 characters to search...',
+                    AppLocalizations.of(context).teams_search_min_chars,
                     style: TextStyle(color: AppTheme.textSecondary),
                   ),
                 )
@@ -963,7 +964,7 @@ class _ClubResults extends StatelessWidget {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('\u03a3\u03c6\u03ac\u03bb\u03bc\u03b1: ${snap.error}',
+              child: Text(AppLocalizations.of(ctx).m_error('${snap.error}'),
                   style: const TextStyle(color: AppTheme.textSecondary),
                   textAlign: TextAlign.center),
             ),
@@ -982,7 +983,7 @@ class _ClubResults extends StatelessWidget {
         if (clubs.isEmpty) {
           return Center(
             child: Text(
-              'No clubs found for "$query"',
+              AppLocalizations.of(ctx).teams_no_clubs_for(query),
               style: const TextStyle(color: AppTheme.textSecondary),
             ),
           );
@@ -1014,7 +1015,7 @@ class _PlayerResults extends StatelessWidget {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('\u03a3\u03c6\u03ac\u03bb\u03bc\u03b1: ${snap.error}',
+              child: Text(AppLocalizations.of(ctx).m_error('${snap.error}'),
                   style: const TextStyle(color: AppTheme.textSecondary),
                   textAlign: TextAlign.center),
             ),
@@ -1031,7 +1032,7 @@ class _PlayerResults extends StatelessWidget {
         if (players.isEmpty) {
           return Center(
             child: Text(
-              'No players found for "$query"',
+              AppLocalizations.of(ctx).teams_no_players_for(query),
               style: const TextStyle(color: AppTheme.textSecondary),
             ),
           );
@@ -1192,11 +1193,11 @@ class _StandingsTabState extends State<_StandingsTab> with AutomaticKeepAliveCli
                             style: const TextStyle(color: Colors.white),
                             underline: const SizedBox(),
                             icon: const Icon(Icons.expand_more, color: AppTheme.textSecondary),
-                            hint: const Text('Όλες οι ενώσεις', style: TextStyle(color: AppTheme.textSecondary)),
+                            hint: Text(AppLocalizations.of(context).teams_all_associations, style: const TextStyle(color: AppTheme.textSecondary)),
                             items: [
-                              const DropdownMenuItem<String?>(
+                              DropdownMenuItem<String?>(
                                 value: null,
-                                child: Text('Όλες οι ενώσεις', style: TextStyle(color: AppTheme.textSecondary)),
+                                child: Text(AppLocalizations.of(context).teams_all_associations, style: const TextStyle(color: AppTheme.textSecondary)),
                               ),
                               ...docs.map((d) {
                                 final name = (d.data() as Map<String, dynamic>)['name'] as String? ?? d.id;
@@ -1303,12 +1304,12 @@ class _StandingsList extends StatelessWidget {
                 const Icon(Icons.emoji_events_outlined, size: 64, color: AppTheme.cardBg2),
                 const SizedBox(height: 12),
                 Text(
-                  'No clubs in $country / $category',
+                  AppLocalizations.of(ctx).teams_no_clubs_in(country, category),
                   style: const TextStyle(color: AppTheme.textSecondary),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Clubs can register and select their category',
+                Text(
+                  AppLocalizations.of(ctx).teams_clubs_register_hint,
                   style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                 ),
               ],
@@ -1518,7 +1519,7 @@ class _CountryTileState extends State<_CountryTile> {
                         ),
                         const SizedBox(width: 3),
                         Text(
-                          'clubs',
+                          AppLocalizations.of(context).teams_count_clubs,
                           style: TextStyle(
                             color: count > 0 ? AppTheme.textSecondary : AppTheme.textSecondary.withValues(alpha: 0.5),
                             fontSize: 11,
