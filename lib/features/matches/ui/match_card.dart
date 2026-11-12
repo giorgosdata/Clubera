@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:clubera/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../models/match_model.dart';
@@ -26,13 +27,13 @@ class MatchCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _statusBadge(),
+            _statusBadge(context),
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(child: _teamWidget(match.homeClubName, match.homeClubLogo, Alignment.centerLeft)),
-                _scoreWidget(),
+                _scoreWidget(context),
                 Expanded(child: _teamWidget(match.awayClubName, match.awayClubLogo, Alignment.centerRight)),
               ],
             ),
@@ -44,7 +45,7 @@ class MatchCard extends StatelessWidget {
     );
   }
 
-  Widget _statusBadge() {
+  Widget _statusBadge(BuildContext context) {
     if (match.isLive) {
       final minute = match.minute ?? '';
       return Row(
@@ -61,7 +62,7 @@ class MatchCard extends StatelessWidget {
               children: [
                 const Icon(Icons.circle, color: Colors.white, size: 6),
                 const SizedBox(width: 4),
-                Text(match.status == 'halftime' ? 'HT' : 'LIVE ${minute.isNotEmpty ? "$minute'" : ""}',
+                Text(match.status == 'halftime' ? AppLocalizations.of(context).m_halftime : 'LIVE ${minute.isNotEmpty ? "$minute'" : ""}',
                   style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -70,8 +71,8 @@ class MatchCard extends StatelessWidget {
       );
     }
     if (match.isFinished) {
-      return const Center(
-        child: Text('FULL TIME', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+      return Center(
+        child: Text(AppLocalizations.of(context).m_full_time, style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
       );
     }
     return Center(
@@ -82,11 +83,11 @@ class MatchCard extends StatelessWidget {
     );
   }
 
-  Widget _scoreWidget() {
+  Widget _scoreWidget(BuildContext context) {
     if (match.isUpcoming) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12),
-        child: Text('vs', style: TextStyle(color: AppTheme.textSecondary, fontSize: 16, fontWeight: FontWeight.bold)),
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Text(AppLocalizations.of(context).vs, style: TextStyle(color: AppTheme.textSecondary, fontSize: 16, fontWeight: FontWeight.bold)),
       );
     }
     return Padding(
