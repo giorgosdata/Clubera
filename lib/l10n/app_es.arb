@@ -164,5 +164,20 @@
   "pred_draw": "Empate",
   "pred_away_win": "Victoria visitante",
   "pred_pending": "Pendiente",
-  "pred_pts": "{points} puntos"
+  "pred_pts": "{points} puntos",
+  "notif_title": "Notificaciones",
+  "notif_section_matches": "Partidos",
+  "notif_section_club": "Club",
+  "notif_section_gamification": "Puntos y predicciones",
+  "notif_goals": "Goles",
+  "notif_goals_desc": "Notificación por cada gol en un partido en directo",
+  "notif_match_start": "Inicio del partido",
+  "notif_match_start_desc": "Cuando empieza un partido de un club que sigues",
+  "notif_match_end": "Resultado final",
+  "notif_match_end_desc": "Notificación del resultado final de un partido",
+  "notif_announcements": "Anuncios",
+  "notif_announcements_desc": "Nuevos anuncios de clubes que sigues",
+  "notif_predictions": "Predicciones",
+  "notif_predictions_desc": "Cuando se puntúen tus predicciones",
+  "notif_device_hint": "Asegúrate de tener activadas las notificaciones de Clubera en los ajustes de tu teléfono."
 }
