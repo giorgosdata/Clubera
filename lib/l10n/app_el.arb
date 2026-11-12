@@ -88,6 +88,77 @@
   "home_redeemed": "Εξαργυρώθηκε! Επικοινώνησε με τον σύλλογο για να το παραλάβεις.",
   "prizes_title": "Τα Δώρα μου",
   "prizes_subtitle": "Δες τα δώρα και τα βραβεία σου",
+  "md_not_found": "Ο αγώνας δεν βρέθηκε",
+  "md_tab_events": "Γεγονότα",
+  "md_tab_lineup": "Ενδεκάδα",
+  "md_tab_predict": "Πρόβλεψη",
+  "md_tab_photos": "Φωτογραφίες",
+  "md_tab_ratings": "Βαθμολογίες",
+  "md_share": "Κοινοποίηση αγώνα",
+  "md_operate": "Διαχείριση αγώνα",
+  "md_share_full_time": "Τέλος αγώνα στο Clubera!",
+  "md_share_follow": "Παρακολούθησε στο Clubera!",
+  "md_half_time": "ΗΜΙΧΡΟΝΟ",
+  "md_no_events": "Δεν υπάρχουν γεγονότα ακόμα",
+  "md_match_events": "Γεγονότα αγώνα",
+  "md_ev_goal": "Γκολ",
+  "md_ev_yellow": "Κίτρινη",
+  "md_ev_red": "Κόκκινη",
+  "md_ev_penalty": "Πέναλτι",
+  "md_ev_foul": "Φάουλ",
+  "md_ev_offside": "Οφσάιντ",
+  "md_ev_corner": "Κόρνερ",
+  "md_ev_throw_in": "Άουτ",
+  "md_ev_goal_cancelled": "Ακυρωμένο γκολ",
+  "md_ev_substitution": "Αλλαγή",
+  "md_lineup_not_set": "Η ενδεκάδα δεν έχει οριστεί ακόμα — εμφανίζονται οι θέσεις της διάταξης",
+  "md_predict_title": "Προβλέψτε το σκορ",
+  "md_predict_points": "10 βαθμοί για ακριβές σκορ • 5 βαθμοί για σωστό αποτέλεσμα",
+  "md_match_finished": "Ο αγώνας έχει τελειώσει",
+  "md_your_prediction": "Η πρόβλεψή σου: {home} - {away}",
+  "@md_your_prediction": {
+    "placeholders": {
+      "home": { "type": "int" },"away": { "type": "int" }
+    }
+  },
+  "md_points_earned": "Κερδισμένοι βαθμοί: {points}",
+  "@md_points_earned": {
+    "placeholders": {
+      "points": { "type": "int" }
+    }
+  },
+  "md_login_to_predict": "Συνδέσου για να προβλέψεις",
+  "md_predictions_unavailable": "Οι προβλέψεις δεν είναι διαθέσιμες",
+  "md_save_prediction": "Αποθήκευση πρόβλεψης",
+  "md_prediction_saved_points": "Η πρόβλεψη αποθηκεύτηκε! Οι βαθμοί θα δοθούν μετά τον αγώνα.",
+  "md_prediction_failed": "Αποτυχία αποθήκευσης πρόβλεψης: {error}",
+  "@md_prediction_failed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "md_photo_uploaded": "Φωτογραφία ανέβηκε!",
+  "md_photo_add": "Ανέβασε φωτογραφία",
+  "md_no_photos": "Δεν υπάρχουν φωτογραφίες",
+  "md_admins_can_upload": "Οι διαχειριστές μπορούν να ανεβάσουν",
+  "md_no_lineup_rating": "Δεν έχει καταχωρηθεί ενδεκάδα για αυτόν τον αγώνα",
+  "md_rating_after_match": "Η αξιολόγηση είναι διαθέσιμη μετά το τέλος του αγώνα",
+  "md_mvp_opens": "Η ψηφοφορία MVP ανοίγει όταν τελειώσει ο αγώνας",
+  "md_potm_votes": "Ο καλύτερος του αγώνα · {count} ψήφοι",
+  "@md_potm_votes": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "md_no_players_lineup": "Δεν υπάρχουν παίκτες στην ενδεκάδα",
+  "md_vote": "Ψήφισε",
+  "md_your_pick": "Η επιλογή σου",
+  "md_votes": "Ψήφοι: {count}",
+  "@md_votes": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "home_redeem_failed": "Αποτυχία: {error}",
   "@home_redeem_failed": {
     "placeholders": {
