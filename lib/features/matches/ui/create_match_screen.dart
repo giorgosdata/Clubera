@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -45,13 +46,13 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_homeClub == null || _awayClub == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select both clubs')),
+        SnackBar(content: Text(AppLocalizations.of(context).cm_select_both)),
       );
       return;
     }
     if (_homeClub!.id == _awayClub!.id) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Home and away club must be different')),
+        SnackBar(content: Text(AppLocalizations.of(context).cm_same_club)),
       );
       return;
     }
@@ -75,7 +76,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Match created!')),
+          SnackBar(content: Text(AppLocalizations.of(context).cm_created)),
         );
         Navigator.pop(context);
       }
@@ -93,7 +94,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Create Match'),
+        title: Text(AppLocalizations.of(context).cm_title),
         backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -109,13 +110,13 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _clubPicker('Home Club', _homeClub, (c) => setState(() => _homeClub = c)),
+              _clubPicker(AppLocalizations.of(context).cm_home_club, _homeClub, (c) => setState(() => _homeClub = c)),
               const SizedBox(height: 12),
-              const Center(child: Text('vs', style: TextStyle(color: AppTheme.textSecondary, fontSize: 18, fontWeight: FontWeight.bold))),
+              Center(child: Text(AppLocalizations.of(context).vs, style: TextStyle(color: AppTheme.textSecondary, fontSize: 18, fontWeight: FontWeight.bold))),
               const SizedBox(height: 12),
-              _clubPicker('Away Club', _awayClub, (c) => setState(() => _awayClub = c)),
+              _clubPicker(AppLocalizations.of(context).cm_away_club, _awayClub, (c) => setState(() => _awayClub = c)),
               const SizedBox(height: 24),
-              const Text('Date & Time', style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+              Text(AppLocalizations.of(context).cm_date_time, style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -159,8 +160,8 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
               TextFormField(
                 controller: _venueCtrl,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: 'Venue (optional)',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).cm_venue,
                   prefixIcon: Icon(Icons.stadium_outlined, color: AppTheme.textSecondary),
                 ),
               ),
@@ -171,7 +172,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
                   onPressed: _loading ? null : _create,
                   child: _loading
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Create Match'),
+                      : Text(AppLocalizations.of(context).cm_title),
                 ),
               ),
             ],
