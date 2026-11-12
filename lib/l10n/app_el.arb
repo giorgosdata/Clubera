@@ -84,5 +84,34 @@
       "error": { "type": "String" }
     }
   },
-  "home_no_news": "Δεν υπάρχουν νέα ακόμα"
+  "home_no_news": "Δεν υπάρχουν νέα ακόμα",
+  "teams_title": "Σύλλογοι",
+  "teams_tab_browse": "Περιήγηση",
+  "teams_tab_search": "Αναζήτηση",
+  "teams_tab_standings": "Βαθμολογία",
+  "teams_tab_tournaments": "Τουρνουά",
+  "teams_search_country": "Αναζήτηση χώρας...",
+  "teams_spin_title": "Ποια ομάδα σου αναλογεί;",
+  "teams_spin_subtitle": "Γύρισε τον τροχό και μάθε!",
+  "teams_my_club": "ΟΜΑΔΑ ΜΟΥ",
+  "teams_search_clubs": "Αναζήτηση συλλόγων...",
+  "teams_search_players": "Αναζήτηση παικτών...",
+  "teams_clubs": "Σύλλογοι",
+  "teams_players": "Παίκτες",
+  "teams_search_min_chars": "Πληκτρολόγησε τουλάχιστον 2 χαρακτήρες...",
+  "teams_no_clubs_for": "Δεν βρέθηκαν σύλλογοι για «{query}»",
+  "@teams_no_clubs_for": {
+    "placeholders": { "query": {"type": "String"} }
+  },
+  "teams_no_players_for": "Δεν βρέθηκαν παίκτες για «{query}»",
+  "@teams_no_players_for": {
+    "placeholders": { "query": {"type": "String"} }
+  },
+  "teams_all_associations": "Όλες οι ενώσεις",
+  "teams_no_clubs_in": "Δεν υπάρχουν σύλλογοι στο {country} / {category}",
+  "@teams_no_clubs_in": {
+    "placeholders": { "country": {"type": "String"}, "category": {"type": "String"} }
+  },
+  "teams_clubs_register_hint": "Οι σύλλογοι μπορούν να εγγραφούν και να επιλέξουν την κατηγορία τους",
+  "teams_count_clubs": "σύλλογοι"
 }
