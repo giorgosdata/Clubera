@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -49,7 +50,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
         stream: FirebaseFirestore.instance.collection('matches').doc(widget.matchId).snapshots(),
         builder: (context, snap) {
           if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-          if (!snap.data!.exists) return const Center(child: Text('Match not found'));
+          if (!snap.data!.exists) return Center(child: Text(AppLocalizations.of(context).md_not_found));
           final match = MatchModel.fromMap(snap.data!.data() as Map<String, dynamic>, widget.matchId);
           return NestedScrollView(
             headerSliverBuilder: (ctx, _) => [
@@ -63,12 +64,12 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
                   labelColor: AppTheme.accent,
                   unselectedLabelColor: AppTheme.textSecondary,
                   tabs: [
-                    const Tab(text: 'Events'),
-                    const Tab(text: 'Line-Up'),
-                    if (FeatureFlags.chanceGamesEnabled) const Tab(text: 'Predict'),
+                    Tab(text: AppLocalizations.of(context).md_tab_events),
+                    Tab(text: AppLocalizations.of(context).md_tab_lineup),
+                    if (FeatureFlags.chanceGamesEnabled) Tab(text: AppLocalizations.of(context).md_tab_predict),
                     const Tab(text: 'MVP'),
-                    const Tab(text: 'Photos'),
-                    const Tab(text: 'Ratings'),
+                    Tab(text: AppLocalizations.of(context).md_tab_photos),
+                    Tab(text: AppLocalizations.of(context).md_tab_ratings),
                   ],
                 )),
               ),
@@ -91,15 +92,15 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
     );
   }
 
-  void _shareMatch(MatchModel match) {
+  void _shareMatch(BuildContext context, MatchModel match) {
     String text;
     if (match.isFinished) {
-      text = '⚽ ${match.homeClubName} ${match.homeScore} – ${match.awayScore} ${match.awayClubName}\nFull Time on Clubera!';
+      text = '⚽ ${match.homeClubName} ${match.homeScore} – ${match.awayScore} ${match.awayClubName}\n${AppLocalizations.of(context).md_share_full_time}';
     } else if (match.isLive) {
       text = '🔴 LIVE: ${match.homeClubName} ${match.homeScore} – ${match.awayScore} ${match.awayClubName} (${match.minute ?? 0}\')';
     } else {
       final date = DateFormat('d MMM, HH:mm').format(match.scheduledAt);
-      text = '📅 ${match.homeClubName} vs ${match.awayClubName} – $date\nFollow on Clubera!';
+      text = '📅 ${match.homeClubName} vs ${match.awayClubName} – $date\n${AppLocalizations.of(context).md_share_follow}';
     }
     Share.share(text);
   }
@@ -118,13 +119,13 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
       actions: [
         IconButton(
           icon: const Icon(Icons.share_outlined, color: Colors.white),
-          tooltip: 'Share match',
-          onPressed: () => _shareMatch(match),
+          tooltip: AppLocalizations.of(context).md_share,
+          onPressed: () => _shareMatch(context, match),
         ),
         if (canOperate && !match.isFinished)
           IconButton(
             icon: const Icon(Icons.sports, color: AppTheme.primaryLight),
-            tooltip: 'Operate Match',
+            tooltip: AppLocalizations.of(context).md_operate,
             onPressed: () => Navigator.push(context, MaterialPageRoute(
               builder: (_) => MatchOperatorScreen(matchId: match.id),
             )),
@@ -151,7 +152,7 @@ class _MatchHeader extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _statusBadge(),
+          _statusBadge(context),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -163,7 +164,7 @@ class _MatchHeader extends StatelessWidget {
                     Text('${match.homeScore}  –  ${match.awayScore}',
                       style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900))
                   else
-                    const Text('vs', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                    Text(AppLocalizations.of(context).vs, style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   if (!match.isUpcoming && match.minute != null)
                     Text("${match.minute}'", style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
@@ -189,7 +190,7 @@ class _MatchHeader extends StatelessWidget {
     );
   }
 
-  Widget _statusBadge() {
+  Widget _statusBadge(BuildContext context) {
     if (match.isLive) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -208,14 +209,14 @@ class _MatchHeader extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(20)),
-        child: const Text('HALF TIME', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+        child: Text(AppLocalizations.of(context).md_half_time, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
       );
     }
     if (match.isFinished) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(color: AppTheme.cardBg2, borderRadius: BorderRadius.circular(20)),
-        child: const Text('FULL TIME', style: TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.bold, fontSize: 13)),
+        child: Text(AppLocalizations.of(context).m_full_time, style: TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.bold, fontSize: 13)),
       );
     }
     return const SizedBox.shrink();
@@ -258,9 +259,9 @@ class _EventsSection extends StatelessWidget {
             .map((d) => MatchEvent.fromMap(d.data() as Map<String, dynamic>, d.id))
             .toList();
         if (events.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(32),
-            child: Center(child: Text('No events yet', style: TextStyle(color: AppTheme.textSecondary))),
+          return Padding(
+            padding: const EdgeInsets.all(32),
+            child: Center(child: Text(AppLocalizations.of(context).md_no_events, style: TextStyle(color: AppTheme.textSecondary))),
           );
         }
         return Padding(
@@ -268,7 +269,7 @@ class _EventsSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Match Events', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(AppLocalizations.of(context).md_match_events, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 12),
               ...events.map((e) => _EventRow(event: e, match: match)),
             ],
@@ -284,34 +285,34 @@ class _EventRow extends StatelessWidget {
   final MatchModel match;
   const _EventRow({required this.event, required this.match});
 
-  ({IconData icon, Color color, String label}) _meta() {
+  ({IconData icon, Color color, String label}) _meta(BuildContext context) {
     switch (event.type) {
       case 'goal':
-        return (icon: Icons.sports_soccer, color: AppTheme.primaryLight, label: 'Goal');
+        return (icon: Icons.sports_soccer, color: AppTheme.primaryLight, label: AppLocalizations.of(context).md_ev_goal);
       case 'yellow_card':
-        return (icon: Icons.square, color: Colors.amber, label: 'Yellow');
+        return (icon: Icons.square, color: Colors.amber, label: AppLocalizations.of(context).md_ev_yellow);
       case 'red_card':
-        return (icon: Icons.square, color: AppTheme.red, label: 'Red');
+        return (icon: Icons.square, color: AppTheme.red, label: AppLocalizations.of(context).md_ev_red);
       case 'penalty':
-        return (icon: Icons.sports_soccer, color: AppTheme.accent, label: 'Penalty');
+        return (icon: Icons.sports_soccer, color: AppTheme.accent, label: AppLocalizations.of(context).md_ev_penalty);
       case 'foul':
-        return (icon: Icons.warning_amber, color: AppTheme.liveRed, label: 'Foul');
+        return (icon: Icons.warning_amber, color: AppTheme.liveRed, label: AppLocalizations.of(context).md_ev_foul);
       case 'offside':
-        return (icon: Icons.flag_outlined, color: Colors.deepPurple, label: 'Offside');
+        return (icon: Icons.flag_outlined, color: Colors.deepPurple, label: AppLocalizations.of(context).md_ev_offside);
       case 'corner':
-        return (icon: Icons.crop_din, color: AppTheme.primaryLight, label: 'Corner');
+        return (icon: Icons.crop_din, color: AppTheme.primaryLight, label: AppLocalizations.of(context).md_ev_corner);
       case 'throw_in':
-        return (icon: Icons.swap_horiz, color: AppTheme.textSecondary, label: 'Throw-in');
+        return (icon: Icons.swap_horiz, color: AppTheme.textSecondary, label: AppLocalizations.of(context).md_ev_throw_in);
       case 'goal_cancelled':
-        return (icon: Icons.cancel_outlined, color: AppTheme.red, label: 'Goal cancelled');
+        return (icon: Icons.cancel_outlined, color: AppTheme.red, label: AppLocalizations.of(context).md_ev_goal_cancelled);
       case 'substitution':
-        return (icon: Icons.swap_vert, color: AppTheme.supportGreen, label: 'Substitution');
+        return (icon: Icons.swap_vert, color: AppTheme.supportGreen, label: AppLocalizations.of(context).md_ev_substitution);
       default:
         return (icon: Icons.fiber_manual_record, color: AppTheme.textSecondary, label: event.type);
     }
   }
 
-  String _description() {
+  String _description(BuildContext context) {
     if (event.type == 'substitution') {
       final out = event.playerName.isEmpty ? '—' : event.playerName;
       final inP = event.playerIn?.isEmpty == false ? event.playerIn! : '—';
@@ -323,7 +324,7 @@ class _EventRow extends StatelessWidget {
       return r.isEmpty ? p : (p.isEmpty ? r : '$p ($r)');
     }
     if (event.type == 'corner' || event.type == 'throw_in') {
-      final m = _meta();
+      final m = _meta(context);
       return event.playerName.isEmpty ? m.label : event.playerName;
     }
     return event.playerName.isEmpty ? '—' : event.playerName;
@@ -332,8 +333,8 @@ class _EventRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isHome = event.clubId == match.homeClubId;
-    final meta = _meta();
-    final text = _description();
+    final meta = _meta(context);
+    final text = _description(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -546,7 +547,7 @@ class _LineupSection extends StatelessWidget {
           ),
           if (!hasLineup) ...[
             const SizedBox(height: 12),
-            const Text('Lineup not set yet — showing formation positions', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12), textAlign: TextAlign.center),
+            Text(AppLocalizations.of(context).md_lineup_not_set, style: TextStyle(color: AppTheme.textSecondary, fontSize: 12), textAlign: TextAlign.center),
           ],
         ],
       ),
@@ -765,14 +766,14 @@ class _PredictSectionState extends State<_PredictSection> {
       if (mounted) {
         setState(() { _existing = prediction; _submitting = false; });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Prediction saved! Points awarded after match.'), backgroundColor: AppTheme.primaryLight),
+          SnackBar(content: Text(AppLocalizations.of(context).md_prediction_saved_points), backgroundColor: AppTheme.primaryLight),
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _submitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save prediction: $e'), backgroundColor: AppTheme.red),
+          SnackBar(content: Text(AppLocalizations.of(context).md_prediction_failed('$e')), backgroundColor: AppTheme.red),
         );
       }
     }
@@ -799,9 +800,9 @@ class _PredictSectionState extends State<_PredictSection> {
               children: [
                 const Icon(Icons.sports_score, color: AppTheme.accent, size: 36),
                 const SizedBox(height: 10),
-                const Text('Predict the Score', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+                Text(AppLocalizations.of(context).md_predict_title, style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
-                const Text('10 pts for exact score • 5 pts for correct outcome', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text(AppLocalizations.of(context).md_predict_points, style: TextStyle(color: Colors.white70, fontSize: 12)),
               ],
             ),
           ),
@@ -811,13 +812,13 @@ class _PredictSectionState extends State<_PredictSection> {
               children: [
                 const Icon(Icons.lock_outline, color: AppTheme.textSecondary, size: 48),
                 const SizedBox(height: 12),
-                const Text('Match finished', style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
+                Text(AppLocalizations.of(context).md_match_finished, style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
                 if (_existing != null) ...[
                   const SizedBox(height: 8),
-                  Text('Your prediction: ${_existing!.homeScore} - ${_existing!.awayScore}',
+                  Text(AppLocalizations.of(context).md_your_prediction(_existing!.homeScore, _existing!.awayScore),
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   if (_existing!.pointsEarned != null)
-                    Text('Points earned: ${_existing!.pointsEarned}', style: const TextStyle(color: AppTheme.accent, fontWeight: FontWeight.w900, fontSize: 16)),
+                    Text(AppLocalizations.of(context).md_points_earned(_existing!.pointsEarned ?? 0), style: const TextStyle(color: AppTheme.accent, fontWeight: FontWeight.w900, fontSize: 16)),
                 ],
               ],
             )
@@ -826,7 +827,7 @@ class _PredictSectionState extends State<_PredictSection> {
               children: [
                 const Icon(Icons.lock_outline, color: AppTheme.textSecondary, size: 48),
                 const SizedBox(height: 12),
-                Text(widget.userId.isEmpty ? 'Login to predict' : 'Predictions unavailable', style: const TextStyle(color: AppTheme.textSecondary)),
+                Text(widget.userId.isEmpty ? AppLocalizations.of(context).md_login_to_predict : AppLocalizations.of(context).md_predictions_unavailable, style: const TextStyle(color: AppTheme.textSecondary)),
               ],
             )
           else ...[
@@ -858,7 +859,7 @@ class _PredictSectionState extends State<_PredictSection> {
                   ),
                   child: _submitting
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Save Prediction', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                      : Text(AppLocalizations.of(context).md_save_prediction, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
                 ),
               )
             else
@@ -874,7 +875,7 @@ class _PredictSectionState extends State<_PredictSection> {
                   children: [
                     const Icon(Icons.check_circle, color: AppTheme.supportGreen, size: 20),
                     const SizedBox(width: 8),
-                    Text('Prediction saved: $_homeGuess - $_awayGuess', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    Text(AppLocalizations.of(context).md_your_prediction(_homeGuess, _awayGuess), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -957,7 +958,7 @@ class _MvpSectionState extends State<_MvpSection> {
   Widget build(BuildContext context) {
     final isFinished = match.status == 'finished';
     if (!isFinished) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
           child: Column(
@@ -966,7 +967,7 @@ class _MvpSectionState extends State<_MvpSection> {
               Icon(Icons.emoji_events, size: 64, color: AppTheme.cardBg2),
               SizedBox(height: 12),
               Text(
-                'MVP voting opens when the match ends',
+                AppLocalizations.of(context).md_mvp_opens,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
               ),
@@ -1013,7 +1014,7 @@ class _MvpSectionState extends State<_MvpSection> {
                     const Icon(Icons.emoji_events, color: Colors.amber, size: 22),
                     const SizedBox(width: 8),
                     Text(
-                      'Player of the Match · ${votes.length} votes',
+                      AppLocalizations.of(context).md_potm_votes(votes.length),
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -1024,10 +1025,10 @@ class _MvpSectionState extends State<_MvpSection> {
                 ),
                 const SizedBox(height: 12),
                 if (players.isEmpty)
-                  const Center(
+                  Center(
                     child: Padding(
                       padding: EdgeInsets.all(24),
-                      child: Text('No players in lineup',
+                      child: Text(AppLocalizations.of(context).md_no_players_lineup,
                           style: TextStyle(color: AppTheme.textSecondary)),
                     ),
                   )
@@ -1158,7 +1159,7 @@ class _MvpPlayerRow extends StatelessWidget {
                 ),
               ),
               Text(
-                '$voteCount vote${voteCount != 1 ? 's' : ''}',
+                AppLocalizations.of(context).md_votes(voteCount),
                 style: TextStyle(
                   color: isWinner ? Colors.amber : AppTheme.textSecondary,
                   fontSize: 12,
@@ -1178,7 +1179,7 @@ class _MvpPlayerRow extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('Vote', style: TextStyle(fontSize: 12)),
+                  child: Text(AppLocalizations.of(context).md_vote, style: TextStyle(fontSize: 12)),
                 )
               else if (isMyPick)
                 Container(
@@ -1187,8 +1188,8 @@ class _MvpPlayerRow extends StatelessWidget {
                     color: AppTheme.primaryLight.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
-                    'Your pick',
+                  child: Text(
+                    AppLocalizations.of(context).md_your_pick,
                     style: TextStyle(color: AppTheme.primaryLight, fontSize: 11),
                   ),
                 ),
@@ -1259,13 +1260,13 @@ class _PhotosSectionState extends State<_PhotosSection> with AutomaticKeepAliveC
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Φωτογραφία ανέβηκε!'), backgroundColor: AppTheme.supportGreen),
+          SnackBar(content: Text(AppLocalizations.of(context).md_photo_uploaded), backgroundColor: AppTheme.supportGreen),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Σφάλμα: $e'), backgroundColor: AppTheme.red),
+          SnackBar(content: Text(AppLocalizations.of(context).m_error('$e')), backgroundColor: AppTheme.red),
         );
       }
     } finally {
@@ -1291,22 +1292,22 @@ class _PhotosSectionState extends State<_PhotosSection> with AutomaticKeepAliveC
               ? FloatingActionButton(
                   backgroundColor: AppTheme.primaryLight,
                   onPressed: _uploading ? null : _pickAndUpload,
-                  tooltip: 'Ανέβασε φωτογραφία',
+                  tooltip: AppLocalizations.of(context).md_photo_add,
                   child: _uploading
                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Icon(Icons.add_photo_alternate_outlined),
                 )
               : null,
           body: photos.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.photo_library_outlined, size: 64, color: AppTheme.cardBg2),
                       SizedBox(height: 12),
-                      Text('Δεν υπάρχουν φωτογραφίες', style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
+                      Text(AppLocalizations.of(context).md_no_photos, style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
                       SizedBox(height: 6),
-                      Text('Οι διαχειριστές μπορούν να ανεβάσουν', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                      Text(AppLocalizations.of(context).md_admins_can_upload, style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                     ],
                   ),
                 )
@@ -1451,7 +1452,7 @@ class _RatingsSectionState extends State<_RatingsSection>
       ...widget.match.awayLineup,
     ];
     if (allPlayers.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(32),
           child: Column(
@@ -1460,7 +1461,7 @@ class _RatingsSectionState extends State<_RatingsSection>
               Icon(Icons.sports_soccer_outlined, size: 48, color: AppTheme.cardBg2),
               SizedBox(height: 12),
               Text(
-                'Δεν έχει καταχωρηθεί ενδεκάδα για αυτόν τον αγώνα',
+                AppLocalizations.of(context).md_no_lineup_rating,
                 style: TextStyle(color: AppTheme.textSecondary),
                 textAlign: TextAlign.center,
               ),
@@ -1497,8 +1498,8 @@ class _RatingsSectionState extends State<_RatingsSection>
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
                 ),
-                child: const Text(
-                  'Η αξιολόγηση είναι διαθέσιμη μετά το τέλος του αγώνα',
+                child: Text(
+                  AppLocalizations.of(context).md_rating_after_match,
                   style: TextStyle(color: AppTheme.accent, fontSize: 13),
                   textAlign: TextAlign.center,
                 ),
