@@ -122,5 +122,21 @@
   "wallet_payment_history": "Histórico de pagamentos",
   "wallet_no_payments": "Sem histórico de pagamentos",
   "wallet_type_donation": "Doação para {club}",
-  "wallet_type_support": "Apoio a {club}"
+  "wallet_type_support": "Apoio a {club}",
+  "profile_admin_pin_prompt": "Introduz o PIN de admin para desbloquear o painel",
+  "profile_unlock": "Desbloquear",
+  "profile_admin_pin_not_set": "PIN de admin não definido. Contacta o proprietário da app.",
+  "profile_admin_granted": "Acesso de admin concedido!",
+  "profile_wrong_pin": "PIN incorreto",
+  "profile_display_name": "Nome de exibição",
+  "profile_email": "E-mail",
+  "profile_saved": "Perfil atualizado!",
+  "profile_failed": "Falhou: {error}",
+  "profile_save_changes": "Guardar alterações",
+  "profile_join_hint": "Pede ao administrador do teu clube o código de convite de 6 caracteres",
+  "profile_join_button": "Entrar",
+  "profile_join_invalid": "Código inválido. Confirma com o administrador do teu clube.",
+  "profile_join_owner": "Já és o proprietário deste clube.",
+  "profile_join_member": "Já és membro deste clube.",
+  "profile_join_success": "Entraste no clube com sucesso!"
 }

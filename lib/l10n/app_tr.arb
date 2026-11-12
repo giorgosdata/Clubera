@@ -122,5 +122,21 @@
   "wallet_payment_history": "Ödeme geçmişi",
   "wallet_no_payments": "Ödeme geçmişi yok",
   "wallet_type_donation": "{club} için bağış",
-  "wallet_type_support": "{club} desteği"
+  "wallet_type_support": "{club} desteği",
+  "profile_admin_pin_prompt": "Yönetici paneli için yönetici PIN’ini gir",
+  "profile_unlock": "Kilidi aç",
+  "profile_admin_pin_not_set": "Yönetici PIN’i ayarlanmamış. Uygulama sahibiyle iletişime geç.",
+  "profile_admin_granted": "Yönetici erişimi verildi!",
+  "profile_wrong_pin": "Yanlış PIN",
+  "profile_display_name": "Görünen ad",
+  "profile_email": "E-posta",
+  "profile_saved": "Profil güncellendi!",
+  "profile_failed": "Başarısız: {error}",
+  "profile_save_changes": "Değişiklikleri kaydet",
+  "profile_join_hint": "Kulüp yöneticinden 6 karakterli davet kodunu iste",
+  "profile_join_button": "Katıl",
+  "profile_join_invalid": "Geçersiz kod. Kulüp yöneticinle kontrol et.",
+  "profile_join_owner": "Bu kulübün zaten sahibisin.",
+  "profile_join_member": "Bu kulübün zaten üyesisin.",
+  "profile_join_success": "Kulübe başarıyla katıldın!"
 }

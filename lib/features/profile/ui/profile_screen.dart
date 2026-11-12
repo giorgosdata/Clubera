@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:clubera/l10n/app_localizations.dart';
+import 'package:flutter/material.dart';
 import '../../../core/providers/locale_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -1077,18 +1077,18 @@ class _MenuSection extends StatelessWidget {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.cardBg,
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.admin_panel_settings, color: AppTheme.accent, size: 20),
             SizedBox(width: 8),
-            Text('Admin Access', style: TextStyle(color: Colors.white)),
+            Text(AppLocalizations.of(context).profile_admin_access, style: TextStyle(color: Colors.white)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Enter admin PIN to unlock admin panel',
+            Text(
+              AppLocalizations.of(context).profile_admin_pin_prompt,
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 16),
@@ -1136,8 +1136,8 @@ class _MenuSection extends StatelessWidget {
                 if (storedPin.isEmpty) {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
-                        content: Text('Admin PIN not set. Contact the app owner.'),
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context).profile_admin_pin_not_set),
                         backgroundColor: AppTheme.red,
                       ),
                     );
@@ -1158,8 +1158,8 @@ class _MenuSection extends StatelessWidget {
                   // Use outer context for snackbar — ctx is unmounted after pop
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Admin access granted!'),
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context).profile_admin_granted),
                         backgroundColor: AppTheme.supportGreen,
                       ),
                     );
@@ -1167,8 +1167,8 @@ class _MenuSection extends StatelessWidget {
                 } else {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
-                        content: Text('Λάθος PIN'),
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context).profile_wrong_pin),
                         backgroundColor: AppTheme.red,
                       ),
                     );
@@ -1178,14 +1178,14 @@ class _MenuSection extends StatelessWidget {
                 if (ctx.mounted) {
                   ScaffoldMessenger.of(ctx).showSnackBar(
                     SnackBar(
-                      content: Text('Σφάλμα: $e'),
+                      content: Text(AppLocalizations.of(context).m_error('$e')),
                       backgroundColor: AppTheme.red,
                     ),
                   );
                 }
               }
             },
-            child: const Text('Unlock', style: TextStyle(color: Colors.black)),
+            child: Text(AppLocalizations.of(context).profile_unlock, style: const TextStyle(color: Colors.black)),
           ),
         ],
       ),
@@ -1224,8 +1224,8 @@ class _MenuSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Edit Profile',
+            Text(
+              AppLocalizations.of(context).profile_edit_profile,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -1242,8 +1242,8 @@ class _MenuSection extends StatelessWidget {
               controller: nameCtrl,
               style: const TextStyle(color: Colors.white),
               maxLength: 50,
-              decoration: const InputDecoration(
-                labelText: 'Display Name',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).profile_display_name,
                 prefixIcon: Icon(
                   Icons.person_outline,
                   color: AppTheme.textSecondary,
@@ -1255,7 +1255,7 @@ class _MenuSection extends StatelessWidget {
               enabled: false,
               style: const TextStyle(color: AppTheme.textSecondary),
               decoration: InputDecoration(
-                labelText: 'Email',
+                labelText: AppLocalizations.of(context).profile_email,
                 hintText: user.email,
                 prefixIcon: const Icon(
                   Icons.email_outlined,
@@ -1294,8 +1294,8 @@ class _MenuSection extends StatelessWidget {
                     ));
                     if (ctx.mounted) Navigator.pop(ctx);
                     messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Profile updated!'),
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context).profile_saved),
                         backgroundColor: AppTheme.primaryLight,
                       ),
                     );
@@ -1303,13 +1303,13 @@ class _MenuSection extends StatelessWidget {
                     if (ctx.mounted) setSheet(() => saving = false);
                     messenger.showSnackBar(
                       SnackBar(
-                        content: Text('Failed: $e'),
+                        content: Text(AppLocalizations.of(context).profile_failed('$e')),
                         backgroundColor: AppTheme.red,
                       ),
                     );
                   }
                 },
-                child: saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Save Changes'),
+                child: saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Text(AppLocalizations.of(context).profile_save_changes),
               ),
             ),
           ],
@@ -1840,7 +1840,7 @@ class _JoinWithCodeSheetState extends State<_JoinWithCodeSheet> {
           .get();
 
       if (query.docs.isEmpty) {
-        if (mounted) setState(() { _error = 'Invalid code. Check with your club admin.'; _loading = false; });
+        if (mounted) setState(() { _error = AppLocalizations.of(context).profile_join_invalid; _loading = false; });
         return;
       }
 
@@ -1848,13 +1848,13 @@ class _JoinWithCodeSheetState extends State<_JoinWithCodeSheet> {
       final clubData = query.docs.first.data();
 
       if (clubData['adminUid'] == widget.user.uid) {
-        if (mounted) setState(() { _error = 'You are already the owner of this club.'; _loading = false; });
+        if (mounted) setState(() { _error = AppLocalizations.of(context).profile_join_owner; _loading = false; });
         return;
       }
 
       final staffUids = List<String>.from(clubData['staffUids'] ?? []);
       if (staffUids.contains(widget.user.uid)) {
-        if (mounted) setState(() { _error = 'You are already a member of this club.'; _loading = false; });
+        if (mounted) setState(() { _error = AppLocalizations.of(context).profile_join_member; _loading = false; });
         return;
       }
 
@@ -1875,8 +1875,8 @@ class _JoinWithCodeSheetState extends State<_JoinWithCodeSheet> {
         );
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Joined club successfully!'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).profile_join_success),
             backgroundColor: AppTheme.supportGreen,
           ),
         );
@@ -1909,8 +1909,8 @@ class _JoinWithCodeSheetState extends State<_JoinWithCodeSheet> {
           const SizedBox(height: 20),
           const Icon(Icons.vpn_key, color: AppTheme.primaryLight, size: 40),
           const SizedBox(height: 12),
-          const Text(
-            'Join Club with Code',
+          Text(
+            AppLocalizations.of(context).profile_join_club_code,
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -1918,8 +1918,8 @@ class _JoinWithCodeSheetState extends State<_JoinWithCodeSheet> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Ask your club admin for the 6-character invite code',
+          Text(
+            AppLocalizations.of(context).profile_join_hint,
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             textAlign: TextAlign.center,
           ),
@@ -1980,8 +1980,8 @@ class _JoinWithCodeSheetState extends State<_JoinWithCodeSheet> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text(
-                      'Join Club',
+                  : Text(
+                      AppLocalizations.of(context).profile_join_button,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
@@ -2309,7 +2309,7 @@ class _GameCard extends StatelessWidget {
                     if (ctx.mounted) setDlg(() => processing = false);
                     if (!ctx.mounted) return;
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(content: Text('Failed: $e'), backgroundColor: AppTheme.red),
+                      SnackBar(content: Text(AppLocalizations.of(context).profile_failed('$e')), backgroundColor: AppTheme.red),
                     );
                   }
                 },

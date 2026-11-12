@@ -122,5 +122,21 @@
   "wallet_payment_history": "Historique des paiements",
   "wallet_no_payments": "Aucun historique de paiement",
   "wallet_type_donation": "Don à {club}",
-  "wallet_type_support": "Soutien à {club}"
+  "wallet_type_support": "Soutien à {club}",
+  "profile_admin_pin_prompt": "Saisis le code PIN admin pour déverrouiller le panneau admin",
+  "profile_unlock": "Déverrouiller",
+  "profile_admin_pin_not_set": "Le code PIN admin n'est pas défini. Contacte le propriétaire de l'application.",
+  "profile_admin_granted": "Accès admin accordé !",
+  "profile_wrong_pin": "Code PIN incorrect",
+  "profile_display_name": "Nom d'affichage",
+  "profile_email": "E-mail",
+  "profile_saved": "Profil mis à jour !",
+  "profile_failed": "Échec : {error}",
+  "profile_save_changes": "Enregistrer les modifications",
+  "profile_join_hint": "Demande à l'admin de ton club le code d'invitation à 6 caractères",
+  "profile_join_button": "Rejoindre",
+  "profile_join_invalid": "Code invalide. Vérifie avec l'admin de ton club.",
+  "profile_join_owner": "Tu es déjà le propriétaire de ce club.",
+  "profile_join_member": "Tu es déjà membre de ce club.",
+  "profile_join_success": "Tu as rejoint le club avec succès !"
 }

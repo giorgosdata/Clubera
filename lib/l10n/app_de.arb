@@ -122,5 +122,21 @@
   "wallet_payment_history": "Zahlungsverlauf",
   "wallet_no_payments": "Kein Zahlungsverlauf",
   "wallet_type_donation": "Spende an {club}",
-  "wallet_type_support": "Unterstützung für {club}"
+  "wallet_type_support": "Unterstützung für {club}",
+  "profile_admin_pin_prompt": "Gib die Admin-PIN ein, um das Admin-Panel zu öffnen",
+  "profile_unlock": "Entsperren",
+  "profile_admin_pin_not_set": "Admin-PIN nicht festgelegt. Wende dich an den App-Betreiber.",
+  "profile_admin_granted": "Admin-Zugang gewährt!",
+  "profile_wrong_pin": "Falsche PIN",
+  "profile_display_name": "Anzeigename",
+  "profile_email": "E-Mail",
+  "profile_saved": "Profil aktualisiert!",
+  "profile_failed": "Fehlgeschlagen: {error}",
+  "profile_save_changes": "Änderungen speichern",
+  "profile_join_hint": "Frag den Vereinsadmin nach dem 6-stelligen Einladungscode",
+  "profile_join_button": "Beitreten",
+  "profile_join_invalid": "Ungültiger Code. Frag deinen Vereinsadmin.",
+  "profile_join_owner": "Du bist bereits Besitzer dieses Vereins.",
+  "profile_join_member": "Du bist bereits Mitglied dieses Vereins.",
+  "profile_join_success": "Erfolgreich dem Verein beigetreten!"
 }
