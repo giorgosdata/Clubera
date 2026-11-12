@@ -48,5 +48,41 @@
   "m_draw": "Ισοπαλία",
   "m_away": "Φιλοξενούμενος",
   "m_coupon_saved": "Το κουπόνι υποβλήθηκε! Αποθηκεύτηκαν {count} επιλογές.",
-  "m_error": "Σφάλμα: {error}"
+    
+  "m_error": "Σφάλμα: {error}",
+  "home_no_rewards": "Δεν υπάρχουν επιβραβεύσεις ακόμα",
+  "home_rewards_hint": "Οι σύλλογοι προσθέτουν επιβραβεύσεις από τον Πίνακα συλλόγου",
+  "home_points_in": "Έχεις {points} πόντους. Κέρδισε περισσότερους ψηφίζοντας και προβλέποντας!",
+  "@home_points_in": {
+    "placeholders": {
+      "points": { "type": "int" }
+    }
+  },
+  "home_sign_in_rewards": "Συνδέσου για να κερδίζεις πόντους και να εξαργυρώνεις επιβραβεύσεις!",
+  "home_pts": "{count} πόντοι",
+  "@home_pts": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "home_redeem": "Εξαργύρωση",
+  "home_locked": "Κλειδωμένο",
+  "home_cancel": "Ακύρωση",
+  "home_redeem_confirm": "Να εξαργυρωθεί το «{title}» με {cost} πόντους; Υπόλοιπο: {balance} → {remaining}.",
+  "@home_redeem_confirm": {
+    "placeholders": {
+      "title": { "type": "String" },
+      "cost": { "type": "int" },
+      "balance": { "type": "int" },
+      "remaining": { "type": "int" }
+    }
+  },
+  "home_redeemed": "Εξαργυρώθηκε! Επικοινώνησε με τον σύλλογο για να το παραλάβεις.",
+  "home_redeem_failed": "Αποτυχία: {error}",
+  "@home_redeem_failed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "home_no_news": "Δεν υπάρχουν νέα ακόμα"
 }

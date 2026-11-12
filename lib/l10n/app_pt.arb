@@ -48,5 +48,17 @@
   "m_draw": "Empate",
   "m_away": "Fora",
   "m_coupon_saved": "Cupom enviado! {count} palpites salvos.",
-  "m_error": "Erro: {error}"
+  "m_error": "Erro: {error}",
+  "home_no_rewards": "Ainda não há recompensas",
+  "home_rewards_hint": "Os clubes adicionam recompensas no painel do clube",
+  "home_points_in": "Tens {points} pontos. Ganha mais votando e prevendo!",
+  "home_sign_in_rewards": "Inicia sessão para ganhar pontos e resgatar recompensas!",
+  "home_pts": "{count} pontos",
+  "home_redeem": "Resgatar",
+  "home_locked": "Bloqueado",
+  "home_cancel": "Cancelar",
+  "home_redeem_confirm": "Resgatar \"{title}\" por {cost} pontos? Saldo: {balance} → {remaining}.",
+  "home_redeemed": "Resgatado! Contacta o clube para o receber.",
+  "home_redeem_failed": "Falha: {error}",
+  "home_no_news": "Ainda não há notícias"
 }

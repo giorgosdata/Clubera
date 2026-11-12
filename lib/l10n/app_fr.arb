@@ -48,5 +48,17 @@
   "m_draw": "Nul",
   "m_away": "Extérieur",
   "m_coupon_saved": "Coupon envoyé ! {count} choix enregistrés.",
-  "m_error": "Erreur : {error}"
+  "m_error": "Erreur : {error}",
+  "home_no_rewards": "Aucune récompense pour le moment",
+  "home_rewards_hint": "Les clubs ajoutent des récompenses depuis le tableau de bord du club",
+  "home_points_in": "Vous avez {points} points. Gagnez-en plus en votant et en pronostiquant !",
+  "home_sign_in_rewards": "Connectez-vous pour gagner des points et échanger des récompenses !",
+  "home_pts": "{count} points",
+  "home_redeem": "Échanger",
+  "home_locked": "Verrouillé",
+  "home_cancel": "Annuler",
+  "home_redeem_confirm": "Échanger « {title} » contre {cost} points ? Solde : {balance} → {remaining}.",
+  "home_redeemed": "Échangé ! Contactez le club pour le récupérer.",
+  "home_redeem_failed": "Échec : {error}",
+  "home_no_news": "Aucune actualité pour le moment"
 }

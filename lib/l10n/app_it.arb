@@ -48,5 +48,17 @@
   "m_draw": "Pareggio",
   "m_away": "Trasferta",
   "m_coupon_saved": "Coupon inviato! {count} scelte salvate.",
-  "m_error": "Errore: {error}"
+  "m_error": "Errore: {error}",
+  "home_no_rewards": "Nessuna ricompensa per ora",
+  "home_rewards_hint": "I club aggiungono ricompense dalla dashboard del club",
+  "home_points_in": "Hai {points} punti. Guadagnane di più votando e pronosticando!",
+  "home_sign_in_rewards": "Accedi per guadagnare punti e riscattare ricompense!",
+  "home_pts": "{count} punti",
+  "home_redeem": "Riscatta",
+  "home_locked": "Bloccato",
+  "home_cancel": "Annulla",
+  "home_redeem_confirm": "Riscattare \"{title}\" per {cost} punti? Saldo: {balance} → {remaining}.",
+  "home_redeemed": "Riscattato! Contatta il club per ritirarlo.",
+  "home_redeem_failed": "Errore: {error}",
+  "home_no_news": "Nessuna notizia per ora"
 }

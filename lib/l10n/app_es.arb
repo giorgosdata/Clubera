@@ -48,5 +48,17 @@
   "m_draw": "Empate",
   "m_away": "Visitante",
   "m_coupon_saved": "¡Cupón enviado! Se guardaron {count} selecciones.",
-  "m_error": "Error: {error}"
+  "m_error": "Error: {error}",
+  "home_no_rewards": "Aún no hay recompensas",
+  "home_rewards_hint": "Los clubes añaden recompensas desde el panel del club",
+  "home_points_in": "Tienes {points} puntos. ¡Gana más votando y prediciendo!",
+  "home_sign_in_rewards": "¡Inicia sesión para ganar puntos y canjear recompensas!",
+  "home_pts": "{count} puntos",
+  "home_redeem": "Canjear",
+  "home_locked": "Bloqueado",
+  "home_cancel": "Cancelar",
+  "home_redeem_confirm": "¿Canjear \"{title}\" por {cost} puntos? Saldo: {balance} → {remaining}.",
+  "home_redeemed": "¡Canjeado! Contacta con el club para recogerlo.",
+  "home_redeem_failed": "Error: {error}",
+  "home_no_news": "Aún no hay noticias"
 }

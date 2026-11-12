@@ -48,5 +48,17 @@
   "m_draw": "Beraberlik",
   "m_away": "Deplasman",
   "m_coupon_saved": "Kupon gönderildi! {count} seçim kaydedildi.",
-  "m_error": "Hata: {error}"
+  "m_error": "Hata: {error}",
+  "home_no_rewards": "Henüz ödül yok",
+  "home_rewards_hint": "Kulüpler ödülleri Kulüp panelinden ekler",
+  "home_points_in": "{points} puanın var. Oy verip tahmin yaparak daha fazla kazan!",
+  "home_sign_in_rewards": "Puan kazanmak ve ödül kullanmak için giriş yap!",
+  "home_pts": "{count} puan",
+  "home_redeem": "Kullan",
+  "home_locked": "Kilitli",
+  "home_cancel": "İptal",
+  "home_redeem_confirm": "\"{title}\" için {cost} puan harcansın mı? Bakiye: {balance} → {remaining}.",
+  "home_redeemed": "Kullanıldı! Ödülü almak için kulüple iletişime geç.",
+  "home_redeem_failed": "Hata: {error}",
+  "home_no_news": "Henüz haber yok"
 }
