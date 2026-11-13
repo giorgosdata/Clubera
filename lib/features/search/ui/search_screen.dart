@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
@@ -97,7 +98,7 @@ class _SearchScreenState extends State<SearchScreen> {
           autofocus: true,
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
-            hintText: 'Σωματεία, αγώνες...',
+            hintText: AppLocalizations.of(context).sr_hint,
             hintStyle: const TextStyle(color: AppTheme.textSecondary),
             border: InputBorder.none,
             filled: false,
@@ -128,7 +129,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         children: [
                           const Icon(Icons.search_off, size: 48, color: AppTheme.cardBg2),
                           const SizedBox(height: 12),
-                          Text('Δεν βρέθηκαν αποτελέσματα για "$_query"',
+                          Text(AppLocalizations.of(context).sr_no_results(_query),
                               style: const TextStyle(color: AppTheme.textSecondary),
                               textAlign: TextAlign.center),
                         ],
@@ -138,12 +139,12 @@ class _SearchScreenState extends State<SearchScreen> {
                       padding: const EdgeInsets.all(16),
                       children: [
                         if (_clubs.isNotEmpty) ...[
-                          const _SectionHeader('Σωματεία'),
+                          _SectionHeader(AppLocalizations.of(context).sr_clubs),
                           ..._clubs.map((c) => _ClubResult(club: c)),
                         ],
                         if (_matches.isNotEmpty) ...[
                           if (_clubs.isNotEmpty) const SizedBox(height: 16),
-                          const _SectionHeader('Αγώνες'),
+                          _SectionHeader(AppLocalizations.of(context).sr_matches),
                           ..._matches.map((m) => _MatchResult(match: m)),
                         ],
                       ],
@@ -258,13 +259,13 @@ class _SearchEmptyState extends StatelessWidget {
   const _SearchEmptyState();
 
   @override
-  Widget build(BuildContext context) => const Center(
+  Widget build(BuildContext context) => Center(
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(Icons.search, size: 64, color: AppTheme.cardBg2),
         SizedBox(height: 12),
-        Text('Αναζήτησε σωματεία & αγώνες', style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
+        Text(AppLocalizations.of(context).sr_empty_hint, style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
       ],
     ),
   );
