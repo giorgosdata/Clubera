@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -192,7 +193,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Σφάλμα: $e'), backgroundColor: AppTheme.red),
+          SnackBar(content: Text(AppLocalizations.of(context).m_error('$e')), backgroundColor: AppTheme.red),
         );
       }
     }
@@ -284,7 +285,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Νέο Τουρνουά'),
+        title: Text(AppLocalizations.of(context).cr_title),
         backgroundColor: Colors.transparent,
       ),
       body: Stepper(
@@ -296,8 +297,8 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
             setState(() => _step = 1);
           } else if (_step == 1) {
             if (_teams.length < 2) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Πρόσθεσε τουλάχιστον 2 ομάδες'),
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(AppLocalizations.of(context).cr_min_teams),
                 backgroundColor: AppTheme.red,
               ));
               return;
@@ -313,17 +314,17 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
         connectorColor: WidgetStateProperty.all(AppTheme.primaryLight),
         steps: [
           Step(
-            title: const Text('Πληροφορίες'),
+            title: Text(AppLocalizations.of(context).cr_step_info),
             isActive: _step >= 0,
             content: _buildStep1(),
           ),
           Step(
-            title: const Text('Ομάδες'),
+            title: Text(AppLocalizations.of(context).td_teams),
             isActive: _step >= 1,
             content: _buildStep2(),
           ),
           Step(
-            title: const Text('Επισκόπηση'),
+            title: Text(AppLocalizations.of(context).cr_step_review),
             isActive: _step >= 2,
             content: _buildStep3(),
           ),
@@ -340,7 +341,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                 onPressed: _loading ? null : details.onStepContinue,
                 child: _loading && _step == 2
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Text(_step == 2 ? 'Δημιουργία' : 'Επόμενο'),
+                    : Text(_step == 2 ? AppLocalizations.of(context).cr_create_btn : AppLocalizations.of(context).cr_next),
               ),
               if (_step > 0) ...[
                 const SizedBox(width: 12),
@@ -363,8 +364,8 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
         TextField(
           controller: _nameCtrl,
           style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            labelText: 'Όνομα τουρνουά *',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).cr_name,
             labelStyle: TextStyle(color: AppTheme.textSecondary),
             filled: true,
             fillColor: AppTheme.cardBg2,
@@ -375,8 +376,8 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
           controller: _descCtrl,
           style: const TextStyle(color: Colors.white),
           maxLines: 2,
-          decoration: const InputDecoration(
-            labelText: 'Περιγραφή (προαιρετικό)',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).cr_description,
             labelStyle: TextStyle(color: AppTheme.textSecondary),
             filled: true,
             fillColor: AppTheme.cardBg2,
@@ -388,20 +389,20 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
           style: const TextStyle(color: Colors.white),
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(
-            labelText: 'Σεζόν',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).td_season,
             labelStyle: TextStyle(color: AppTheme.textSecondary),
             filled: true,
             fillColor: AppTheme.cardBg2,
           ),
         ),
         const SizedBox(height: 16),
-        const Text('Φορμά', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+        Text(AppLocalizations.of(context).td_format, style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
         const SizedBox(height: 8),
         ...[
-          ('knockout', 'Νοκ-Άουτ', 'Απευθείας αποκλεισμός από την αρχή'),
-          ('groups', 'Όμιλοι', 'Μόνο φάση ομίλων (βαθμολογία)'),
-          ('groups_knockout', 'Όμιλοι + Νοκ-Άουτ', 'Φάση ομίλων → προκριματικά'),
+          ('knockout', AppLocalizations.of(context).tn_status_knockout, AppLocalizations.of(context).cr_format_knockout_desc),
+          ('groups', AppLocalizations.of(context).cr_format_groups, AppLocalizations.of(context).cr_format_groups_desc),
+          ('groups_knockout', AppLocalizations.of(context).tn_format_groups_knockout, AppLocalizations.of(context).cr_format_groups_knockout_desc),
         ].map((f) => RadioListTile<String>(
               value: f.$1,
               groupValue: _format,
@@ -415,7 +416,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Text('Αριθμός ομίλων:', style: TextStyle(color: AppTheme.textSecondary)),
+              Text(AppLocalizations.of(context).cr_num_groups, style: TextStyle(color: AppTheme.textSecondary)),
               const SizedBox(width: 16),
               ...List.generate(4, (i) {
                 final n = i + 2;
@@ -450,8 +451,8 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
               child: TextField(
                 controller: _teamNameCtrl,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Αναζήτηση ή πληκτρολόγησε όνομα...',
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context).cr_search_hint,
                   hintStyle: TextStyle(color: AppTheme.textSecondary),
                   prefixIcon: Icon(Icons.search, color: AppTheme.textSecondary),
                   filled: true,
@@ -467,7 +468,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
               style: IconButton.styleFrom(backgroundColor: AppTheme.primaryLight),
               icon: const Icon(Icons.add, color: Colors.white),
               onPressed: _addCustomTeam,
-              tooltip: 'Προσθήκη ως νέα ομάδα',
+              tooltip: AppLocalizations.of(context).cr_add_team_tooltip,
             ),
           ],
         ),
@@ -532,19 +533,19 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
 
   Widget _buildStep3() {
     final formatLabel = {
-      'knockout': 'Νοκ-Άουτ',
-      'groups': 'Φάση Ομίλων',
-      'groups_knockout': 'Όμιλοι + Νοκ-Άουτ',
+      'knockout': AppLocalizations.of(context).tn_status_knockout,
+      'groups': AppLocalizations.of(context).tn_status_groups,
+      'groups_knockout': AppLocalizations.of(context).tn_format_groups_knockout,
     }[_format] ?? _format;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _reviewRow('Όνομα', _nameCtrl.text),
-        _reviewRow('Φορμά', formatLabel),
-        _reviewRow('Σεζόν', _seasonCtrl.text),
-        if (_format != 'knockout') _reviewRow('Όμιλοι', '$_groupCount'),
-        _reviewRow('Ομάδες', '${_teams.length}'),
-        if (_format != 'groups') _reviewRow('Φάσεις Νοκ-Άουτ', '$_totalRounds (${_roundLabel(_totalRounds)})'),
+        _reviewRow(AppLocalizations.of(context).cr_review_name, _nameCtrl.text),
+        _reviewRow(AppLocalizations.of(context).td_format, formatLabel),
+        _reviewRow(AppLocalizations.of(context).td_season, _seasonCtrl.text),
+        if (_format != 'knockout') _reviewRow(AppLocalizations.of(context).cr_review_groups, '$_groupCount'),
+        _reviewRow(AppLocalizations.of(context).td_teams, '${_teams.length}'),
+        if (_format != 'groups') _reviewRow(AppLocalizations.of(context).cr_review_rounds, '$_totalRounds (${_roundLabel(context, _totalRounds)})'),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(12),
@@ -553,13 +554,13 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AppTheme.supportGreen.withValues(alpha: 0.3)),
           ),
-          child: const Row(
+          child: Row(
             children: [
               Icon(Icons.info_outline, color: AppTheme.supportGreen, size: 16),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Τα fixtures θα δημιουργηθούν αυτόματα. Μπορείς να εισάγεις αποτελέσματα από το detail screen.',
+                  AppLocalizations.of(context).cr_fixtures_info,
                   style: TextStyle(color: AppTheme.supportGreen, fontSize: 12),
                 ),
               ),
@@ -583,10 +584,10 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
         ),
       );
 
-  String _roundLabel(int rounds) {
-    if (rounds <= 1) return 'Τελικός';
-    if (rounds == 2) return 'Ημιτελικός + Τελικός';
-    if (rounds == 3) return 'Προημιτελικός + Ημιτελικός + Τελικός';
-    return '$rounds γύροι';
+  String _roundLabel(BuildContext context, int rounds) {
+    if (rounds <= 1) return AppLocalizations.of(context).tn_round_final;
+    if (rounds == 2) return AppLocalizations.of(context).cr_round_semi_final;
+    if (rounds == 3) return AppLocalizations.of(context).cr_round_quarter_final;
+    return AppLocalizations.of(context).tn_rounds_count(rounds);
   }
 }
