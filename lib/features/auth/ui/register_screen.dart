@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -39,7 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         role: 'fan',
       );
     } catch (e) {
-      if (mounted) setState(() => _error = _friendlyAuthError(e));
+      if (mounted) setState(() => _error = _friendlyAuthError(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -50,7 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Create Account'),
+        title: Text(AppLocalizations.of(context).au_create_account),
         backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -65,29 +66,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Join Clubera', style: Theme.of(context).textTheme.headlineMedium),
+                Text(AppLocalizations.of(context).au_join, style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 6),
-                Text('Create your account to get started', style: Theme.of(context).textTheme.bodyMedium),
+                Text(AppLocalizations.of(context).au_register_subtitle, style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _nameCtrl,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).au_full_name,
                     prefixIcon: Icon(Icons.person_outline, color: AppTheme.textSecondary),
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter your name' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? AppLocalizations.of(context).au_err_name : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).au_email,
                     prefixIcon: Icon(Icons.email_outlined, color: AppTheme.textSecondary),
                   ),
-                  validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                  validator: (v) => (v == null || !v.contains('@')) ? AppLocalizations.of(context).au_err_email : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -95,14 +96,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: _obscure,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: AppLocalizations.of(context).au_password,
                     prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.textSecondary),
                     suffixIcon: IconButton(
                       icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: AppTheme.textSecondary),
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
-                  validator: (v) => (v == null || v.length < 6) ? 'Minimum 6 characters' : null,
+                  validator: (v) => (v == null || v.length < 6) ? AppLocalizations.of(context).au_err_password : null,
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),
@@ -123,7 +124,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onPressed: _loading ? null : _register,
                     child: _loading
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Create Account'),
+                        : Text(AppLocalizations.of(context).au_create_account),
                   ),
                 ),
               ],
@@ -134,15 +135,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  static String _friendlyAuthError(Object e) {
+  static String _friendlyAuthError(BuildContext context, Object e) {
+    final l = AppLocalizations.of(context);
     if (e is FirebaseAuthException) {
       switch (e.code) {
-        case 'email-already-in-use': return 'This email is already registered.';
-        case 'weak-password': return 'Password is too weak (min 6 characters).';
-        case 'invalid-email': return 'Enter a valid email address.';
-        case 'network-request-failed': return 'No internet connection.';
-        case 'too-many-requests': return 'Too many attempts. Try again later.';
-        default: return e.message ?? 'Registration failed.';
+        case 'email-already-in-use': return l.au_err_email_in_use;
+        case 'weak-password': return l.au_err_weak_password;
+        case 'invalid-email': return l.au_err_invalid_email;
+        case 'network-request-failed': return l.au_err_no_internet;
+        case 'too-many-requests': return l.au_err_too_many;
+        default: return e.message ?? l.au_err_register_failed;
       }
     }
     return e.toString().replaceAll('Exception: ', '');

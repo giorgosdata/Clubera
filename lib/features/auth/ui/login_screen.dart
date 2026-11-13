@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -47,10 +48,10 @@ class _LoginScreenState extends State<LoginScreen> {
         if (msg.contains('no_credentials')) {
           setState(() {
             _biometricEnabled = false;
-            _error = 'Συνδέσου με κωδικό για να ενεργοποιήσεις ξανά το biometric.';
+            _error = AppLocalizations.of(context).au_err_biometric_relogin;
           });
         } else {
-          setState(() => _error = 'Biometric απέτυχε. Χρησιμοποίησε κωδικό.');
+          setState(() => _error = AppLocalizations.of(context).au_err_biometric_failed);
         }
       }
     } finally {
@@ -75,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _offerBiometric();
       }
     } catch (e) {
-      if (mounted) setState(() => _error = _friendlyAuthError(e));
+      if (mounted) setState(() => _error = _friendlyAuthError(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -86,13 +87,13 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.cardBg,
-        title: const Text('Biometric Login', style: TextStyle(color: Colors.white)),
+        title: Text(AppLocalizations.of(context).au_biometric_title, style: const TextStyle(color: Colors.white)),
         content: const Text(
           'Θέλεις να συνδέεσαι με δακτυλικό αποτύπωμα την επόμενη φορά;',
           style: TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Όχι')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(context).au_no)),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
@@ -103,25 +104,26 @@ class _LoginScreenState extends State<LoginScreen> {
               );
               if (mounted) setState(() => _biometricEnabled = true);
             },
-            child: const Text('Ναι'),
+            child: Text(AppLocalizations.of(context).au_yes),
           ),
         ],
       ),
     );
   }
 
-  static String _friendlyAuthError(Object e) {
+  static String _friendlyAuthError(BuildContext context, Object e) {
+    final l = AppLocalizations.of(context);
     if (e is FirebaseAuthException) {
       switch (e.code) {
         case 'user-not-found':
         case 'invalid-credential':
-          return 'Invalid email or password.';
-        case 'wrong-password': return 'Incorrect password.';
-        case 'invalid-email': return 'Enter a valid email address.';
-        case 'user-disabled': return 'This account has been disabled.';
-        case 'network-request-failed': return 'No internet connection.';
-        case 'too-many-requests': return 'Too many attempts. Try again later.';
-        default: return e.message ?? 'Sign in failed.';
+          return l.au_err_invalid_credentials;
+        case 'wrong-password': return l.au_err_wrong_password;
+        case 'invalid-email': return l.au_err_invalid_email;
+        case 'user-disabled': return l.au_err_disabled;
+        case 'network-request-failed': return l.au_err_no_internet;
+        case 'too-many-requests': return l.au_err_too_many;
+        default: return e.message ?? l.au_err_sign_in_failed;
       }
     }
     return e.toString().replaceAll('Exception: ', '');
@@ -142,19 +144,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                     _buildLogo(),
                     const SizedBox(height: 24),
-                    Text('Welcome back', style: Theme.of(context).textTheme.headlineMedium),
+                    Text(AppLocalizations.of(context).au_welcome_back, style: Theme.of(context).textTheme.headlineMedium),
                     const SizedBox(height: 6),
-                    Text('Sign in to your account', style: Theme.of(context).textTheme.bodyMedium),
+                    Text(AppLocalizations.of(context).au_sign_in_subtitle, style: Theme.of(context).textTheme.bodyMedium),
                     const SizedBox(height: 24),
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).au_email,
                     prefixIcon: Icon(Icons.email_outlined, color: AppTheme.textSecondary),
                   ),
-                  validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                  validator: (v) => (v == null || !v.contains('@')) ? AppLocalizations.of(context).au_err_email : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -162,21 +164,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscure,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: AppLocalizations.of(context).au_password,
                     prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.textSecondary),
                     suffixIcon: IconButton(
                       icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: AppTheme.textSecondary),
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
-                  validator: (v) => (v == null || v.length < 6) ? 'Minimum 6 characters' : null,
+                  validator: (v) => (v == null || v.length < 6) ? AppLocalizations.of(context).au_err_password : null,
                 ),
                 const SizedBox(height: 8),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: _showForgotPassword,
-                    child: const Text('Forgot password?', style: TextStyle(color: AppTheme.primaryLight)),
+                    child: Text(AppLocalizations.of(context).au_forgot, style: TextStyle(color: AppTheme.primaryLight)),
                   ),
                 ),
                 if (_error != null) ...[
@@ -191,11 +193,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Row(
                       children: [
                         Expanded(child: Text(_error!, style: const TextStyle(color: AppTheme.red, fontSize: 13))),
-                        if (_error == 'Biometric failed. Use password.' && _biometricAvailable)
+                        if (_error == AppLocalizations.of(context).au_err_biometric_failed && _biometricAvailable)
                           TextButton(
                             onPressed: _loading ? null : _loginWithBiometric,
                             style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
-                            child: const Text('Retry', style: TextStyle(color: AppTheme.primaryLight, fontSize: 13, fontWeight: FontWeight.bold)),
+                            child: Text(AppLocalizations.of(context).au_retry, style: TextStyle(color: AppTheme.primaryLight, fontSize: 13, fontWeight: FontWeight.bold)),
                           ),
                       ],
                     ),
@@ -208,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _loading ? null : _login,
                     child: _loading
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Sign In'),
+                        : Text(AppLocalizations.of(context).au_sign_in),
                   ),
                 ),
                 if (_biometricAvailable) ...[
@@ -218,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _loading ? null : _loginWithBiometric,
                       icon: const Icon(Icons.fingerprint, size: 22),
-                      label: Text(_biometricEnabled ? 'Σύνδεση με Biometric' : 'Ενεργοποίηση Biometric'),
+                      label: Text(_biometricEnabled ? AppLocalizations.of(context).au_biometric_login : AppLocalizations.of(context).au_biometric_enable),
                     ),
                   ),
                 ],
@@ -226,10 +228,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Don't have an account? ", style: TextStyle(color: AppTheme.textSecondary)),
+                        Text(AppLocalizations.of(context).au_no_account, style: TextStyle(color: AppTheme.textSecondary)),
                         GestureDetector(
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
-                          child: const Text('Sign up', style: TextStyle(color: AppTheme.primaryLight, fontWeight: FontWeight.bold)),
+                          child: Text(AppLocalizations.of(context).au_sign_up, style: TextStyle(color: AppTheme.primaryLight, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -252,14 +254,14 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.cardBg,
-        title: const Text('Reset Password', style: TextStyle(color: Colors.white)),
+        title: Text(AppLocalizations.of(context).au_reset_title, style: TextStyle(color: Colors.white)),
         content: TextField(
           controller: ctrl,
           style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(labelText: 'Email', labelStyle: TextStyle(color: AppTheme.textSecondary)),
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).au_email, labelStyle: TextStyle(color: AppTheme.textSecondary)),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(context).home_cancel)),
           ElevatedButton(
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
@@ -268,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 await context.read<AppProvider>().resetPassword(ctrl.text);
                 navigator.pop();
                 messenger.showSnackBar(
-                  const SnackBar(content: Text('Reset email sent!')),
+                  SnackBar(content: Text(AppLocalizations.of(context).au_reset_sent)),
                 );
               } catch (e) {
                 messenger.showSnackBar(
@@ -276,7 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 );
               }
             },
-            child: const Text('Send'),
+            child: Text(AppLocalizations.of(context).au_send),
           ),
         ],
       ),
