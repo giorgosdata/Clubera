@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -37,12 +38,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     return c;
   }
 
-  List<Tab> _tabs(TournamentModel t) {
+  List<Tab> _tabs(BuildContext context, TournamentModel t) {
     return [
-      const Tab(text: 'Αγώνες'),
-      if (t.hasGroups) const Tab(text: 'Βαθμολογία'),
-      if (t.hasKnockout) const Tab(text: 'Κλήρωση'),
-      const Tab(text: 'Πληροφορίες'),
+      Tab(text: AppLocalizations.of(context).td_tab_matches),
+      if (t.hasGroups) Tab(text: AppLocalizations.of(context).td_tab_standings),
+      if (t.hasKnockout) Tab(text: AppLocalizations.of(context).td_tab_draw),
+      Tab(text: AppLocalizations.of(context).td_tab_info),
     ];
   }
 
@@ -73,7 +74,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         if (!tSnap.data!.exists) {
           return const Scaffold(
             backgroundColor: Colors.transparent,
-            body: Center(child: Text('Δεν βρέθηκε το τουρνουά')),
+            body: Center(child: Text(AppLocalizations.of(context).td_not_found)),
           );
         }
         final tournament = TournamentModel.fromMap(
@@ -107,13 +108,13 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                       if (canAdmin && tournament.status == 'groups' && tournament.hasKnockout)
                         TextButton(
                           onPressed: () => _advanceToKnockout(ctx, tournament, allMatches),
-                          child: const Text('→ Νοκ-Άουτ',
+                          child: Text(AppLocalizations.of(context).td_advance_knockout,
                               style: TextStyle(color: AppTheme.accent, fontWeight: FontWeight.bold)),
                         ),
                       if (canAdmin && tournament.status == 'knockout')
                         TextButton(
                           onPressed: () => _finishTournament(tournament),
-                          child: const Text('Λήξη',
+                          child: Text(AppLocalizations.of(context).td_finish,
                               style: TextStyle(color: AppTheme.supportGreen, fontWeight: FontWeight.bold)),
                         ),
                     ],
@@ -123,7 +124,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                       labelColor: AppTheme.accent,
                       unselectedLabelColor: AppTheme.textSecondary,
                       isScrollable: true,
-                      tabs: _tabs(tournament),
+                      tabs: _tabs(context, tournament),
                     ),
                   ),
                 ],
@@ -169,8 +170,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
 
     if (advancingTeams.isEmpty) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Δεν υπάρχουν αποτελέσματα για να γίνει προαγωγή'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppLocalizations.of(context).td_no_advancing),
           backgroundColor: AppTheme.red,
         ));
       }
@@ -230,8 +231,8 @@ class _MatchesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (matches.isEmpty) {
-      return const Center(
-        child: Text('Δεν υπάρχουν αγώνες', style: TextStyle(color: AppTheme.textSecondary)),
+      return Center(
+        child: Text(AppLocalizations.of(context).td_no_matches, style: TextStyle(color: AppTheme.textSecondary)),
       );
     }
 
@@ -242,7 +243,7 @@ class _MatchesTab extends StatelessWidget {
         final key = m.groupName ?? 'Group';
         grouped.putIfAbsent(key, () => []).add(m);
       } else {
-        final label = _knockoutLabel(m.bracketRound, tournament.totalRounds);
+        final label = _knockoutLabel(context, m.bracketRound, tournament.totalRounds);
         grouped.putIfAbsent(label, () => []).add(m);
       }
     }
@@ -284,12 +285,12 @@ class _MatchesTab extends StatelessWidget {
     );
   }
 
-  String _knockoutLabel(int round, int totalRounds) {
+  String _knockoutLabel(BuildContext context, int round, int totalRounds) {
     final roundsFromFinal = totalRounds - round - 1;
-    if (roundsFromFinal == 0) return 'Τελικός';
-    if (roundsFromFinal == 1) return 'Ημιτελικά';
-    if (roundsFromFinal == 2) return 'Προημιτελικά';
-    return 'Γύρος ${round + 1}';
+    if (roundsFromFinal == 0) return AppLocalizations.of(context).tn_round_final;
+    if (roundsFromFinal == 1) return AppLocalizations.of(context).tn_round_semi;
+    if (roundsFromFinal == 2) return AppLocalizations.of(context).tn_round_quarter;
+    return AppLocalizations.of(context).td_round_n(round + 1);
   }
 }
 
@@ -506,12 +507,12 @@ class _MatchTile extends StatelessWidget {
                   } catch (e) {
                     if (ctx.mounted) {
                       ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(content: Text('Αποτυχία αποθήκευσης: $e'), backgroundColor: Colors.red),
+                        SnackBar(content: Text(AppLocalizations.of(ctx).td_save_failed('$e')), backgroundColor: Colors.red),
                       );
                     }
                   }
                 },
-                child: const Text('Αποθήκευση', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(AppLocalizations.of(ctx).td_save, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ],
@@ -585,9 +586,9 @@ class _StandingsTab extends StatelessWidget {
                   ...standings.asMap().entries.map((e) =>
                       _StandingsRow(rank: e.key + 1, standing: e.value)),
                   if (standings.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('Δεν υπάρχουν αποτελέσματα ακόμα',
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(AppLocalizations.of(context).td_no_standings,
                           style: TextStyle(color: AppTheme.textSecondary),
                           textAlign: TextAlign.center),
                     ),
@@ -613,7 +614,7 @@ class _StandingsHeader extends StatelessWidget {
         child: const Row(
           children: [
             SizedBox(width: 24, child: Text('#', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
-            Expanded(child: Text('Ομάδα', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
+            Expanded(child: Text(AppLocalizations.of(context).td_team, style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
             SizedBox(width: 28, child: Text('Α', textAlign: TextAlign.center, style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
             SizedBox(width: 28, child: Text('Ν', textAlign: TextAlign.center, style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
             SizedBox(width: 28, child: Text('Ι', textAlign: TextAlign.center, style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
@@ -706,15 +707,15 @@ class _BracketTab extends StatelessWidget {
       });
 
     if (knockoutMatches.isEmpty) {
-      return const Center(
-        child: Text('Δεν υπάρχει κλήρωση ακόμα', style: TextStyle(color: AppTheme.textSecondary)),
+      return Center(
+        child: Text(AppLocalizations.of(context).td_no_draw, style: TextStyle(color: AppTheme.textSecondary)),
       );
     }
 
     final totalRounds = tournament.totalRounds;
     if (totalRounds == 0) {
-      return const Center(
-        child: Text('Δεν υπάρχει κλήρωση', style: TextStyle(color: AppTheme.textSecondary)),
+      return Center(
+        child: Text(AppLocalizations.of(context).td_no_draw2, style: TextStyle(color: AppTheme.textSecondary)),
       );
     }
 
@@ -751,7 +752,7 @@ class _BracketTab extends StatelessWidget {
               // Round labels
               ...List.generate(totalRounds, (round) {
                 final x = round * (cardW + colGap);
-                final label = _roundLabel(round, totalRounds);
+                final label = _roundLabel(context, round, totalRounds);
                 return Positioned(
                   left: x,
                   top: 0,
@@ -791,12 +792,12 @@ class _BracketTab extends StatelessWidget {
     );
   }
 
-  String _roundLabel(int round, int totalRounds) {
+  String _roundLabel(BuildContext context, int round, int totalRounds) {
     final fromFinal = totalRounds - round - 1;
-    if (fromFinal == 0) return 'ΤΕΛΙΚΟΣ';
-    if (fromFinal == 1) return 'ΗΜΙΤΕΛΙΚΑ';
-    if (fromFinal == 2) return 'ΠΡΟΗΜΙΤΕΛΙΚΑ';
-    return 'ΓΥΡΟΣ ${round + 1}';
+    if (fromFinal == 0) return AppLocalizations.of(context).tn_round_final.toUpperCase();
+    if (fromFinal == 1) return AppLocalizations.of(context).tn_round_semi.toUpperCase();
+    if (fromFinal == 2) return AppLocalizations.of(context).tn_round_quarter.toUpperCase();
+    return AppLocalizations.of(context).td_round_n(round + 1).toUpperCase();
   }
 }
 
@@ -981,12 +982,12 @@ class _InfoTab extends StatelessWidget {
           ),
           const SizedBox(height: 16),
         ],
-        _infoRow('Φορμά', _formatLabel(t.format)),
-        _infoRow('Σεζόν', t.season),
-        _infoRow('Ομάδες', '${t.teams.length}'),
-        if (t.hasGroups) _infoRow('Αριθμός ομίλων', '${t.groupCount}'),
+        _infoRow(AppLocalizations.of(context).td_format, _formatLabel(context, t.format)),
+        _infoRow(AppLocalizations.of(context).td_season, t.season),
+        _infoRow(AppLocalizations.of(context).td_teams, '${t.teams.length}'),
+        if (t.hasGroups) _infoRow(AppLocalizations.of(context).td_groups_count, '${t.groupCount}'),
         const SizedBox(height: 20),
-        const Text('ΟΜΑΔΕΣ',
+        Text(AppLocalizations.of(context).td_teams_upper,
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 11,
                 fontWeight: FontWeight.bold, letterSpacing: 1)),
         const SizedBox(height: 10),
@@ -1028,11 +1029,11 @@ class _InfoTab extends StatelessWidget {
         ),
       );
 
-  String _formatLabel(String format) {
+  String _formatLabel(BuildContext context, String format) {
     switch (format) {
-      case 'knockout': return 'Νοκ-Άουτ';
-      case 'groups': return 'Φάση Ομίλων';
-      case 'groups_knockout': return 'Όμιλοι + Νοκ-Άουτ';
+      case 'knockout': return AppLocalizations.of(context).tn_status_knockout;
+      case 'groups': return AppLocalizations.of(context).tn_status_groups;
+      case 'groups_knockout': return AppLocalizations.of(context).tn_format_groups_knockout;
       default: return format;
     }
   }

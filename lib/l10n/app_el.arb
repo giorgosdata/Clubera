@@ -88,6 +88,37 @@
   "home_redeemed": "Εξαργυρώθηκε! Επικοινώνησε με τον σύλλογο για να το παραλάβεις.",
   "prizes_title": "Τα Δώρα μου",
   "prizes_subtitle": "Δες τα δώρα και τα βραβεία σου",
+  "td_tab_matches": "Αγώνες",
+  "td_tab_standings": "Βαθμολογία",
+  "td_tab_draw": "Κλήρωση",
+  "td_tab_info": "Πληροφορίες",
+  "td_not_found": "Δεν βρέθηκε το τουρνουά",
+  "td_advance_knockout": "→ Νοκ-Άουτ",
+  "td_finish": "Λήξη",
+  "td_no_advancing": "Δεν υπάρχουν αποτελέσματα για να γίνει προαγωγή",
+  "td_no_matches": "Δεν υπάρχουν αγώνες",
+  "td_round_n": "Γύρος {n}",
+  "@td_round_n": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "td_save_failed": "Αποτυχία αποθήκευσης: {error}",
+  "@td_save_failed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "td_save": "Αποθήκευση",
+  "td_no_standings": "Δεν υπάρχουν αποτελέσματα ακόμα",
+  "td_team": "Ομάδα",
+  "td_no_draw": "Δεν υπάρχει κλήρωση ακόμα",
+  "td_no_draw2": "Δεν υπάρχει κλήρωση",
+  "td_format": "Φορμά",
+  "td_season": "Σεζόν",
+  "td_teams": "Ομάδες",
+  "td_groups_count": "Αριθμός ομίλων",
+  "td_teams_upper": "ΟΜΑΔΕΣ",
   "tn_title": "Τουρνουά",
   "tn_empty": "Δεν υπάρχουν τουρνουά ακόμα",
   "tn_create_first": "Δημιούργησε το πρώτο",
