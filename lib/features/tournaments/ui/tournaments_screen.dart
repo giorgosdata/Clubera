@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -19,7 +20,7 @@ class TournamentsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: showAppBar
-          ? AppBar(title: const Text('Τουρνουά'), backgroundColor: Colors.transparent)
+          ? AppBar(title: Text(AppLocalizations.of(context).tn_title), backgroundColor: Colors.transparent)
           : null,
       floatingActionButton: canCreate
           ? FloatingActionButton(
@@ -49,14 +50,14 @@ class TournamentsScreen extends StatelessWidget {
                 children: [
                   const Icon(Icons.emoji_events_outlined, size: 72, color: AppTheme.cardBg2),
                   const SizedBox(height: 16),
-                  const Text('Δεν υπάρχουν τουρνουά ακόμα',
+                  Text(AppLocalizations.of(context).tn_empty,
                       style: TextStyle(color: AppTheme.textSecondary, fontSize: 16)),
                   if (canCreate) ...[
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryLight),
                       icon: const Icon(Icons.add, color: Colors.white),
-                      label: const Text('Δημιούργησε το πρώτο', style: TextStyle(color: Colors.white)),
+                      label: Text(AppLocalizations.of(context).tn_create_first, style: TextStyle(color: Colors.white)),
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const CreateTournamentScreen()),
@@ -96,15 +97,15 @@ class _TournamentCard extends StatelessWidget {
       'finished': AppTheme.supportGreen,
     }[t.status] ?? AppTheme.textSecondary;
     final statusLabel = {
-      'setup': 'Προετοιμασία',
-      'groups': 'Φάση Ομίλων',
-      'knockout': 'Νοκ-Άουτ',
-      'finished': 'Ολοκληρώθηκε',
+      'setup': AppLocalizations.of(context).tn_status_setup,
+      'groups': AppLocalizations.of(context).tn_status_groups,
+      'knockout': AppLocalizations.of(context).tn_status_knockout,
+      'finished': AppLocalizations.of(context).tn_status_finished,
     }[t.status] ?? t.status;
     final formatLabel = {
-      'knockout': 'Νοκ-Άουτ',
-      'groups': 'Φάση Ομίλων',
-      'groups_knockout': 'Όμιλοι + Νοκ-Άουτ',
+      'knockout': AppLocalizations.of(context).tn_status_knockout,
+      'groups': AppLocalizations.of(context).tn_status_groups,
+      'groups_knockout': AppLocalizations.of(context).tn_format_groups_knockout,
     }[t.format] ?? t.format;
 
     return GestureDetector(
@@ -165,12 +166,12 @@ class _TournamentCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                _chip(Icons.groups, '${t.teams.length} ομάδες'),
+                _chip(Icons.groups, AppLocalizations.of(context).tn_teams_count(t.teams.length)),
                 const SizedBox(width: 8),
-                if (t.hasGroups) _chip(Icons.table_chart_outlined, '${t.groupCount} όμιλοι'),
+                if (t.hasGroups) _chip(Icons.table_chart_outlined, AppLocalizations.of(context).tn_groups_count(t.groupCount)),
                 if (t.hasKnockout) ...[
                   const SizedBox(width: 8),
-                  _chip(Icons.account_tree_outlined, _roundsLabel(t.totalRounds)),
+                  _chip(Icons.account_tree_outlined, _roundsLabel(context, t.totalRounds)),
                 ],
                 const Spacer(),
                 Text(
@@ -193,10 +194,10 @@ class _TournamentCard extends StatelessWidget {
         ],
       );
 
-  String _roundsLabel(int rounds) {
-    if (rounds <= 1) return 'Τελικός';
-    if (rounds == 2) return 'Ημιτελικά';
-    if (rounds == 3) return 'Προημιτελικά';
-    return '$rounds γύροι';
+  String _roundsLabel(BuildContext context, int rounds) {
+    if (rounds <= 1) return AppLocalizations.of(context).tn_round_final;
+    if (rounds == 2) return AppLocalizations.of(context).tn_round_semi;
+    if (rounds == 3) return AppLocalizations.of(context).tn_round_quarter;
+    return AppLocalizations.of(context).tn_rounds_count(rounds);
   }
 }
