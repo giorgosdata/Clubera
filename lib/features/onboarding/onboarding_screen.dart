@@ -1,3 +1,4 @@
+import 'package:clubera/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
@@ -15,32 +16,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _ctrl = PageController();
   int _page = 0;
 
-  static const _pages = [
+  List<_OnboardPage> _pagesOf(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return [
     _OnboardPage(
       art: _Art.welcome,
       color: AppTheme.primaryLight,
-      title: 'Καλώς ήρθες στο Clubera!',
-      subtitle: 'Η εφαρμογή για τους λάτρεις του ερασιτεχνικού ποδοσφαίρου. Παρακολούθησε αγώνες, παίκτες και σωματεία σε ένα μέρος.',
+      title: l.ob_title_welcome,
+      subtitle: l.ob_sub_welcome,
     ),
     _OnboardPage(
       art: _Art.follow,
       color: AppTheme.supportGreen,
-      title: 'Ακολούθησε την ομάδα σου',
-      subtitle: 'Μείνε ενημερωμένος για αγώνες, αποτελέσματα, μεταγραφές και νέα της αγαπημένης σου ομάδας.',
+      title: l.ob_title_follow,
+      subtitle: l.ob_sub_follow,
     ),
     _OnboardPage(
       art: _Art.predict,
       color: AppTheme.accent,
-      title: 'Πρόβλεψε & Κέρδισε',
-      subtitle: 'Δώσε προβλέψεις για αγώνες, μάζεψε πόντους, ανέβα στην κατάταξη και κέρδισε ανταμοιβές.',
+      title: l.ob_title_predict,
+      subtitle: l.ob_sub_predict,
     ),
     _OnboardPage(
       art: _Art.live,
       color: AppTheme.liveRed,
-      title: 'Live Ειδοποιήσεις',
-      subtitle: 'Μάθε για γκολ και αποτελέσματα real-time ακόμα και αν δεν έχεις ανοιχτό το app.',
+      title: l.ob_title_live,
+      subtitle: l.ob_sub_live,
     ),
-  ];
+    ];
+  }
 
   Future<void> _done() async {
     final prefs = await SharedPreferences.getInstance();
@@ -50,6 +54,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = _pagesOf(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -68,15 +73,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _ctrl,
-                itemCount: _pages.length,
+                itemCount: pages.length,
                 onPageChanged: (i) => setState(() => _page = i),
-                itemBuilder: (ctx, i) => _pages[i],
+                itemBuilder: (ctx, i) => pages[i],
               ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                _pages.length,
+                pages.length,
                 (i) => AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -102,7 +107,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: () {
-                    if (_page < _pages.length - 1) {
+                    if (_page < pages.length - 1) {
                       _ctrl.nextPage(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
@@ -112,7 +117,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     }
                   },
                   child: Text(
-                    _page < _pages.length - 1 ? 'Επόμενο' : 'Ξεκίνα!',
+                    _page < pages.length - 1 ? AppLocalizations.of(context).ob_next : AppLocalizations.of(context).ob_start,
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                   ),
                 ),
@@ -203,14 +208,14 @@ class _OnboardArt extends StatelessWidget {
                 border: Border.all(color: const Color(0x24FFFFFF)),
               ),
             ),
-            Center(child: _content()),
+            Center(child: _content(context)),
           ],
         ),
       ),
     );
   }
 
-  Widget _content() {
+  Widget _content(BuildContext context) {
     switch (art) {
       case _Art.welcome:
         return Container(
@@ -236,7 +241,7 @@ class _OnboardArt extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18),
-            _chip(ClIcon.support, 'Ακολουθείς'),
+            _chip(ClIcon.support, AppLocalizations.of(context).ob_chip_following),
           ],
         );
       case _Art.predict:
@@ -261,7 +266,7 @@ class _OnboardArt extends StatelessWidget {
               children: [
                 const ClIconTile(ClIcon.rewards, size: 64),
                 const SizedBox(width: 12),
-                _chip(null, '+50 πόντοι'),
+                _chip(null, AppLocalizations.of(context).ob_chip_points),
               ],
             ),
           ],
