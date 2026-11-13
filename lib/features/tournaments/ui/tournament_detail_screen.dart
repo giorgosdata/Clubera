@@ -72,7 +72,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           );
         }
         if (!tSnap.data!.exists) {
-          return const Scaffold(
+          return Scaffold(
             backgroundColor: Colors.transparent,
             body: Center(child: Text(AppLocalizations.of(context).td_not_found)),
           );
@@ -611,7 +611,7 @@ class _StandingsHeader extends StatelessWidget {
           color: AppTheme.cardBg2,
           borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
         ),
-        child: const Row(
+        child: Row(
           children: [
             SizedBox(width: 24, child: Text('#', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
             Expanded(child: Text(AppLocalizations.of(context).td_team, style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
