@@ -152,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: AppLocalizations.of(context).au_email,
                     prefixIcon: Icon(Icons.email_outlined, color: AppTheme.textSecondary),
                   ),

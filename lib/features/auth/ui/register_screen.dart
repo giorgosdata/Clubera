@@ -73,7 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _nameCtrl,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: AppLocalizations.of(context).au_full_name,
                     prefixIcon: Icon(Icons.person_outline, color: AppTheme.textSecondary),
                   ),
@@ -84,7 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: AppLocalizations.of(context).au_email,
                     prefixIcon: Icon(Icons.email_outlined, color: AppTheme.textSecondary),
                   ),
