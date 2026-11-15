@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -42,11 +43,37 @@ class _PuzzlePlayScreenState extends State<PuzzlePlayScreen> {
   bool _solved = false;
   bool _saving = false;
 
+  // How the fan did: fewer moves and less time is better. Saved with the
+  // play so games can later be ranked by skill.
+  int _moves = 0;
+  final Stopwatch _watch = Stopwatch();
+  Timer? _ticker;
+
   @override
   void initState() {
     super.initState();
     _initPuzzle();
     _checkDailyLimit();
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  // The clock starts with the first tap, not when the screen opens.
+  void _startClock() {
+    if (_watch.isRunning) return;
+    _watch.start();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  String get _clock {
+    final secs = _watch.elapsed.inSeconds;
+    return '${secs ~/ 60}:${(secs % 60).toString().padLeft(2, '0')}';
   }
 
   // Build a shuffled order that is guaranteed not to equal the solved state.
@@ -120,6 +147,7 @@ class _PuzzlePlayScreenState extends State<PuzzlePlayScreen> {
 
   void _onTileTap(int boardIndex) {
     if (!_canPlay || _solved || _saving) return;
+    _startClock();
 
     if (_selected == null) {
       setState(() => _selected = boardIndex);
@@ -139,6 +167,7 @@ class _PuzzlePlayScreenState extends State<PuzzlePlayScreen> {
       _order[a] = _order[b];
       _order[b] = tmp;
       _selected = null;
+      _moves++;
     });
 
     // Check for win.
@@ -150,6 +179,8 @@ class _PuzzlePlayScreenState extends State<PuzzlePlayScreen> {
   // ── Save prize & show dialog ────────────────────────────────────────────────
 
   Future<void> _onSolved() async {
+    _watch.stop();
+    _ticker?.cancel();
     setState(() {
       _solved = true;
       _saving = true;
@@ -175,6 +206,8 @@ class _PuzzlePlayScreenState extends State<PuzzlePlayScreen> {
       'gameId': widget.game.id,
       'gameTitle': widget.game.title,
       'pointsWon': (prize != null && prize.isPoints) ? prize.pointsValue : 0,
+      'moves': _moves,
+      'seconds': _watch.elapsed.inSeconds,
       'playedAt': FieldValue.serverTimestamp(),
     });
 
@@ -209,12 +242,29 @@ class _PuzzlePlayScreenState extends State<PuzzlePlayScreen> {
     try {
       await batch.commit();
     } catch (e) {
-      // Non-fatal — we still show the dialog.
+      // Nothing was saved, so do not tell the fan they won. Let them retry.
       debugPrint('PuzzlePlayScreen: batch commit error: $e');
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Δεν αποθηκεύτηκε. Έλεγξε τη σύνδεσή σου.'),
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(label: 'Ξανά', onPressed: _onSolved),
+        ),
+      );
+      return;
     }
 
     if (!mounted) return;
     setState(() => _saving = false);
+
+    // Keep the points shown around the app in step with what was saved.
+    if (prize != null && prize.isPoints && prize.pointsValue > 0) {
+      provider.updateUser(
+        user.copyWith(points: user.points + prize.pointsValue),
+      );
+    }
 
     _showWinDialog(prize);
   }
@@ -225,6 +275,7 @@ class _PuzzlePlayScreenState extends State<PuzzlePlayScreen> {
       barrierDismissible: false,
       builder: (_) => _WinDialog(
         prize: prize,
+        stats: '$_moves κινήσεις · $_clock',
         onContinue: () {
           Navigator.of(context).pop(); // close dialog
           Navigator.of(context).pop(); // leave puzzle screen
@@ -346,9 +397,50 @@ class _PuzzlePlayScreenState extends State<PuzzlePlayScreen> {
                 strokeWidth: 2,
                 color: AppTheme.supportGreen,
               ),
+            )
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _statChip(Icons.timer_outlined, _clock),
+                const SizedBox(height: 4),
+                _statChip(Icons.swap_horiz, '$_moves'),
+              ],
             ),
+          if (widget.game.puzzleImageUrl != null) ...[
+            const SizedBox(width: 10),
+            // The finished picture, so the fan can see what to build.
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: CachedNetworkImage(
+                imageUrl: widget.game.puzzleImageUrl!,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorWidget: (_, _, _) => const SizedBox(width: 56, height: 56),
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _statChip(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: AppTheme.accent, size: 16),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
+      ],
     );
   }
 
@@ -580,9 +672,14 @@ class _AlreadyPlayedView extends StatelessWidget {
 
 class _WinDialog extends StatelessWidget {
   final PrizeModel? prize;
+  final String stats;
   final VoidCallback onContinue;
 
-  const _WinDialog({required this.prize, required this.onContinue});
+  const _WinDialog({
+    required this.prize,
+    required this.stats,
+    required this.onContinue,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -630,6 +727,17 @@ class _WinDialog extends StatelessWidget {
                 fontWeight: FontWeight.w900,
                 fontSize: 26,
                 letterSpacing: 0.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+
+            // How the fan did
+            Text(
+              stats,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
               ),
               textAlign: TextAlign.center,
             ),
