@@ -5,13 +5,11 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/app_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/image_utils.dart';
-import '../../../core/utils/feature_flags.dart';
 import '../../../models/club_model.dart';
 import '../../../models/player_model.dart';
 import '../../clubs/ui/club_profile_screen.dart';
 import '../../clubs/ui/create_club_screen.dart' show kCountryList;
 import '../../tournaments/ui/tournaments_screen.dart';
-import '../../games/ui/spin_wheel_screen.dart';
 
 const kCountries = [
   {'flag': '🇩🇪', 'name': 'Germany'},
@@ -660,7 +658,6 @@ class _BrowseTabState extends State<_BrowseTab> with AutomaticKeepAliveClientMix
                   _MyClubCard(clubId: myClubId),
                   const SizedBox(height: 16),
                 ],
-                if (FeatureFlags.chanceGamesEnabled) _SpinBanner(),
                 const SizedBox(height: 16),
                 ...filtered.map(
                   (c) => Padding(
@@ -673,57 +670,6 @@ class _BrowseTabState extends State<_BrowseTab> with AutomaticKeepAliveClientMix
           ),
         ),
       ],
-    );
-  }
-}
-
-class _SpinBanner extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SpinWheelScreen()),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1A3A8F), Color(0xFF5B1A8F)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF1A6FE8).withValues(alpha: 0.4)),
-        ),
-        child: Row(
-          children: [
-            const Text('🎰', style: TextStyle(fontSize: 36)),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppLocalizations.of(context).teams_spin_title,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    AppLocalizations.of(context).teams_spin_subtitle,
-                    style: TextStyle(color: Color(0xFFAABBFF), fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.white60),
-          ],
-        ),
-      ),
     );
   }
 }
