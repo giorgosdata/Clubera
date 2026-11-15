@@ -370,5 +370,6 @@
   "fs_not_now": "Pas maintenant",
   "fs_end_title": "À demain",
   "fs_end_sub": "Un nouveau jeu chaque jour.",
-  "fs_start": "Commencer"
+  "fs_start": "Commencer",
+  "fs_replay": "Premiers pas"
 }

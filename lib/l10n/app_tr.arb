@@ -370,5 +370,6 @@
   "fs_not_now": "Şimdi değil",
   "fs_end_title": "Yarın görüşürüz",
   "fs_end_sub": "Her gün yeni bir oyun.",
-  "fs_start": "Başla"
+  "fs_start": "Başla",
+  "fs_replay": "İlk adımlar"
 }

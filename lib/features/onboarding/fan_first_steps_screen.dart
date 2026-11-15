@@ -76,6 +76,9 @@ class _FanFirstStepsScreenState extends State<FanFirstStepsScreen>
   List<ClubModel>? _clubs;
   ClubModel? _club;
 
+  /// The club this tour started following, if any.
+  String? _followedHere;
+
   /// Which welcome points this account already has.
   final Map<String, dynamic> _awarded = {};
 
@@ -277,6 +280,31 @@ class _FanFirstStepsScreenState extends State<FanFirstStepsScreen>
     }
   }
 
+  Future<void> _unfollow(AppProvider prov, String uid, String clubId) async {
+    try {
+      final db = FirebaseFirestore.instance;
+      final batch = db.batch();
+      batch.update(db.collection('users').doc(uid), {
+        'followedClubs': FieldValue.arrayRemove([clubId]),
+      });
+      batch.update(db.collection('clubs').doc(clubId), {
+        'followers': FieldValue.increment(-1),
+      });
+      await batch.commit();
+      final u = prov.user;
+      if (u != null && u.followedClubs.contains(clubId)) {
+        prov.updateUser(
+          u.copyWith(
+            followedClubs: u.followedClubs.where((id) => id != clubId).toList(),
+          ),
+        );
+      }
+      await NotificationsService.unsubscribe('club_$clubId');
+    } catch (_) {
+      // The fan can still unfollow the club from its page.
+    }
+  }
+
   // ── Actions ─────────────────────────────────────────────────────────────────
 
   void _goTo(int step) {
@@ -289,12 +317,33 @@ class _FanFirstStepsScreenState extends State<FanFirstStepsScreen>
     _goTo(_step + 1);
   }
 
+  /// Back to the previous screen, so the fan moves on only when they want.
+  void _back() {
+    if (_step == 0) return;
+    setState(() {
+      _gain = 0;
+      _step -= 1;
+      if (_step == 1) {
+        // The penalty can be taken again; the points are not given twice.
+        _shotSide = null;
+        _kick.reset();
+      }
+    });
+  }
+
   void _pickClub(ClubModel club) {
     final prov = context.read<AppProvider>();
     final user = prov.user;
     FocusScope.of(context).unfocus();
     setState(() => _club = club);
+    // Coming back and choosing another team replaces the first choice.
+    final before = _followedHere;
+    if (user != null && before != null && before != club.id) {
+      _followedHere = null;
+      unawaited(_unfollow(prov, user.uid, before));
+    }
     if (user != null && !user.followedClubs.contains(club.id)) {
+      _followedHere = club.id;
       unawaited(_follow(prov, user.uid, club.id));
     }
     _award('team', _teamPoints);
@@ -585,7 +634,14 @@ class _FanFirstStepsScreenState extends State<FanFirstStepsScreen>
         const SizedBox(height: 10),
         Row(
           children: [
-            Image.asset('assets/images/shield.png', width: 36, height: 36),
+            if (_step > 0)
+              IconButton(
+                onPressed: _back,
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+              )
+            else
+              Image.asset('assets/images/shield.png', width: 36, height: 36),
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

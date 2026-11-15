@@ -370,5 +370,6 @@
   "fs_not_now": "Not now",
   "fs_end_title": "See you tomorrow",
   "fs_end_sub": "A new game every day.",
-  "fs_start": "Start"
+  "fs_start": "Start",
+  "fs_replay": "First steps"
 }

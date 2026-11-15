@@ -370,5 +370,6 @@
   "fs_not_now": "Nicht jetzt",
   "fs_end_title": "Bis morgen",
   "fs_end_sub": "Jeden Tag ein neues Spiel.",
-  "fs_start": "Los geht's"
+  "fs_start": "Los geht's",
+  "fs_replay": "Erste Schritte"
 }

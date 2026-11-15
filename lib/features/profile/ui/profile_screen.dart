@@ -20,6 +20,7 @@ import '../../admin/ui/admin_screen.dart';
 import '../../club_admin/ui/club_admin_screen.dart';
 import '../../help/ui/gazette_screen.dart';
 import '../../gamification/ui/prediction_history_screen.dart';
+import '../../onboarding/fan_first_steps_screen.dart';
 import 'notification_prefs_screen.dart';
 import '../widgets/fan_card.dart';
 import '../widgets/badges_section.dart';
@@ -1030,6 +1031,19 @@ class _MenuSection extends StatelessWidget {
             label: AppLocalizations.of(context).profile_user_guide,
             onTap: () => _showHelp(context),
           ),
+          // Lets anyone watch the guided first steps again.
+          if (FeatureFlags.chanceGamesEnabled)
+            _MenuItem(
+              icon: Icons.touch_app,
+              label: AppLocalizations.of(context).fs_replay,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (ctx) =>
+                      FanFirstStepsScreen(onDone: () => Navigator.pop(ctx)),
+                ),
+              ),
+            ),
           const SizedBox(height: 8),
           _MenuItem(
             icon: Icons.logout,
