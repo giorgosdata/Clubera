@@ -4575,7 +4575,7 @@ class _ClubGamesTab extends StatelessWidget {
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final limitCtrl = TextEditingController(text: '1');
-    String type = 'spin_wheel';
+    String type = 'trivia';
     final List<Map<String, dynamic>> prizes = [];
     DateTime? expiresAt;
     XFile? puzzleImage;
@@ -4597,8 +4597,6 @@ class _ClubGamesTab extends StatelessWidget {
                   spacing: 6,
                   runSpacing: 6,
                   children: const [
-                    {'v': 'spin_wheel', 'l': '🎡 Τυχερός Τροχός'},
-                    {'v': 'scratch_card', 'l': '🎫 Ξυστό'},
                     {'v': 'trivia', 'l': '🧠 Trivia'},
                     {'v': 'puzzle', 'l': '🧩 Puzzle'},
                   ].map((e) {
@@ -4823,8 +4821,6 @@ class _ClubGamesTab extends StatelessWidget {
                   spacing: 6,
                   runSpacing: 6,
                   children: const [
-                    {'v': 'spin_wheel', 'l': '🎡 Τυχερός Τροχός'},
-                    {'v': 'scratch_card', 'l': '🎫 Ξυστό'},
                     {'v': 'trivia', 'l': '🧠 Trivia'},
                     {'v': 'puzzle', 'l': '🧩 Puzzle'},
                   ].map((e) {

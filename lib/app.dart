@@ -21,7 +21,9 @@ import 'features/matches/ui/match_detail_screen.dart';
 import 'features/matches/ui/matches_screen.dart';
 import 'features/teams/ui/teams_screen.dart';
 import 'features/profile/ui/profile_screen.dart';
+import 'core/utils/feature_flags.dart';
 import 'features/onboarding/onboarding_screen.dart';
+import 'features/onboarding/fan_first_steps_screen.dart';
 import 'features/tournaments/ui/tournament_detail_screen.dart';
 
 final _navigatorKey = GlobalKey<NavigatorState>();
@@ -128,6 +130,7 @@ class _RootState extends State<_Root> {
   bool _onboardingChecked = false;
   bool _onboardingDone = false;
   bool _introDone = false;
+  bool _tourSeenThisRun = false;
 
   @override
   void initState() {
@@ -142,7 +145,14 @@ class _RootState extends State<_Root> {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
-        _onboardingDone = prefs.getBool('onboarding_done') ?? false;
+        // The guided first steps use their own flag, so fans who saw the old
+        // intro pages still get the new tour once.
+        _onboardingDone = prefs.getBool(
+              FeatureFlags.chanceGamesEnabled
+                  ? FanFirstStepsScreen.prefsKey
+                  : 'onboarding_done',
+            ) ??
+            false;
         _onboardingChecked = true;
       });
     }
@@ -169,8 +179,21 @@ class _RootState extends State<_Root> {
       );
     }
     if (!prov.isLoggedIn) return const LoginScreen();
-    if (!_onboardingDone) {
-      return OnboardingScreen(onDone: () => setState(() => _onboardingDone = true));
+    // Admins see the tour at every start, so they can review it; fans see it
+    // once.
+    final reviewTour = prov.user?.role == 'admin' &&
+        FeatureFlags.chanceGamesEnabled &&
+        !_tourSeenThisRun;
+    if (!_onboardingDone || reviewTour) {
+      void done() => setState(() {
+            _onboardingDone = true;
+            _tourSeenThisRun = true;
+          });
+      // The tour has games and points, which are hidden on iOS for now, so
+      // iOS keeps the plain intro pages.
+      return FeatureFlags.chanceGamesEnabled
+          ? FanFirstStepsScreen(onDone: done)
+          : OnboardingScreen(onDone: done);
     }
     return const _MainShell();
   }

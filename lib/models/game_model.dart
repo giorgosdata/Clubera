@@ -1,10 +1,15 @@
 import 'prize_model.dart';
 
+/// The game types fans can play: questions and interactive games.
+/// Games of chance (spin wheel, scratch card, daily bonus) were removed, and
+/// old documents of those types are hidden from fans.
+const kPlayableGameTypes = {'trivia', 'penalty', 'puzzle'};
+
 class GameModel {
   final String id;
   final String title;
   final String description;
-  final String type; // 'spin_wheel' | 'scratch_card' | 'daily_bonus' | 'trivia' | 'puzzle'
+  final String type; // 'trivia' | 'penalty' | 'puzzle'
   final String emoji;
   final int minPoints;
   final int maxPoints;
@@ -12,7 +17,7 @@ class GameModel {
   final bool isActive;
   final DateTime createdAt;
   final String? clubId;
-  final List<PrizeModel> prizes; // segments for spin/scratch; single prize for trivia/puzzle
+  final List<PrizeModel> prizes; // single prize for trivia/puzzle
   final String? puzzleImageUrl; // Firebase Storage URL for puzzle image
   final DateTime? expiresAt;    // optional: game unavailable after this date
 
@@ -62,7 +67,7 @@ class GameModel {
     id: id,
     title: m['title'] ?? '',
     description: m['description'] ?? '',
-    type: m['type'] ?? 'spin_wheel',
+    type: m['type'] ?? '',
     emoji: m['emoji'] ?? '🎮',
     minPoints: (m['minPoints'] as num?)?.toInt() ?? 1,
     maxPoints: (m['maxPoints'] as num?)?.toInt() ?? 100,

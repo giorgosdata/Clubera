@@ -1683,7 +1683,7 @@ class _AdminGamesTab extends StatelessWidget {
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final limitCtrl = TextEditingController(text: '1');
-    String type = 'spin_wheel';
+    String type = 'trivia';
     final List<Map<String, dynamic>> prizes = [];
     DateTime? expiresAt;
     XFile? puzzleImage;
@@ -1704,9 +1704,6 @@ class _AdminGamesTab extends StatelessWidget {
                 Wrap(
                   spacing: 6,
                   children: const [
-                    {'v': 'spin_wheel', 'l': '🎡 Τυχερός Τροχός'},
-                    {'v': 'scratch_card', 'l': '🎫 Ξυστό'},
-                    {'v': 'daily_bonus', 'l': '🎁 Ημερήσιο Bonus'},
                     {'v': 'trivia', 'l': '🧠 Trivia'},
                     {'v': 'penalty', 'l': '⚽ Πέναλτι'},
                     {'v': 'puzzle', 'l': '🧩 Puzzle'},
@@ -2230,9 +2227,6 @@ class _GameAdminRow extends StatelessWidget {
                 Wrap(
                   spacing: 6,
                   children: const [
-                    {'v': 'spin_wheel', 'l': '🎡 Τυχερός Τροχός'},
-                    {'v': 'scratch_card', 'l': '🎫 Ξυστό'},
-                    {'v': 'daily_bonus', 'l': '🎁 Ημερήσιο Bonus'},
                     {'v': 'trivia', 'l': '🧠 Trivia'},
                     {'v': 'penalty', 'l': '⚽ Πέναλτι'},
                     {'v': 'puzzle', 'l': '🧩 Puzzle'},
