@@ -371,5 +371,14 @@
   "fs_end_title": "À demain",
   "fs_end_sub": "Un nouveau jeu chaque jour.",
   "fs_start": "Commencer",
-  "fs_replay": "Premiers pas"
+  "fs_replay": "Premiers pas",
+  "fs_prize_title": "Joue pour le prix",
+  "fs_prize_name": "Le prix du jeu",
+  "fs_prize_top3": "Les 3 premiers gagnent",
+  "fs_prize_entry": "Une participation par jeu",
+  "fs_prize_note": "Pas de tirage. Le classement décide.",
+  "fs_zone_title": "Vois ta position",
+  "fs_zone_label": "ILS GAGNENT LE PRIX",
+  "fs_zone_sub": "Les 3 premiers sont dans la zone du prix.",
+  "fs_club_sub": "Chacun de tes points compte aussi pour ton équipe."
 }

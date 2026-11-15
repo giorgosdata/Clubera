@@ -371,5 +371,14 @@
   "fs_end_title": "Nos vemos mañana",
   "fs_end_sub": "Un juego nuevo cada día.",
   "fs_start": "Empezar",
-  "fs_replay": "Primeros pasos"
+  "fs_replay": "Primeros pasos",
+  "fs_prize_title": "Juega por el premio",
+  "fs_prize_name": "El premio del juego",
+  "fs_prize_top3": "Los 3 primeros ganan",
+  "fs_prize_entry": "Una participación por juego",
+  "fs_prize_note": "Sin sorteo. Decide la clasificación.",
+  "fs_zone_title": "Mira tu posición",
+  "fs_zone_label": "GANAN EL PREMIO",
+  "fs_zone_sub": "Los 3 primeros están en la zona de premio.",
+  "fs_club_sub": "Cada punto tuyo cuenta también para tu equipo."
 }

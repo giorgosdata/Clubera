@@ -371,5 +371,14 @@
   "fs_end_title": "See you tomorrow",
   "fs_end_sub": "A new game every day.",
   "fs_start": "Start",
-  "fs_replay": "First steps"
+  "fs_replay": "First steps",
+  "fs_prize_title": "Play for the prize",
+  "fs_prize_name": "The game's prize",
+  "fs_prize_top3": "The top 3 win",
+  "fs_prize_entry": "One entry per game",
+  "fs_prize_note": "No draw. The ranking decides.",
+  "fs_zone_title": "See where you stand",
+  "fs_zone_label": "THEY WIN THE PRIZE",
+  "fs_zone_sub": "The top 3 are in the prize zone.",
+  "fs_club_sub": "Every point you earn counts for your team too."
 }

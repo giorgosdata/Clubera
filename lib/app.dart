@@ -130,6 +130,7 @@ class _RootState extends State<_Root> {
   bool _onboardingChecked = false;
   bool _onboardingDone = false;
   bool _introDone = false;
+  bool _tourSeenThisRun = false;
 
   @override
   void initState() {
@@ -178,8 +179,16 @@ class _RootState extends State<_Root> {
       );
     }
     if (!prov.isLoggedIn) return const LoginScreen();
-    if (!_onboardingDone) {
-      void done() => setState(() => _onboardingDone = true);
+    // Admins see the tour at every start, so they can review it; fans see it
+    // once.
+    final reviewTour = prov.user?.role == 'admin' &&
+        FeatureFlags.chanceGamesEnabled &&
+        !_tourSeenThisRun;
+    if (!_onboardingDone || reviewTour) {
+      void done() => setState(() {
+            _onboardingDone = true;
+            _tourSeenThisRun = true;
+          });
       // The tour has games and points, which are hidden on iOS for now, so
       // iOS keeps the plain intro pages.
       return FeatureFlags.chanceGamesEnabled

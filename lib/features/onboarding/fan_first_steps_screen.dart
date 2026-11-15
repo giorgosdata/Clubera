@@ -23,9 +23,11 @@ import '../teams/ui/teams_screen.dart' show kCountries;
 ///   1. find your team among the clubs of your country (follows the club)
 ///   2. take a free penalty
 ///   3. see your place among the other fans
-///   4. your participation matters to your club
-///   5. support the club
-///   6. see you tomorrow
+///   4. play for the prize: the top 3 win, one entry per game
+///   5. see how far you are from the prize zone
+///   6. your participation matters to your club
+///   7. support the club
+///   8. see you tomorrow
 ///
 /// The welcome points for steps 1 and 2 are saved once per account.
 class FanFirstStepsScreen extends StatefulWidget {
@@ -54,7 +56,7 @@ class _RankRow {
 
 class _FanFirstStepsScreenState extends State<FanFirstStepsScreen>
     with TickerProviderStateMixin {
-  static const int _stepCount = 6;
+  static const int _stepCount = 8;
   static const int _teamPoints = 10;
   static const int _goalPoints = 10;
 
@@ -84,6 +86,10 @@ class _FanFirstStepsScreenState extends State<FanFirstStepsScreen>
 
   int? _shotSide; // 0 = left, 1 = right
   List<_RankRow>? _rank;
+
+  /// The three fans at the top, and the fan's own row, for the prize zone.
+  List<_RankRow>? _top3;
+  _RankRow? _meRow;
 
   @override
   void initState() {
@@ -210,11 +216,36 @@ class _FanFirstStepsScreenState extends State<FanFirstStepsScreen>
         }
         rows.add(_RankRow(rank: '100+', name: '', points: _points, isMe: true));
       }
-      if (mounted) setState(() => _rank = rows);
-    } catch (_) {
+      final top = <_RankRow>[];
+      for (var i = 0; i < docs.length && i < 3; i++) {
+        final d = docs[i].data();
+        top.add(_RankRow(
+          rank: '${i + 1}',
+          name: first(d['name']),
+          points: i == idx ? _points : ((d['points'] as num?)?.toInt() ?? 0),
+          isMe: i == idx,
+        ));
+      }
+      final meRow = _RankRow(
+        rank: idx >= 0 ? '${idx + 1}' : '100+',
+        name: '',
+        points: _points,
+        isMe: true,
+      );
       if (mounted) {
         setState(() {
-          _rank = [_RankRow(rank: '—', name: '', points: _points, isMe: true)];
+          _rank = rows;
+          _top3 = top;
+          _meRow = meRow;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        final meRow = _RankRow(rank: '—', name: '', points: _points, isMe: true);
+        setState(() {
+          _rank = [meRow];
+          _top3 = const [];
+          _meRow = meRow;
         });
       }
     }
@@ -694,8 +725,12 @@ class _FanFirstStepsScreenState extends State<FanFirstStepsScreen>
       case 2:
         return _rankStep(l);
       case 3:
-        return _clubStep(l);
+        return _prizeStep(l);
       case 4:
+        return _zoneStep(l);
+      case 5:
+        return _clubStep(l);
+      case 6:
         return _supportStep(l);
       default:
         return _endStep(l);
@@ -1077,7 +1112,153 @@ class _FanFirstStepsScreenState extends State<FanFirstStepsScreen>
     );
   }
 
-  // ── Step 4: your participation matters ──────────────────────────────────────
+  // ── Step 4: play for the prize ──────────────────────────────────────────────
+
+  Widget _prizeStep(AppLocalizations l) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(l.fs_prize_title, style: _titleStyle),
+        const SizedBox(height: 14),
+        Expanded(
+          child: ListView(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                decoration: BoxDecoration(
+                  color: const Color(0xEB101840),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.divider),
+                ),
+                child: Column(
+                  children: [
+                    const ClIconTile(ClIcon.rewards, size: 124),
+                    const SizedBox(height: 16),
+                    Text(
+                      l.fs_prize_name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardBg2,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        l.fs_prize_top3,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+                decoration: BoxDecoration(
+                  color: const Color(0xEB101840),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppTheme.divider),
+                ),
+                child: Text(
+                  l.fs_prize_entry,
+                  style: const TextStyle(color: Color(0xFFD5DEF7), fontSize: 16),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l.fs_prize_note,
+                style: const TextStyle(color: Color(0xFFD5DEF7), fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _cta(l.fs_continue, _next),
+      ],
+    );
+  }
+
+  // ── Step 5: how far from the prize zone ─────────────────────────────────────
+
+  Widget _zoneStep(AppLocalizations l) {
+    final top = _top3;
+    final me = _meRow;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(l.fs_zone_title, style: _titleStyle),
+        const SizedBox(height: 14),
+        Expanded(
+          child: top == null
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppTheme.accent),
+                )
+              : ListView(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0x8C080E2A),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: AppTheme.accent, width: 2),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              const ClIconView(ClIcon.rewards, size: 24),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  l.fs_zone_label,
+                                  style: const TextStyle(
+                                    color: AppTheme.accent,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          for (final r in top) ...[
+                            const SizedBox(height: 8),
+                            _rankRow(l, r),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (me != null && !top.any((r) => r.isMe)) ...[
+                      const SizedBox(height: 12),
+                      _rankRow(l, me),
+                    ],
+                    const SizedBox(height: 14),
+                    Text(
+                      l.fs_zone_sub,
+                      style: const TextStyle(color: Color(0xFFD5DEF7), fontSize: 16),
+                    ),
+                  ],
+                ),
+        ),
+        const SizedBox(height: 12),
+        _cta(l.fs_continue, _next),
+      ],
+    );
+  }
+
+  // ── Step 6: your participation matters ──────────────────────────────────────
 
   Widget _clubBadge(double size) {
     final club = _club;
@@ -1115,13 +1296,19 @@ class _FanFirstStepsScreenState extends State<FanFirstStepsScreen>
         _clubBadge(148),
         const SizedBox(height: 18),
         _clubName(),
+        const SizedBox(height: 10),
+        Text(
+          l.fs_club_sub,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xFFD5DEF7), fontSize: 17),
+        ),
         const Spacer(),
         _cta(l.fs_continue, _next),
       ],
     );
   }
 
-  // ── Step 5: support the club ────────────────────────────────────────────────
+  // ── Step 7: support the club ────────────────────────────────────────────────
 
   Widget _supportStep(AppLocalizations l) {
     return Column(
@@ -1186,7 +1373,7 @@ class _FanFirstStepsScreenState extends State<FanFirstStepsScreen>
     );
   }
 
-  // ── Step 6: see you tomorrow ────────────────────────────────────────────────
+  // ── Step 8: see you tomorrow ────────────────────────────────────────────────
 
   Widget _endStep(AppLocalizations l) {
     return Column(
