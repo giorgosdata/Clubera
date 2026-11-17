@@ -433,5 +433,6 @@
   "eps_clean_sheets": "Clean sheets",
   "eps_most_clean_sheets": "Most clean sheets",
   "eps_highest_scoring": "Highest-scoring match",
-  "eps_matches_count": "{count} matches"
+  "eps_matches_count": "{count} matches",
+  "eps_already_picked": "You already picked {count} ΕΠΣ matches"
 }

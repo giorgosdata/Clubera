@@ -581,5 +581,7 @@
   "eps_most_clean_sheets": "Περισσότερες ανέπαφες εστίες",
   "eps_highest_scoring": "Αγώνας με τα περισσότερα γκολ",
   "eps_matches_count": "{count} αγώνες",
-  "@eps_matches_count": {"placeholders": {"count": {"type": "int"}}}
+  "@eps_matches_count": {"placeholders": {"count": {"type": "int"}}},
+  "eps_already_picked": "Έχεις ήδη επιλογή σε {count} αγώνες ΕΠΣ",
+  "@eps_already_picked": {"placeholders": {"count": {"type": "int"}}}
 }

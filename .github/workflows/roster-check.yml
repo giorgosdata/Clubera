@@ -49,7 +49,7 @@ jobs:
       - name: Unit tests
         run: |
           set -o pipefail
-          if ! flutter test test/roster_parser_test.dart test/roster_file_test.dart test/eps_competition_model_test.dart 2>&1 | tee test.log; then
+          if ! flutter test test/roster_parser_test.dart test/roster_file_test.dart test/eps_competition_model_test.dart test/eps_matches_test.dart 2>&1 | tee test.log; then
             grep -E "Expected|Actual|Error|error:|FAILED|\[E\]|Which:" test.log | head -40 | while IFS= read -r l; do echo "::error::${l//%/%25}"; done
             exit 1
           fi
