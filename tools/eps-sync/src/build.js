@@ -83,4 +83,20 @@ function buildCompetition({ source, name, matches, standings, clubsByKey }) {
   return { id, doc, teams: [...teams] };
 }
 
-module.exports = { buildCompetition, competitionMeta };
+// One entry of eps_associations/{assocId}.competitions (no matches/standings).
+function competitionIndexEntry(id, doc) {
+  return {
+    id,
+    name: doc.name,
+    season: doc.season,
+    level: doc.level,
+    ageGroup: doc.ageGroup,
+    gender: doc.gender,
+    teams: doc.standings.length || doc.teamKeys.length,
+    rounds: doc.rounds,
+    played: doc.matches.filter((m) => m.status === 'finished').length,
+    total: doc.matches.length,
+  };
+}
+
+module.exports = { buildCompetition, competitionMeta, competitionIndexEntry };

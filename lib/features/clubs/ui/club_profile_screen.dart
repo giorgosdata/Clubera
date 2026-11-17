@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../eps/ui/club_eps_section.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -1458,27 +1459,26 @@ class _MatchesTab extends StatelessWidget {
               (d) => MatchModel.fromMap(d.data() as Map<String, dynamic>, d.id),
             )
             .toList();
-        if (matches.isEmpty) {
-          return const Center(
-            child: Text(
-              'No matches yet',
-              style: TextStyle(color: AppTheme.textSecondary),
-            ),
-          );
-        }
-        return ListView.separated(
+        // ΕΠΣ championship (read automatically from the ΕΠΣ website) first,
+        // then the matches created in Clubera.
+        return ListView(
           padding: const EdgeInsets.all(16),
-          itemCount: matches.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 10),
-          itemBuilder: (ctx, i) => MatchCard(
-            match: matches[i],
-            onTap: () => Navigator.push(
-              ctx,
-              MaterialPageRoute(
-                builder: (_) => MatchDetailScreen(matchId: matches[i].id),
+          children: [
+            ClubEpsSection(clubId: clubId),
+            for (final m in matches)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: MatchCard(
+                  match: m,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MatchDetailScreen(matchId: m.id),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
+          ],
         );
       },
     );

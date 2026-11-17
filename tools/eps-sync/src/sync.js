@@ -13,9 +13,9 @@
 const fs = require('fs');
 const path = require('path');
 const { parseCompetitionLinks, parseMatches, parseStandings } = require('./mascotnet');
-const { buildCompetition } = require('./build');
+const { buildCompetition, competitionIndexEntry } = require('./build');
 const { isAllowed } = require('./robots');
-const { teamKey, slug } = require('./util');
+const { teamKey, slug, hashOf } = require('./util');
 
 const USER_AGENT = 'CluberaBot/1.0 (+https://www.clubera-global.com; info@clubera-global.com)';
 const DELAY_MS = 1500;
@@ -87,6 +87,7 @@ async function syncSource(db, source, summary) {
 
   const { byKey, manual } = await loadClubLinks(db, source.assocId);
   const allTeams = new Map(); // teamKey -> { name, competitionIds:Set }
+  const index = []; // light list for eps_associations/{assocId}
   let totalMatches = 0;
   let written = 0;
 
@@ -101,6 +102,7 @@ async function syncSource(db, source, summary) {
     totalMatches += matches.length;
 
     const { id, doc, teams } = buildCompetition({ source, name, matches, standings, clubsByKey: byKey });
+    index.push(competitionIndexEntry(id, doc));
     teams.forEach((t) => {
       const k = teamKey(t);
       if (!allTeams.has(k)) allTeams.set(k, { name: t, competitionIds: new Set() });
@@ -125,6 +127,17 @@ async function syncSource(db, source, summary) {
       competition: name,
       note: `${matches.length} αγώνες (${finished} με σκορ), ${standings.length} ομάδες, ${doc.clubIds.length} συνδεδεμένοι σύλλογοι — ${state}`,
     });
+  }
+
+  if (db && index.length) {
+    // Small document the app reads to list an ΕΠΣ's championships quickly.
+    const ref = db.collection('eps_associations').doc(source.assocId);
+    const data = { assocId: source.assocId, name: source.name, sourceUrl: source.baseUrl, competitions: index };
+    const hash = hashOf(data);
+    const existing = await ref.get();
+    if (!existing.exists || existing.get('hash') !== hash) {
+      await ref.set({ ...data, hash, updatedAt: new Date() });
+    }
   }
 
   if (db) {

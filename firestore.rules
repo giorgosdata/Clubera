@@ -267,6 +267,20 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── ΕΠΣ DATA (written only by tools/eps-sync with the Admin SDK) ─────────
+    match /eps_associations/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /eps_competitions/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /eps_teams/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // ── NEWS ─────────────────────────────────────────────────────────────────
     match /news/{newsId} {
       allow read: if true;
