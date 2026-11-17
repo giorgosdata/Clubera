@@ -24,7 +24,7 @@ function competitionMeta(name) {
 }
 
 // clubsByKey: Map teamKey -> clubId (from Clubera clubs + existing links).
-function buildCompetition({ source, name, matches, standings, clubsByKey }) {
+function buildCompetition({ source, name, matches, standings, scorers = [], clubsByKey }) {
   const id = `${source.assocId}__${slug(name)}`;
   const linkOf = (team) => clubsByKey.get(teamKey(team)) || null;
 
@@ -57,6 +57,9 @@ function buildCompetition({ source, name, matches, standings, clubsByKey }) {
   }));
 
   const outStandings = standings.map((r) => ({ ...r, clubId: linkOf(r.team) }));
+  const outScorers = scorers
+    .map((r) => ({ ...r, clubId: linkOf(r.team) }))
+    .sort((a, b) => b.goals - a.goals);
 
   const teams = new Set();
   matches.forEach((m) => { teams.add(m.home); teams.add(m.away); });
@@ -75,6 +78,7 @@ function buildCompetition({ source, name, matches, standings, clubsByKey }) {
     sourceUrl: `${source.baseUrl}/table.asp?diorganosi=${encodeURIComponent(name)}`,
     rounds: Math.max(0, ...matches.map((m) => m.round || 0)),
     standings: outStandings,
+    scorers: outScorers,
     matches: outMatches,
     teamKeys,
     clubIds,
