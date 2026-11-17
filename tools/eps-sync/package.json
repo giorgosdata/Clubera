@@ -1,0 +1,17 @@
+{
+  "name": "clubera-eps-sync",
+  "private": true,
+  "description": "Reads championships, matches and standings from ΕΠΣ websites and stores them in Firestore.",
+  "main": "src/sync.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "sync": "node src/sync.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "node-html-parser": "^7.0.1"
+  }
+}
