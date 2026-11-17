@@ -1,0 +1,13 @@
+[
+  {
+    "assocId": "eps_achaias",
+    "name": "ΕΠΣ Αχαΐας",
+    "platform": "mascotnet",
+    "baseUrl": "https://epsachaias.gr",
+    "legacyCompetitions": {
+      "^Α ΕΡΑΣΙΤΕΧΝΙΚΗ": "eps_achaias_a",
+      "^Β ΕΡΑΣΙΤΕΧΝΙΚΗ": "eps_achaias_b",
+      "^Γ ΕΡΑΣΙΤΕΧΝΙΚΗ": "eps_achaias_c"
+    }
+  }
+]

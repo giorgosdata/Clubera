@@ -1,0 +1,77 @@
+# Reads championships, matches and standings from ΕΠΣ websites
+# (tools/eps-sync/sources.json) and stores them in Firestore:
+#   eps_competitions  one document per championship/group (standings + matches)
+#   eps_teams         every ΕΠΣ team and the Clubera club it belongs to
+#
+# Runs every 3 hours. Needs the repository secret FIREBASE_SERVICE_ACCOUNT
+# (Firebase console → Project settings → Service accounts → Generate new
+# private key, paste the whole JSON). Without it the run is a dry run: it reads
+# the sites and shows the summary, but writes nothing.
+name: ΕΠΣ sync
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Δοκιμή χωρίς εγγραφή στη βάση'
+        type: boolean
+        default: false
+      only:
+        description: 'Μόνο αυτές οι ΕΠΣ (π.χ. eps_achaias)'
+        required: false
+        default: ''
+      limit:
+        description: 'Μόνο οι πρώτες N διοργανώσεις ανά ΕΠΣ (κενό = όλες)'
+        required: false
+        default: ''
+  push:
+    paths: ['tools/eps-sync/**', '.github/workflows/eps-sync.yml']
+  pull_request:
+    paths: ['tools/eps-sync/**', '.github/workflows/eps-sync.yml']
+
+concurrency:
+  group: eps-sync-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: tools/eps-sync
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tools/eps-sync/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+
+  sync:
+    needs: test
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: tools/eps-sync
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tools/eps-sync/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Sync
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          EPS_DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+          EPS_ONLY: ${{ inputs.only }}
+          EPS_LIMIT: ${{ inputs.limit }}
+        run: node src/sync.js
