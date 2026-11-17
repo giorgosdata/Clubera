@@ -47,59 +47,74 @@ class EpsCompetitionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
+    AppBar appBar([List<Widget>? tabs]) => AppBar(
           title: Text(title),
           backgroundColor: Colors.transparent,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
-          bottom: TabBar(
-            indicatorColor: AppTheme.accent,
-            labelColor: AppTheme.accent,
-            unselectedLabelColor: AppTheme.textSecondary,
-            tabs: [
-              Tab(text: l.eps_standings),
-              Tab(text: l.eps_fixtures),
-            ],
+          bottom: tabs == null
+              ? null
+              : TabBar(
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  indicatorColor: AppTheme.accent,
+                  labelColor: AppTheme.accent,
+                  unselectedLabelColor: AppTheme.textSecondary,
+                  tabs: tabs,
+                ),
+        );
+    Widget message(String text) => Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: appBar(),
+          body: Center(
+            child: Text(text, style: const TextStyle(color: AppTheme.textSecondary)),
           ),
-        ),
-        body: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('eps_competitions')
-              .doc(competitionId)
-              .snapshots(),
-          builder: (context, snap) {
-            if (snap.hasError) {
-              return Center(
-                child: Text(l.m_error('${snap.error}'),
-                    style: const TextStyle(color: AppTheme.textSecondary)),
-              );
-            }
-            if (!snap.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final data = snap.data!.data() as Map<String, dynamic>?;
-            if (data == null) {
-              return Center(
-                child: Text(l.eps_no_standings,
-                    style: const TextStyle(color: AppTheme.textSecondary)),
-              );
-            }
-            final comp = EpsCompetition.fromMap(data, snap.data!.id);
-            return TabBarView(
-              children: [
-                _StandingsTab(comp: comp, highlightClubId: highlightClubId),
-                _FixturesTab(comp: comp, highlightClubId: highlightClubId),
-              ],
-            );
-          },
-        ),
-      ),
+        );
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('eps_competitions')
+          .doc(competitionId)
+          .snapshots(),
+      builder: (context, snap) {
+        if (snap.hasError) return message(l.m_error('${snap.error}'));
+        if (!snap.hasData) {
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: appBar(),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        final data = snap.data!.data() as Map<String, dynamic>?;
+        if (data == null) return message(l.eps_no_standings);
+        final comp = EpsCompetition.fromMap(data, snap.data!.id);
+
+        // Scorers tab only where the ΕΠΣ publishes scorers (senior leagues).
+        final hasScorers = comp.scorers.isNotEmpty;
+        final tabs = <Widget>[
+          Tab(text: l.eps_standings),
+          Tab(text: l.eps_fixtures),
+          if (hasScorers) Tab(text: l.eps_scorers),
+          Tab(text: l.eps_stats),
+        ];
+        final views = <Widget>[
+          _StandingsTab(comp: comp, highlightClubId: highlightClubId),
+          _FixturesTab(comp: comp, highlightClubId: highlightClubId),
+          if (hasScorers) _ScorersTab(comp: comp, highlightClubId: highlightClubId),
+          _StatsTab(comp: comp),
+        ];
+        return DefaultTabController(
+          key: ValueKey(tabs.length),
+          length: tabs.length,
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: appBar(tabs),
+            body: TabBarView(children: views),
+          ),
+        );
+      },
     );
   }
 }
@@ -387,6 +402,268 @@ class EpsMatchTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Scorers ────────────────────────────────────────────────────────────────
+
+class _ScorersTab extends StatelessWidget {
+  final EpsCompetition comp;
+  final String? highlightClubId;
+  const _ScorersTab({required this.comp, this.highlightClubId});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    if (comp.scorers.isEmpty) {
+      return Center(
+        child: Text(l.eps_no_scorers, style: const TextStyle(color: AppTheme.textSecondary)),
+      );
+    }
+    final total = comp.scorers.fold<int>(0, (sum, s) => sum + s.goals);
+    const head = TextStyle(
+        color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.w700);
+
+    // Same goals = same position (1, 2, 2, 4 ...).
+    final positions = <int>[];
+    for (var i = 0; i < comp.scorers.length; i++) {
+      positions.add(i > 0 && comp.scorers[i].goals == comp.scorers[i - 1].goals
+          ? positions[i - 1]
+          : i + 1);
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Text(
+            l.eps_scorers_summary(comp.scorers.length, total),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppTheme.accent, fontWeight: FontWeight.w700),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
+            children: [
+              const SizedBox(width: 28, child: Text('#', style: head)),
+              Expanded(child: Text(l.eps_col_player, style: head)),
+              SizedBox(
+                width: 44,
+                child: Text(l.eps_col_goals, textAlign: TextAlign.center, style: head),
+              ),
+            ],
+          ),
+        ),
+        for (var i = 0; i < comp.scorers.length; i++)
+          _scorerRow(context, comp.scorers[i], positions[i]),
+        _SourceNote(comp: comp),
+      ],
+    );
+  }
+
+  Widget _scorerRow(BuildContext context, EpsScorer s, int position) {
+    final mine = highlightClubId != null && s.clubId == highlightClubId;
+    final halves = s.firstHalf != null && s.secondHalf != null
+        ? '(${s.firstHalf}+${s.secondHalf})'
+        : '';
+    return InkWell(
+      onTap: s.clubId != null ? () => _openClub(context, s.clubId) : null,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+        decoration: BoxDecoration(
+          color: mine ? AppTheme.accent.withValues(alpha: 0.10) : AppTheme.cardBg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+              color: mine ? AppTheme.accent.withValues(alpha: 0.5) : AppTheme.divider),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 28,
+              child: Text('$position',
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(s.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: mine ? AppTheme.accent : Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600)),
+                  Text(s.team,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 44,
+              child: Column(
+                children: [
+                  Text('${s.goals}',
+                      style: const TextStyle(
+                          color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                  if (halves.isNotEmpty)
+                    Text(halves,
+                        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Statistics ─────────────────────────────────────────────────────────────
+
+class _StatsTab extends StatelessWidget {
+  final EpsCompetition comp;
+  const _StatsTab({required this.comp});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final st = comp.stats;
+    if (st.played == 0) {
+      return Center(
+        child: Text(l.eps_no_stats, style: const TextStyle(color: AppTheme.textSecondary)),
+      );
+    }
+
+    Widget tile(String label, String value) => Expanded(
+          child: Container(
+            margin: const EdgeInsets.all(4),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+            decoration: BoxDecoration(
+              gradient: AppTheme.navyGradient,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.divider),
+            ),
+            child: Column(
+              children: [
+                Text(value,
+                    style: const TextStyle(
+                        color: AppTheme.accent, fontSize: 20, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(label,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+              ],
+            ),
+          ),
+        );
+
+    Widget highlight(IconData icon, String label, String team, String detail, String? clubId) =>
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: InkWell(
+            onTap: clubId != null ? () => _openClub(context, clubId) : null,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.divider),
+              ),
+              child: Row(
+                children: [
+                  Icon(icon, color: AppTheme.accent, size: 22),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label.toUpperCase(),
+                            style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.1)),
+                        const SizedBox(height: 3),
+                        Text(team,
+                            style: const TextStyle(
+                                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                        Text(detail,
+                            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+    final big = st.biggestWin;
+    final top = st.highestScoring;
+    String matchLine(EpsMatch m) => '${m.homeTeam} ${m.homeScore} - ${m.awayScore} ${m.awayTeam}';
+    String matchInfo(EpsMatch m) =>
+        [if (m.round != null) l.eps_round(m.round!), epsDateLabel(context, m)].join(' · ');
+    Widget section(String text) => Padding(
+          padding: const EdgeInsets.fromLTRB(4, 16, 4, 6),
+          child: Text(text.toUpperCase(),
+              style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2)),
+        );
+
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        Row(children: [
+          tile(l.eps_matches_played, '${st.played}'),
+          tile(l.eps_total_goals, '${st.totalGoals}'),
+          tile(l.eps_goals_per_match, st.goalsPerMatch.toStringAsFixed(2)),
+        ]),
+        section(l.eps_section_results),
+        Row(children: [
+          tile(l.eps_home_wins, '${st.homeWins}'),
+          tile(l.eps_draws, '${st.draws}'),
+          tile(l.eps_away_wins, '${st.awayWins}'),
+        ]),
+        section(l.eps_section_goals),
+        Row(children: [
+          tile(l.eps_home_goals, '${st.homeGoals}'),
+          tile(l.eps_away_goals, '${st.awayGoals}'),
+        ]),
+        Row(children: [
+          tile(l.eps_three_plus, '${st.threePlusGoals}'),
+          tile(l.eps_up_to_two, '${st.upToTwoGoals}'),
+        ]),
+        Row(children: [
+          tile(l.eps_both_scored, '${st.bothScored}'),
+          tile(l.eps_clean_sheets, '${st.cleanSheets}'),
+        ]),
+        section(l.eps_section_records),
+        if (st.bestAttack != null)
+          highlight(Icons.sports_soccer, l.eps_best_attack, st.bestAttack!.team,
+              l.eps_goals_count(st.bestAttack!.goalsFor), st.bestAttack!.clubId),
+        if (st.bestDefence != null)
+          highlight(Icons.shield, l.eps_best_defence, st.bestDefence!.team,
+              l.eps_goals_conceded(st.bestDefence!.goalsAgainst), st.bestDefence!.clubId),
+        if (st.mostCleanSheetsTeam != null)
+          highlight(Icons.lock, l.eps_most_clean_sheets, st.mostCleanSheetsTeam!,
+              l.eps_matches_count(st.mostCleanSheets), st.mostCleanSheetsClubId),
+        if (big != null)
+          highlight(Icons.bolt, l.eps_biggest_win, matchLine(big), matchInfo(big), null),
+        if (top != null)
+          highlight(Icons.local_fire_department, l.eps_highest_scoring, matchLine(top),
+              matchInfo(top), null),
+        _SourceNote(comp: comp),
+      ],
     );
   }
 }

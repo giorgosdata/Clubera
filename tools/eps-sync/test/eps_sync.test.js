@@ -160,3 +160,25 @@ test('competition index entry is small and counts matches', () => {
     total: 4,
   });
 });
+
+test('scorers: names decoded, goals and halves, linked to clubs', () => {
+  const { parseScorers } = require('../src/mascotnet');
+  const s = parseScorers(fixture('achaia_scorers.html'));
+  assert.equal(s.length, 3);
+  assert.deepEqual(s[0], {
+    name: 'ΠΑΝΤΕΛΗΣ ΚΩΝΣΤΑΝΤΙΝΟΣ',
+    team: 'ΕΘΝΙΚΟΣ ΠΟΛΥΤΕΚΝΟΣ',
+    goals: 7,
+    firstHalf: 5,
+    secondHalf: 2,
+  });
+  assert.equal(s[2].firstHalf, null);
+
+  const clubsByKey = new Map([[teamKey('ΝΙΚΗ ΠΡΟΑΣΤΕΙΟΥ'), 'club_niki']]);
+  const { doc } = buildCompetition({
+    source, name: 'Α ΕΡΑΣΙΤΕΧΝΙΚΗ - 2ος ΟΜΙΛΟΣ', matches: [], standings: [], scorers: s, clubsByKey,
+  });
+  assert.equal(doc.scorers[1].clubId, 'club_niki');
+  assert.equal(doc.scorers[0].clubId, null);
+  assert.deepEqual(doc.scorers.map((x) => x.goals), [7, 4, 1]);
+});

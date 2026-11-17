@@ -84,4 +84,47 @@ void main() {
     expect(e.isWomen, isTrue);
     expect(e.teams, 8);
   });
+
+  test('scorers of a club and season statistics', () {
+    final c = EpsCompetition.fromMap({
+      'standings': [
+        {'position': 1, 'team': 'Α', 'clubId': 'a', 'played': 3, 'goalsFor': 9, 'goalsAgainst': 2},
+        {'position': 2, 'team': 'Β', 'played': 3, 'goalsFor': 4, 'goalsAgainst': 1},
+        {'position': 3, 'team': 'Γ', 'played': 3, 'goalsFor': 1, 'goalsAgainst': 11},
+      ],
+      'scorers': [
+        {'name': 'ΠΑΙΚΤΗΣ 1', 'team': 'Α', 'clubId': 'a', 'goals': 5, 'firstHalf': 2, 'secondHalf': 3},
+        {'name': 'ΠΑΙΚΤΗΣ 2', 'team': 'Β', 'goals': 3},
+        {'name': 'ΠΑΙΚΤΗΣ 3', 'team': 'Α', 'clubId': 'a', 'goals': 2},
+      ],
+      'matches': [
+        _m(1, 'Α', 'Γ', hs: 6, aws: 0),
+        _m(1, 'Β', 'Α', hs: 1, aws: 1),
+        _m(2, 'Γ', 'Β', hs: 1, aws: 3),
+        _m(2, 'Α', 'Β', hs: 2, aws: 0),
+        _m(3, 'Γ', 'Α'),
+      ],
+    }, 'x');
+    expect(c.scorersOf('a').map((s) => s.name).toList(), ['ΠΑΙΚΤΗΣ 1', 'ΠΑΙΚΤΗΣ 3']);
+    expect(c.scorers.first.firstHalf, 2);
+    final st = c.stats;
+    expect(st.played, 4);
+    expect(st.totalGoals, 14);
+    expect(st.homeWins, 2);
+    expect(st.draws, 1);
+    expect(st.awayWins, 1);
+    expect(st.goalsPerMatch, 3.5);
+    expect(st.bestAttack?.team, 'Α');
+    expect(st.bestDefence?.team, 'Β');
+    expect(st.biggestWin?.homeScore, 6);
+    expect(st.homeGoals, 10);
+    expect(st.awayGoals, 4);
+    expect(st.threePlusGoals, 2);
+    expect(st.upToTwoGoals, 2);
+    expect(st.bothScored, 2);
+    expect(st.cleanSheets, 2);
+    expect(st.mostCleanSheetsTeam, 'Α');
+    expect(st.mostCleanSheets, 2);
+    expect(st.highestScoring?.homeScore, 6);
+  });
 }

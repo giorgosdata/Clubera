@@ -136,4 +136,26 @@ function parseStandings(html) {
   return rows;
 }
 
-module.exports = { parseCompetitionLinks, parseMatches, parseStandings, parseMeta };
+// Scorers from table_scorers.asp (published for senior championships only).
+function parseScorers(html) {
+  const root = parse(html);
+  const rows = [];
+  for (const tr of root.querySelectorAll('tr.mn-player-row')) {
+    const name = clean(tr.querySelector('.scorer-name')?.text);
+    const teamEl = tr.querySelector('.scorer-team');
+    const team = clean(teamEl?.getAttribute('title')) || clean(teamEl?.text);
+    const goals = parseInt(clean(tr.querySelector('.goal-value')?.text), 10);
+    if (!name || Number.isNaN(goals)) continue;
+    const halves = clean(tr.querySelector('.goal-halves')?.text).match(/(\d+)\s*\+\s*(\d+)/);
+    rows.push({
+      name,
+      team,
+      goals,
+      firstHalf: halves ? +halves[1] : null,
+      secondHalf: halves ? +halves[2] : null,
+    });
+  }
+  return rows;
+}
+
+module.exports = { parseCompetitionLinks, parseMatches, parseStandings, parseScorers, parseMeta };

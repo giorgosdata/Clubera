@@ -12,8 +12,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const { parseCompetitionLinks, parseMatches, parseStandings } = require('./mascotnet');
-const { buildCompetition, competitionIndexEntry } = require('./build');
+const { parseCompetitionLinks, parseMatches, parseStandings, parseScorers } = require('./mascotnet');
+const { buildCompetition, competitionIndexEntry, competitionMeta } = require('./build');
 const { isAllowed } = require('./robots');
 const { teamKey, slug, hashOf } = require('./util');
 
@@ -101,7 +101,15 @@ async function syncSource(db, source, summary) {
     const standings = parseStandings(standingsHtml);
     totalMatches += matches.length;
 
-    const { id, doc, teams } = buildCompetition({ source, name, matches, standings, clubsByKey: byKey });
+    // Scorers only for senior championships: the ΕΠΣ does not publish youth
+    // scorers, and we don't show minors' names.
+    let scorers = [];
+    if (competitionMeta(name).level === 'senior' && isAllowed(robots, USER_AGENT, '/table_scorers.asp')) {
+      await sleep(DELAY_MS);
+      scorers = parseScorers(await fetchText(`${base}/table_scorers.asp?diorganosi=${q}`));
+    }
+
+    const { id, doc, teams } = buildCompetition({ source, name, matches, standings, scorers, clubsByKey: byKey });
     index.push(competitionIndexEntry(id, doc));
     teams.forEach((t) => {
       const k = teamKey(t);
@@ -125,7 +133,7 @@ async function syncSource(db, source, summary) {
     summary.push({
       source: source.name,
       competition: name,
-      note: `${matches.length} αγώνες (${finished} με σκορ), ${standings.length} ομάδες, ${doc.clubIds.length} συνδεδεμένοι σύλλογοι — ${state}`,
+      note: `${matches.length} αγώνες (${finished} με σκορ), ${standings.length} ομάδες, ${scorers.length} σκόρερ, ${doc.clubIds.length} συνδεδεμένοι σύλλογοι — ${state}`,
     });
   }
 

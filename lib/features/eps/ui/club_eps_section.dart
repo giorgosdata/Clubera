@@ -49,6 +49,7 @@ class _ClubCompetitionCard extends StatelessWidget {
     final standing = comp.standingOf(clubId);
     final next = comp.nextMatchOf(clubId);
     final last = comp.lastResultsOf(clubId);
+    final scorers = comp.scorersOf(clubId);
 
     const label = TextStyle(
         color: AppTheme.textSecondary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.1);
@@ -96,6 +97,28 @@ class _ClubCompetitionCard extends StatelessWidget {
             ...last.map((m) => Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: EpsMatchTile(match: m, highlightClubId: clubId, showRound: true),
+                )),
+          ],
+          if (scorers.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(l.eps_club_scorers.toUpperCase(), style: label),
+            const SizedBox(height: 6),
+            ...scorers.map((s) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.sports_soccer, size: 14, color: AppTheme.textSecondary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(s.name,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white, fontSize: 13)),
+                      ),
+                      Text(l.eps_goals_count(s.goals),
+                          style: const TextStyle(
+                              color: AppTheme.accent, fontSize: 13, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
                 )),
           ],
           const SizedBox(height: 6),
