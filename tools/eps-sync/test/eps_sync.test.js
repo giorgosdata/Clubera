@@ -140,3 +140,23 @@ test('robots.txt of epsachaias.gr allows us, blocks AI crawlers', () => {
   assert.equal(isAllowed('User-agent: *\nDisallow:', ua, '/table.asp'), true);
   assert.equal(isAllowed('', ua, '/table.asp'), true);
 });
+
+test('competition index entry is small and counts matches', () => {
+  const { competitionIndexEntry } = require('../src/build');
+  const matches = parseMatches(fixture('achaia_analytika.html'));
+  const standings = parseStandings(fixture('achaia_table.html'));
+  const { id, doc } = buildCompetition({ source, name: 'Κ13 ΚΟΡΑΣΙΔΩΝ 8Χ8', matches, standings, clubsByKey: new Map() });
+  const e = competitionIndexEntry(id, doc);
+  assert.deepEqual(e, {
+    id: 'eps_achaias__k13_korasidon_8ch8',
+    name: 'Κ13 ΚΟΡΑΣΙΔΩΝ 8Χ8',
+    season: '2026-2027',
+    level: 'youth',
+    ageGroup: 'K13',
+    gender: 'women',
+    teams: 3,
+    rounds: 18,
+    played: 2,
+    total: 4,
+  });
+});

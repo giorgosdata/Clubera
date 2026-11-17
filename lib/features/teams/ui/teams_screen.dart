@@ -10,6 +10,7 @@ import '../../../models/player_model.dart';
 import '../../clubs/ui/club_profile_screen.dart';
 import '../../clubs/ui/create_club_screen.dart' show kCountryList;
 import '../../tournaments/ui/tournaments_screen.dart';
+import '../../eps/ui/eps_association_list.dart';
 
 const kCountries = [
   {'flag': '🇩🇪', 'name': 'Germany'},
@@ -1776,7 +1777,9 @@ class AssociationDetailScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
+      body: EpsAssociationGate(
+        assocId: assocId,
+        fallback: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('competitions')
             .where('assocId', isEqualTo: assocId)
@@ -1851,6 +1854,7 @@ class AssociationDetailScreen extends StatelessWidget {
             ],
           );
         },
+      ),
       ),
     );
   }
