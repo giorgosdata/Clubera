@@ -280,6 +280,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+    match /eps_days/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
 
     // ── NEWS ─────────────────────────────────────────────────────────────────
     match /news/{newsId} {

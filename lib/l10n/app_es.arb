@@ -433,5 +433,6 @@
   "eps_clean_sheets": "Porterías a cero",
   "eps_most_clean_sheets": "Más porterías a cero",
   "eps_highest_scoring": "Partido con más goles",
-  "eps_matches_count": "{count} partidos"
+  "eps_matches_count": "{count} partidos",
+  "eps_already_picked": "Ya elegiste en {count} partidos de la ΕΠΣ"
 }

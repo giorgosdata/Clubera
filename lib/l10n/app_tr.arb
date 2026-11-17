@@ -433,5 +433,6 @@
   "eps_clean_sheets": "Gol yemeden biten maçlar",
   "eps_most_clean_sheets": "En çok gol yemeden biten maç",
   "eps_highest_scoring": "En gollü maç",
-  "eps_matches_count": "{count} maç"
+  "eps_matches_count": "{count} maç",
+  "eps_already_picked": "{count} ΕΠΣ maçında zaten seçim yaptın"
 }

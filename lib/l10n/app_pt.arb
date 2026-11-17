@@ -433,5 +433,6 @@
   "eps_clean_sheets": "Jogos sem sofrer",
   "eps_most_clean_sheets": "Mais jogos sem sofrer",
   "eps_highest_scoring": "Jogo com mais golos",
-  "eps_matches_count": "{count} jogos"
+  "eps_matches_count": "{count} jogos",
+  "eps_already_picked": "Já escolheste em {count} jogos ΕΠΣ"
 }

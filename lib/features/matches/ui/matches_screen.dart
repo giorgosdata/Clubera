@@ -11,6 +11,7 @@ import '../../../core/utils/feature_flags.dart';
 import 'match_card.dart';
 import 'match_detail_screen.dart';
 import 'create_match_screen.dart';
+import '../../eps/ui/eps_matches.dart';
 
 class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
@@ -288,6 +289,28 @@ class _DateFilteredList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Matches created in Clubera + the ΕΠΣ matches of that day (read
+    // automatically from the ΕΠΣ website by tools/eps-sync).
+    return EpsAssociationScope(
+      builder: (context, assocId, assocName) {
+        if (assocId == null) return _list(context, const [], null, null);
+        return StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('eps_days')
+              .doc(epsDayId(assocId, date))
+              .snapshots(),
+          builder: (context, daySnap) {
+            final eps = daySnap.hasError
+                ? const <EpsDayMatch>[]
+                : epsDayMatchesFrom(daySnap.data?.data() as Map<String, dynamic>?);
+            return _list(context, eps, assocId, assocName);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _list(BuildContext context, List<EpsDayMatch> eps, String? assocId, String? assocName) {
     final start = Timestamp.fromDate(date);
     final end = Timestamp.fromDate(date.add(const Duration(days: 1)));
 
@@ -308,38 +331,48 @@ class _DateFilteredList extends StatelessWidget {
               (d) => MatchModel.fromMap(d.data() as Map<String, dynamic>, d.id),
             )
             .toList();
-        if (matches.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.event_busy, size: 56, color: AppTheme.cardBg2),
-                const SizedBox(height: 12),
-                Text(
-                  AppLocalizations.of(context).m_no_matches_on(DateFormat('EEEE d MMM').format(date)),
-                  style: const TextStyle(color: AppTheme.textSecondary),
-                ),
-              ],
-            ),
+        final header = assocId != null && assocName != null
+            ? EpsChampionshipsLink(assocId: assocId, assocName: assocName)
+            : null;
+        if (matches.isEmpty && eps.isEmpty) {
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (header != null) header,
+              const SizedBox(height: 80),
+              const Icon(Icons.event_busy, size: 56, color: AppTheme.cardBg2),
+              const SizedBox(height: 12),
+              Text(
+                AppLocalizations.of(context).m_no_matches_on(DateFormat('EEEE d MMM').format(date)),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppTheme.textSecondary),
+              ),
+            ],
           );
         }
         return RefreshIndicator(
           onRefresh: () => Future.delayed(const Duration(milliseconds: 500)),
           color: AppTheme.primaryLight,
-          child: ListView.separated(
+          child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
-            itemCount: matches.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (ctx, i) => MatchCard(
-              match: matches[i],
-              onTap: () => Navigator.push(
-                ctx,
-                MaterialPageRoute(
-                  builder: (_) => MatchDetailScreen(matchId: matches[i].id),
+            children: [
+              if (header != null) ...[header, const SizedBox(height: 6)],
+              for (final m in matches)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: MatchCard(
+                    match: m,
+                    onTap: () => Navigator.push(
+                      ctx,
+                      MaterialPageRoute(
+                        builder: (_) => MatchDetailScreen(matchId: m.id),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              if (eps.isNotEmpty) EpsDayMatchesList(matches: eps),
+            ],
           ),
         );
       },
@@ -362,6 +395,81 @@ class _CouponTabState extends State<_CouponTab> {
   final Map<String, (int, int)> _exactScores = {}; // matchId → (home, away)
   bool _submitting = false;
 
+  // ΕΠΣ matches (read from the ΕΠΣ website by tools/eps-sync). Points for
+  // them are awarded by the sync once the ΕΠΣ publishes the result.
+  String? _assocId;
+  bool _epsRequested = false;
+  List<EpsDayMatch> _eps = const [];
+  final Set<String> _alreadyPicked = {};
+
+  Map<String, EpsDayMatch> get _epsById => {for (final m in _eps) m.id: m};
+
+  List<EpsDayMatch> get _epsOpen =>
+      _eps.where((m) => !_alreadyPicked.contains(m.id)).toList();
+
+  void _ensureEps(String? assocId) {
+    if (_epsRequested && assocId == _assocId) return;
+    _epsRequested = true;
+    _assocId = assocId;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadEps());
+  }
+
+  Future<void> _loadEps() async {
+    final assocId = _assocId;
+    if (assocId == null) {
+      if (mounted) setState(() => _eps = const []);
+      return;
+    }
+    final fs = FirebaseFirestore.instance;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final user = context.read<AppProvider>().user;
+    final mine = <String>{
+      if (user?.clubId != null) user!.clubId!,
+      ...?user?.followedClubs,
+    };
+    try {
+      final days = await Future.wait(List.generate(
+        7,
+        (i) => fs.collection('eps_days').doc(epsDayId(assocId, today.add(Duration(days: i)))).get(),
+      ));
+      // Only senior championships, only matches that have not kicked off.
+      final list = days
+          .expand((d) => epsDayMatchesFrom(d.data()))
+          .where((m) =>
+              m.isSenior &&
+              !m.match.isFinished &&
+              m.match.scheduledAt != null &&
+              m.match.scheduledAt!.isAfter(now))
+          .toList();
+      bool isMine(EpsDayMatch m) =>
+          mine.contains(m.match.homeClubId) || mine.contains(m.match.awayClubId);
+      list.sort((a, b) {
+        if (isMine(a) != isMine(b)) return isMine(a) ? -1 : 1;
+        return a.match.scheduledAt!.compareTo(b.match.scheduledAt!);
+      });
+      final picked = <String>{};
+      if (widget.userId.isNotEmpty) {
+        final snap = await fs
+            .collection('coupon_picks')
+            .where('userId', isEqualTo: widget.userId)
+            .where('source', isEqualTo: 'eps')
+            .get();
+        picked.addAll(snap.docs.map((d) => d.data()['matchId'] as String? ?? ''));
+      }
+      if (mounted) {
+        setState(() {
+          _eps = list;
+          _alreadyPicked
+            ..clear()
+            ..addAll(picked);
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _eps = const []);
+    }
+  }
+
   Future<void> _submitCoupon(List<MatchModel> matches) async {
     if (_picks.isEmpty || widget.userId.isEmpty) return;
     setState(() => _submitting = true);
@@ -372,26 +480,43 @@ class _CouponTabState extends State<_CouponTab> {
         if (matchIdx < 0) continue;
         final match = matches[matchIdx];
         final exact = _exactScores[entry.key];
-        final ref = FirebaseFirestore.instance.collection('coupon_picks').doc();
+        final eps = _epsById[entry.key];
+        // ΕΠΣ picks: one per user and match (fixed id; the rules allow only
+        // creating it, so a second pick for the same match is refused).
+        final ref = eps != null
+            ? FirebaseFirestore.instance
+                .collection('coupon_picks')
+                .doc('${widget.userId}_${entry.key}')
+            : FirebaseFirestore.instance.collection('coupon_picks').doc();
         batch.set(
           ref,
-          CouponPick(
-            id: ref.id,
-            userId: widget.userId,
-            matchId: entry.key,
-            homeClubName: match.homeClubName,
-            awayClubName: match.awayClubName,
-            pick: entry.value,
-            predictedHomeScore: exact?.$1,
-            predictedAwayScore: exact?.$2,
-            createdAt: DateTime.now(),
-          ).toMap(),
+          {
+            ...CouponPick(
+              id: ref.id,
+              userId: widget.userId,
+              matchId: entry.key,
+              homeClubName: match.homeClubName,
+              awayClubName: match.awayClubName,
+              pick: entry.value,
+              predictedHomeScore: exact?.$1,
+              predictedAwayScore: exact?.$2,
+              createdAt: DateTime.now(),
+            ).toMap(),
+            if (eps != null) ...{
+              'source': 'eps',
+              'assocId': _assocId,
+              'competitionId': eps.competitionId,
+              'competitionName': eps.competitionName,
+              'scheduledAt': eps.match.scheduledAt,
+            },
+          },
         );
       }
       final count = _picks.length;
       await batch.commit();
       if (mounted) {
         setState(() {
+          _alreadyPicked.addAll(_picks.keys.where(_epsById.containsKey));
           _picks.clear();
           _exactScores.clear();
         });
@@ -415,6 +540,15 @@ class _CouponTabState extends State<_CouponTab> {
 
   @override
   Widget build(BuildContext context) {
+    return EpsAssociationScope(
+      builder: (context, assocId, assocName) {
+        _ensureEps(assocId);
+        return _coupon(context);
+      },
+    );
+  }
+
+  Widget _coupon(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('matches')
@@ -426,11 +560,17 @@ class _CouponTabState extends State<_CouponTab> {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        final matches = (snap.data?.docs ?? [])
+        final cluberaMatches = (snap.data?.docs ?? [])
             .map(
               (d) => MatchModel.fromMap(d.data() as Map<String, dynamic>, d.id),
             )
             .toList();
+        // Matches of the user's ΕΠΣ (their clubs first), then Clubera matches.
+        final matches = <MatchModel>[
+          ..._epsOpen.map((m) => m.toMatchModel()),
+          ...cluberaMatches,
+        ];
+        final pickedEps = _eps.where((m) => _alreadyPicked.contains(m.id)).length;
 
         if (matches.isEmpty) {
           return Center(
@@ -443,6 +583,13 @@ class _CouponTabState extends State<_CouponTab> {
                   AppLocalizations.of(context).m_no_predict,
                   style: TextStyle(color: AppTheme.textSecondary),
                 ),
+                if (pickedEps > 0) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    AppLocalizations.of(context).eps_already_picked(pickedEps),
+                    style: const TextStyle(color: AppTheme.accent, fontSize: 12),
+                  ),
+                ],
               ],
             ),
           );
@@ -509,9 +656,18 @@ class _CouponTabState extends State<_CouponTab> {
                 ],
               ),
             ),
+            if (pickedEps > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: Text(
+                  AppLocalizations.of(context).eps_already_picked(pickedEps),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppTheme.accent, fontSize: 12),
+                ),
+              ),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () => Future.delayed(const Duration(milliseconds: 500)),
+                onRefresh: _loadEps,
                 color: AppTheme.primaryLight,
                 child: ListView.separated(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -652,6 +808,17 @@ class _CouponMatchRowState extends State<_CouponMatchRow> {
       ),
       child: Column(
         children: [
+          if (match.league.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                '${match.league} · ${DateFormat('dd/MM HH:mm').format(match.scheduledAt)}',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+              ),
+            ),
           Row(
             children: [
               Expanded(

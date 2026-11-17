@@ -15,6 +15,8 @@ const path = require('path');
 const { parseCompetitionLinks, parseMatches, parseStandings, parseScorers } = require('./mascotnet');
 const { buildCompetition, competitionIndexEntry, competitionMeta } = require('./build');
 const { isAllowed } = require('./robots');
+const { buildDays } = require('./days');
+const { matchesToResolve, resolveCouponPicks } = require('./coupons');
 const { teamKey, slug, hashOf } = require('./util');
 
 const USER_AGENT = 'CluberaBot/1.0 (+https://www.clubera-global.com; info@clubera-global.com)';
@@ -88,6 +90,7 @@ async function syncSource(db, source, summary) {
   const { byKey, manual } = await loadClubLinks(db, source.assocId);
   const allTeams = new Map(); // teamKey -> { name, competitionIds:Set }
   const index = []; // light list for eps_associations/{assocId}
+  const built = []; // [{ id, doc }] of every championship
   let totalMatches = 0;
   let written = 0;
 
@@ -111,6 +114,7 @@ async function syncSource(db, source, summary) {
 
     const { id, doc, teams } = buildCompetition({ source, name, matches, standings, scorers, clubsByKey: byKey });
     index.push(competitionIndexEntry(id, doc));
+    built.push({ id, doc });
     teams.forEach((t) => {
       const k = teamKey(t);
       if (!allTeams.has(k)) allTeams.set(k, { name: t, competitionIds: new Set() });
@@ -140,7 +144,14 @@ async function syncSource(db, source, summary) {
   if (db && index.length) {
     // Small document the app reads to list an ΕΠΣ's championships quickly.
     const ref = db.collection('eps_associations').doc(source.assocId);
-    const data = { assocId: source.assocId, name: source.name, sourceUrl: source.baseUrl, competitions: index };
+    const clubIds = [...new Set(built.flatMap((c) => c.doc.clubIds))].sort();
+    const data = {
+      assocId: source.assocId,
+      name: source.name,
+      sourceUrl: source.baseUrl,
+      competitions: index,
+      clubIds,
+    };
     const hash = hashOf(data);
     const existing = await ref.get();
     if (!existing.exists || existing.get('hash') !== hash) {
@@ -173,11 +184,49 @@ async function syncSource(db, source, summary) {
     await batch.commit();
   }
 
+  // Day lists for the match screens (only changed days are written; days
+  // that no longer have matches are deleted).
+  const days = buildDays(source.assocId, source.name, built);
+  let daysWritten = 0;
+  if (db && !process.env.EPS_LIMIT) {
+    const existing = await db.collection('eps_days').where('assocId', '==', source.assocId).get();
+    const oldHash = new Map(existing.docs.map((d) => [d.id, d.get('hash')]));
+    let batch = db.batch();
+    let n = 0;
+    const flush = async () => {
+      if (n % 400 === 0 && n > 0) {
+        await batch.commit();
+        batch = db.batch();
+      }
+    };
+    for (const [dayId, day] of days) {
+      if (oldHash.get(dayId) === day.hash) continue;
+      batch.set(db.collection('eps_days').doc(dayId), { ...day, updatedAt: new Date() });
+      n++;
+      daysWritten++;
+      await flush();
+    }
+    for (const dayId of oldHash.keys()) {
+      if (days.has(dayId)) continue;
+      batch.delete(db.collection('eps_days').doc(dayId));
+      n++;
+      await flush();
+    }
+    await batch.commit();
+  }
+
+  // Coupon points for finished ΕΠΣ matches.
+  let coupon = { picks: 0, points: 0 };
+  if (db) {
+    const admin = require('firebase-admin');
+    coupon = await resolveCouponPicks(admin, db, matchesToResolve(built));
+  }
+
   const linked = [...allTeams.keys()].filter((k) => byKey.has(k)).length;
   summary.push({
     source: source.name,
     competition: 'Σύνολο',
-    note: `${names.length} διοργανώσεις, ${totalMatches} αγώνες, ${allTeams.size} ομάδες (${linked} συνδεδεμένες με Clubera), ${written} έγγραφα γράφτηκαν`,
+    note: `${names.length} διοργανώσεις, ${totalMatches} αγώνες, ${allTeams.size} ομάδες (${linked} συνδεδεμένες με Clubera), ${written} έγγραφα γράφτηκαν, ${days.size} ημέρες αγώνων (${daysWritten} ενημερώθηκαν), κουπόνι: ${coupon.picks} επιλογές, ${coupon.points} πόντοι`,
   });
   return { competitions: names.length, matches: totalMatches };
 }

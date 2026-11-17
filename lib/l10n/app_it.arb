@@ -433,5 +433,6 @@
   "eps_clean_sheets": "Porta inviolata",
   "eps_most_clean_sheets": "Più porte inviolate",
   "eps_highest_scoring": "Partita con più gol",
-  "eps_matches_count": "{count} partite"
+  "eps_matches_count": "{count} partite",
+  "eps_already_picked": "Hai già scelto in {count} partite ΕΠΣ"
 }

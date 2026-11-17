@@ -182,3 +182,46 @@ test('scorers: names decoded, goals and halves, linked to clubs', () => {
   assert.equal(doc.scorers[0].clubId, null);
   assert.deepEqual(doc.scorers.map((x) => x.goals), [7, 4, 1]);
 });
+
+test('day lists group matches by Greek date and skip undated ones', () => {
+  const { buildDays, athensDay } = require('../src/days');
+  const matches = parseMatches(fixture('achaia_analytika.html'));
+  const comp = buildCompetition({
+    source, name: 'Α ΕΡΑΣΙΤΕΧΝΙΚΗ - 1ος ΟΜΙΛΟΣ', matches, standings: [], clubsByKey: new Map(),
+  });
+  const days = buildDays('eps_achaias', 'ΕΠΣ Αχαΐας', [comp]);
+  assert.deepEqual([...days.keys()].sort(), ['eps_achaias__2026-09-27', 'eps_achaias__2026-11-22']);
+  const sep = days.get('eps_achaias__2026-09-27');
+  assert.equal(sep.matches.length, 2);
+  assert.equal(sep.matches[0].homeTeam, 'ΑΧΑΙΚΗ'); // 17:00 before 19:30
+  assert.equal(sep.matches[0].competitionId, comp.id);
+  assert.equal(sep.matches[0].level, 'senior');
+  // 00:30 Greek time on the 1st is still the 1st, though it is the 30th in UTC.
+  assert.equal(athensDay(new Date('2026-11-30T22:30:00Z')), '2026-12-01');
+});
+
+test('coupon points: same rules as the Cloud Function, late picks get nothing', () => {
+  const { pointsFor, matchesToResolve } = require('../src/coupons');
+  const match = { homeScore: 2, awayScore: 1, scheduledAt: '2026-11-22T16:30:00.000Z' };
+  const before = new Date('2026-11-21T10:00:00Z');
+  assert.deepEqual(pointsFor({ pick: '1', createdAt: before }, match), { points: 5, late: false });
+  assert.deepEqual(pointsFor({ pick: 'X', createdAt: before }, match), { points: 0, late: false });
+  assert.deepEqual(
+    pointsFor({ pick: '1', predictedHomeScore: 2, predictedAwayScore: 1, createdAt: before }, match),
+    { points: 10, late: false });
+  assert.deepEqual(
+    pointsFor({ pick: '1', predictedHomeScore: 3, predictedAwayScore: 0, createdAt: before }, match),
+    { points: 5, late: false });
+  assert.deepEqual(
+    pointsFor({ pick: '1', createdAt: new Date('2026-11-22T16:31:00Z') }, match),
+    { points: 0, late: true });
+  // Firestore Timestamp-like object
+  assert.equal(pointsFor({ pick: '1', createdAt: { toDate: () => before } }, match).points, 5);
+
+  const doc = { matches: [
+    { id: 'a', status: 'finished', homeScore: 1, awayScore: 0, scheduledAt: '2026-11-15T13:00:00Z' },
+    { id: 'b', status: 'finished', homeScore: 1, awayScore: 0, scheduledAt: '2026-09-01T13:00:00Z' },
+    { id: 'c', status: 'upcoming', homeScore: null, awayScore: null, scheduledAt: '2026-11-22T13:00:00Z' },
+  ] };
+  assert.deepEqual(matchesToResolve([{ doc }], new Date('2026-11-17T12:00:00Z')).map((m) => m.id), ['a']);
+});

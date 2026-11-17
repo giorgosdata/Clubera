@@ -433,5 +433,6 @@
   "eps_clean_sheets": "Zu-null-Spiele",
   "eps_most_clean_sheets": "Meiste Zu-null-Spiele",
   "eps_highest_scoring": "Torreichstes Spiel",
-  "eps_matches_count": "{count} Spiele"
+  "eps_matches_count": "{count} Spiele",
+  "eps_already_picked": "Du hast bereits {count} ΕΠΣ-Spiele getippt"
 }
