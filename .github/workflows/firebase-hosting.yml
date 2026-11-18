@@ -1,0 +1,71 @@
+# Builds the Flutter web version and publishes it on Firebase Hosting
+# (https://clubera-app.web.app). Runs on every push to main, or by hand:
+# GitHub → Actions → «Firebase Hosting (web)» → Run workflow.
+# Needs the repository secret:
+#   FIREBASE_SERVICE_ACCOUNT   JSON key of a service account of clubera-app
+#                              with the role «Firebase Hosting Admin»
+name: Firebase Hosting (web)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-hosting
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check secret
+        id: secret
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then
+            echo "::warning::Λείπει το μυστικό FIREBASE_SERVICE_ACCOUNT — δεν έγινε ανέβασμα στο Firebase Hosting."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.secret.outputs.ok == 'true'
+
+      - uses: subosito/flutter-action@v2
+        if: steps.secret.outputs.ok == 'true'
+        with:
+          channel: stable
+          flutter-version: '3.47.9'
+          cache: true
+
+      - name: Create app_config.dart
+        if: steps.secret.outputs.ok == 'true'
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+        run: |
+          mkdir -p lib/core/config
+          cat > lib/core/config/app_config.dart <<EOT
+          class AppConfig {
+            static const String openWeatherApiKey = '${OPENWEATHER_API_KEY}';
+          }
+          EOT
+
+      - name: Build web
+        if: steps.secret.outputs.ok == 'true'
+        run: |
+          flutter config --enable-web --no-analytics
+          flutter pub get
+          flutter build web --release --no-tree-shake-icons
+
+      - name: Deploy to Firebase Hosting
+        if: steps.secret.outputs.ok == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: clubera-app
+          channelId: live

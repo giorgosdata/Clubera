@@ -1,10 +1,27 @@
 {
   "hosting": {
-    "public": "public",
+    "public": "build/web",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=0, must-revalidate"
+          }
+        ]
+      }
     ]
   },
   "firestore": {
@@ -13,10 +30,6 @@
   },
   "storage": {
     "rules": "storage.rules"
-  },
-  "hosting": {
-    "public": "hosting/public",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
   },
   "functions": [
     {
