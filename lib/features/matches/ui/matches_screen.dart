@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:clubera/l10n/app_localizations.dart';
@@ -282,10 +283,56 @@ class _DatePickerRow extends StatelessWidget {
       a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
-class _DateFilteredList extends StatelessWidget {
+class _DateFilteredList extends StatefulWidget {
   final String filter;
   final DateTime date;
   const _DateFilteredList({required this.filter, required this.date});
+
+  @override
+  State<_DateFilteredList> createState() => _DateFilteredListState();
+}
+
+class _DateFilteredListState extends State<_DateFilteredList> {
+  // Streams are created once per date, not on every rebuild: a new stream
+  // makes StreamBuilder start over (spinner) and rebuild the whole list.
+  late Stream<QuerySnapshot> _matches;
+  String? _dayAssocId;
+  Stream<DocumentSnapshot>? _day;
+
+  DateTime get date => widget.date;
+
+  @override
+  void initState() {
+    super.initState();
+    _matches = _matchesStream();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DateFilteredList old) {
+    super.didUpdateWidget(old);
+    if (old.date != widget.date) {
+      _matches = _matchesStream();
+      _day = null;
+    }
+  }
+
+  Stream<QuerySnapshot> _matchesStream() => FirebaseFirestore.instance
+      .collection('matches')
+      .where('scheduledAt', isGreaterThanOrEqualTo: Timestamp.fromDate(date))
+      .where('scheduledAt', isLessThan: Timestamp.fromDate(date.add(const Duration(days: 1))))
+      .orderBy('scheduledAt')
+      .snapshots();
+
+  Stream<DocumentSnapshot> _dayStream(String assocId) {
+    if (_day == null || _dayAssocId != assocId) {
+      _dayAssocId = assocId;
+      _day = FirebaseFirestore.instance
+          .collection('eps_days')
+          .doc(epsDayId(assocId, date))
+          .snapshots();
+    }
+    return _day!;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -295,10 +342,7 @@ class _DateFilteredList extends StatelessWidget {
       builder: (context, assocId, assocName) {
         if (assocId == null) return _list(context, const [], null, null);
         return StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('eps_days')
-              .doc(epsDayId(assocId, date))
-              .snapshots(),
+          stream: _dayStream(assocId),
           builder: (context, daySnap) {
             final eps = daySnap.hasError
                 ? const <EpsDayMatch>[]
@@ -311,19 +355,10 @@ class _DateFilteredList extends StatelessWidget {
   }
 
   Widget _list(BuildContext context, List<EpsDayMatch> eps, String? assocId, String? assocName) {
-    final start = Timestamp.fromDate(date);
-    final end = Timestamp.fromDate(date.add(const Duration(days: 1)));
-
-    Query query = FirebaseFirestore.instance
-        .collection('matches')
-        .where('scheduledAt', isGreaterThanOrEqualTo: start)
-        .where('scheduledAt', isLessThan: end)
-        .orderBy('scheduledAt');
-
     return StreamBuilder<QuerySnapshot>(
-      stream: query.snapshots(),
+      stream: _matches,
       builder: (ctx, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
+        if (!snap.hasData && !snap.hasError) {
           return const Center(child: CircularProgressIndicator());
         }
         final matches = (snap.data?.docs ?? [])
@@ -548,16 +583,20 @@ class _CouponTabState extends State<_CouponTab> {
     );
   }
 
+  // Created once: typing a score calls setState on every key, and a new
+  // stream each time made the list reload and the score field lose its text.
+  late final Stream<QuerySnapshot> _upcoming = FirebaseFirestore.instance
+      .collection('matches')
+      .where('status', isEqualTo: 'upcoming')
+      .orderBy('scheduledAt')
+      .limit(20)
+      .snapshots();
+
   Widget _coupon(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('matches')
-          .where('status', isEqualTo: 'upcoming')
-          .orderBy('scheduledAt')
-          .limit(20)
-          .snapshots(),
+      stream: _upcoming,
       builder: (ctx, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
+        if (!snap.hasData && !snap.hasError) {
           return const Center(child: CircularProgressIndicator());
         }
         final cluberaMatches = (snap.data?.docs ?? [])
@@ -675,6 +714,7 @@ class _CouponTabState extends State<_CouponTab> {
                   itemCount: matches.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (ctx, i) => _CouponMatchRow(
+                    key: ValueKey(matches[i].id),
                     match: matches[i],
                     selectedPick: _picks[matches[i].id],
                     exactScore: _exactScores[matches[i].id],
@@ -745,6 +785,7 @@ class _CouponMatchRow extends StatefulWidget {
   final ValueChanged<String> onPick;
   final void Function(int?, int?) onExactScore;
   const _CouponMatchRow({
+    super.key,
     required this.match,
     this.selectedPick,
     this.exactScore,
@@ -931,6 +972,10 @@ class _CouponMatchRowState extends State<_CouponMatchRow> {
                   child: TextField(
                     controller: _homeCtrl,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(2),
+                    ],
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
@@ -963,6 +1008,10 @@ class _CouponMatchRowState extends State<_CouponMatchRow> {
                   child: TextField(
                     controller: _awayCtrl,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(2),
+                    ],
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
