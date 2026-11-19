@@ -65,15 +65,27 @@ List<EpsDayMatch> epsDayMatchesFrom(Map<String, dynamic>? data) =>
 /// The ΕΠΣ to show to this user: the one of their club or a followed club,
 /// otherwise the first one with data. Calls [builder] with null while there
 /// is none (or the rules do not allow reading yet).
-class EpsAssociationScope extends StatelessWidget {
+class EpsAssociationScope extends StatefulWidget {
   final Widget Function(BuildContext context, String? assocId, String? assocName) builder;
   const EpsAssociationScope({super.key, required this.builder});
+
+  @override
+  State<EpsAssociationScope> createState() => _EpsAssociationScopeState();
+}
+
+class _EpsAssociationScopeState extends State<EpsAssociationScope> {
+  // One stream for the widget's life, so parent rebuilds don't re-query.
+  final Stream<QuerySnapshot> _associations =
+      FirebaseFirestore.instance.collection('eps_associations').snapshots();
+
+  Widget Function(BuildContext context, String? assocId, String? assocName) get builder =>
+      widget.builder;
 
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AppProvider>().user;
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('eps_associations').snapshots(),
+      stream: _associations,
       builder: (context, snap) {
         final docs = snap.data?.docs ?? const [];
         if (snap.hasError || docs.isEmpty) return builder(context, null, null);
